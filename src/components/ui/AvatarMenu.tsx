@@ -39,9 +39,6 @@ export const AvatarMenu: React.FC = () => {
         hitSlop={8}
         style={({ pressed }) => ({
           transform: [{ scale: pressed ? 0.92 : 1 }],
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 4,
         })}
       >
         <View
@@ -61,7 +58,17 @@ export const AvatarMenu: React.FC = () => {
             {initial}
           </Text>
         </View>
-        <MaterialIcons name="keyboard-arrow-down" size={16} color={colors.primaryFixed} />
+        <View 
+          style={{ 
+            position: 'absolute', 
+            bottom: -2, 
+            right: -2, 
+            backgroundColor: colors.background,
+            borderRadius: 10,
+          }}
+        >
+          <MaterialIcons name="arrow-drop-down" size={16} color={colors.primaryFixed} />
+        </View>
       </Pressable>
 
       <Modal

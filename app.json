@@ -9,7 +9,6 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -43,9 +42,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash.png",
-          "backgroundColor": "#000000",
-          "imageWidth": 200
+          "backgroundColor": "#000000"
         }
       ],
       [
