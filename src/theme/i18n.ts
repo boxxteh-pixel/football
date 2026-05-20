@@ -30,7 +30,7 @@ const EN: Dict = {
   'predictor.search': 'Search teams or leagues',
 
   'live.title': 'Live Matches',
-  'live.subtitle': 'Auto-refresh every 15 seconds.',
+  'live.subtitle': 'Auto-refresh every 20 minutes.',
   'live.empty.title': 'No live matches right now',
   'live.empty.sub': "Check today's slate in the Predictor tab, or pull to refresh.",
 
@@ -172,7 +172,7 @@ const IT: Dict = {
   'predictor.search': 'Cerca squadre o campionati',
 
   'live.title': 'Partite Live',
-  'live.subtitle': 'Aggiornamento ogni 15 secondi.',
+  'live.subtitle': 'Aggiornamento ogni 20 minuti.',
   'live.empty.title': 'Nessuna partita live al momento',
   'live.empty.sub': "Guarda le partite di oggi nella scheda Previsioni o trascina per aggiornare.",
 
