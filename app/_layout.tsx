@@ -15,7 +15,8 @@ import {
   HankenGrotesk_800ExtraBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
-import { View, Text, LogBox } from 'react-native';
+import { View, Text, LogBox, StyleSheet, Image } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
 import { useColors} from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -47,9 +48,14 @@ const persister = createAsyncStoragePersister({
 export default function RootLayout() {
   const colors = useColors();
   const [storesReady, setStoresReady] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
   const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+
+  const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(0.9);
 
   const [fontsLoaded, fontError] = useFonts({
     HankenGrotesk_600SemiBold,
@@ -68,12 +74,33 @@ export default function RootLayout() {
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && storesReady) {
+      // Hide the native splash screen immediately
       SplashScreen.hideAsync().catch(() => {});
+
+      // Animate the custom JS splash screen
+      scale.value = withTiming(1, { duration: 600 });
+      const timer = setTimeout(() => {
+        opacity.value = withTiming(0, { duration: 400 }, (finished) => {
+          if (finished) {
+            runOnJS(setSplashVisible)(false);
+          }
+        });
+      }, 1000);
+
+      return () => clearTimeout(timer);
     }
   }, [fontsLoaded, fontError, storesReady]);
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const logoAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   if ((!fontsLoaded && !fontError) || !storesReady) {
-    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+    return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
   }
 
   return (
@@ -84,23 +111,67 @@ export default function RootLayout() {
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
           <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-              animation: 'fade',
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="match/[id]"
-              options={{ animation: 'slide_from_right', presentation: 'card' }}
-            />
-            <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
-          </Stack>
+          <View style={{ flex: 1 }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+                animation: 'fade',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="match/[id]"
+                options={{ animation: 'slide_from_right', presentation: 'card' }}
+              />
+              <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
+            </Stack>
+
+            {splashVisible && (
+              <Animated.View
+                style={[
+                  {
+                    ...StyleSheet.absoluteFillObject,
+                    backgroundColor: '#000000',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99999,
+                  },
+                  animatedStyle,
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    {
+                      width: 168,
+                      height: 168,
+                      borderRadius: 84,
+                      borderWidth: 1,
+                      borderColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.2)' : 'rgba(195,244,0,0.2)',
+                      backgroundColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.04)' : 'rgba(195,244,0,0.04)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    },
+                    logoAnimatedStyle,
+                  ]}
+                >
+                  <Image
+                    source={
+                      colorTheme === 'purple'
+                        ? require('../assets/images/logo2.png')
+                        : require('../assets/images/logo.png')
+                    }
+                    style={{ width: 140, height: 140 }}
+                    resizeMode="contain"
+                  />
+                </Animated.View>
+              </Animated.View>
+            )}
+          </View>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

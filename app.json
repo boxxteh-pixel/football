@@ -47,6 +47,14 @@
           "backgroundColor": "#000000",
           "imageWidth": 200
         }
+      ],
+      [
+        "@variant-systems/expo-dynamic-app-icon",
+        {
+          "purple": {
+            "image": "./assets/images/icon2.png"
+          }
+        }
       ]
     ],
     "experiments": {

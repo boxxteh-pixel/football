@@ -3,6 +3,18 @@ import { DEFAULT_SETTINGS, readSettings, updateSettings, type AppSettings, type 
 import { supabase } from '@/services/supabase/client';
 import { useAuthStore } from '@/store/authStore';
 
+const setNativeAppIcon = async (themeName: string | null) => {
+  try {
+    const ExpoDynamicAppIcon = require('@variant-systems/expo-dynamic-app-icon');
+    if (ExpoDynamicAppIcon && typeof ExpoDynamicAppIcon.setAppIcon === 'function') {
+      await ExpoDynamicAppIcon.setAppIcon(themeName);
+    }
+  } catch (err) {
+    // Silently handle native module unavailability in Expo Go
+    console.log('Dynamic app icon not supported in this environment (e.g. Expo Go):', err);
+  }
+};
+
 const syncProfileSettings = async (patch: Partial<AppSettings>) => {
   const session = useAuthStore.getState().session;
   if (!session?.user?.id) return;
@@ -43,6 +55,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   hydrate: async () => {
     const local = await readSettings();
     const session = useAuthStore.getState().session;
+    
+    // Make sure native app icon matches the hydrated setting
+    await setNativeAppIcon(local.colorTheme === 'purple' ? 'purple' : null);
     
     if (session?.user?.id) {
       try {
@@ -97,5 +112,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const settings = await updateSettings({ colorTheme: theme });
     set({ settings });
     // Note: colorTheme is kept local-only since it is a device appearance config.
+    await setNativeAppIcon(theme === 'purple' ? 'purple' : null);
   },
 }));
