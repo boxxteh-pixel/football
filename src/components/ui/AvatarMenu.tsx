@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useT } from '@/theme/i18n';
 
@@ -145,6 +147,10 @@ export const AvatarMenu: React.FC = () => {
               onPress={() =>
                 handle(async () => {
                   await logOut();
+                  await Promise.all([
+                    useSettingsStore.getState().hydrate(),
+                    useFavoritesStore.getState().hydrate(),
+                  ]);
                   router.replace('/(auth)/intro');
                 })
               }

@@ -29,6 +29,10 @@ export const config = {
     fixturesRefreshMs: Number(getEnv('EXPO_PUBLIC_FIXTURES_REFRESH_MS', '600000')),
     dailyQuota: 100, // API-Football free tier
   },
+  supabase: {
+    url: getEnv('EXPO_PUBLIC_SUPABASE_URL', 'https://bhzdkjiisgntqpdgrjpq.supabase.co'),
+    anonKey: getEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY', 'sb_publishable_5H053SjmcKqEOkDcAY_QPA_8ZSXDbv2'),
+  },
 } as const;
 
 export const hasApiKey = (): boolean => config.apiFootball.key.length > 0;

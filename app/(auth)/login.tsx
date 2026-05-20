@@ -19,6 +19,7 @@ import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useT } from '@/theme/i18n';
 
@@ -39,6 +40,10 @@ export default function LoginScreen() {
   const submit = async () => {
     try {
       await logIn({ name, password });
+      await Promise.all([
+        useSettingsStore.getState().hydrate(),
+        useFavoritesStore.getState().hydrate()
+      ]);
       haptics.success();
       router.replace('/(tabs)');
     } catch {

@@ -1,3 +1,4 @@
+'use no memo';
 import React from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,11 +13,13 @@ import { fonts } from '@/theme/typography';
 import { useLiveFixtures } from '@/hooks/useFixtures';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/theme/i18n';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function LiveTab() {
   const colors = useColors();
+  const isFocused = useIsFocused();
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
-  const { data, isLoading, refetch, isRefetching, error } = useLiveFixtures();
+  const { data, isLoading, refetch, isRefetching, error } = useLiveFixtures(undefined, isFocused);
   const t = useT();
 
   const fixtures = (data ?? []).filter((f) => selectedLeagueIds.includes(f.league.id));

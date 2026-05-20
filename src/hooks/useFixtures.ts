@@ -32,13 +32,14 @@ export const useFixturesByDate = (date: string, leagueId?: number) =>
     staleTime: fiveMinutes,
   });
 
-export const useLiveFixtures = (leagueIds?: number[]) =>
+export const useLiveFixtures = (leagueIds?: number[], enabled = true) =>
   useQuery({
     queryKey: ['fixtures', 'live', leagueIds?.join(',') ?? 'all'],
     queryFn: () => fetchLiveFixtures(leagueIds),
-    refetchInterval: config.app.liveRefreshMs,
+    refetchInterval: enabled ? config.app.liveRefreshMs : false,
     refetchIntervalInBackground: false,
     staleTime: config.app.liveRefreshMs / 2,
+    enabled: enabled,
   });
 
 export const useFixture = (id: number | undefined) =>
