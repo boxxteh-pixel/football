@@ -30,7 +30,10 @@ export const useFullPrediction = (fixture: Fixture | null | undefined) => {
   return useQuery({
     queryKey: ['prediction', fixture?.fixture.id],
     enabled,
-    staleTime: 60 * 60 * 1000,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const [homeHistory, awayHistory, homeStats, awayStats, h2h] = await Promise.all([
         fetchTeamLastFixtures(homeId!, 10).catch(() => []),

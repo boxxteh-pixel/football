@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
@@ -18,11 +18,13 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { quickPredict } from '@/services/ai/predictor';
 import { hasApiKey } from '@/constants/config';
+import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import { useT } from '@/theme/i18n';
 
 export default function PredictorTab() {
   const colors = useColors();
+  const haptics = useHaptics();
   const [search, setSearch] = useState('');
   const [activeLeague, setActiveLeague] = useState<number | null>(null);
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
@@ -66,6 +68,22 @@ export default function PredictorTab() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenContainer
         title="BORO"
+        rightSlot={
+          <Pressable
+            onPress={() => {
+              haptics.light();
+              refetch();
+            }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.6 : 1,
+              padding: 8,
+              borderRadius: 20,
+              backgroundColor: 'rgba(255,255,255,0.05)',
+            })}
+          >
+            <MaterialIcons name="refresh" size={22} color={colors.primaryFixed} />
+          </Pressable>
+        }
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

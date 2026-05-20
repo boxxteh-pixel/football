@@ -21,8 +21,8 @@ export const config = {
   },
   app: {
     defaultSeason: Number(process.env.EXPO_PUBLIC_DEFAULT_SEASON || '2024'),
-    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '60000'),
-    fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '600000'),
+    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '1200000'),
+    fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '3600000'),
     dailyQuota: 100, // API-Football free tier
   },
   supabase: {

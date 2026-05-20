@@ -1,6 +1,6 @@
 'use no memo';
 import React from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, Text, View, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { MatchListItem } from '@/components/match/MatchListItem';
@@ -14,9 +14,11 @@ import { useLiveFixtures } from '@/hooks/useFixtures';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/theme/i18n';
 import { useIsFocused } from '@react-navigation/native';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function LiveTab() {
   const colors = useColors();
+  const haptics = useHaptics();
   const isFocused = useIsFocused();
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const { data, isLoading, refetch, isRefetching, error } = useLiveFixtures(undefined, isFocused);
@@ -28,6 +30,22 @@ export default function LiveTab() {
     <ScreenContainer
       title="BORO"
       showLive
+      rightSlot={
+        <Pressable
+          onPress={() => {
+            haptics.light();
+            refetch();
+          }}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.6 : 1,
+            padding: 8,
+            borderRadius: 20,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+          })}
+        >
+          <MaterialIcons name="refresh" size={22} color={colors.primaryFixed} />
+        </Pressable>
+      }
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}

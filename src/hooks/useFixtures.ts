@@ -14,22 +14,26 @@ import { config } from '@/constants/config';
 import { isLive } from '@/types/match';
 import { todayIsoDate } from '@/utils/date';
 
-const fiveMinutes = 5 * 60 * 1000;
-const oneHour = 60 * 60 * 1000;
 const oneDay = 24 * 60 * 60 * 1000;
 
 export const useTodayFixtures = (leagueId?: number) =>
   useQuery({
     queryKey: ['fixtures', 'today', todayIsoDate(), leagueId ?? 'all'],
     queryFn: () => fetchFixturesByDate(todayIsoDate(), leagueId),
-    staleTime: fiveMinutes,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useFixturesByDate = (date: string, leagueId?: number) =>
   useQuery({
     queryKey: ['fixtures', 'date', date, leagueId ?? 'all'],
     queryFn: () => fetchFixturesByDate(date, leagueId),
-    staleTime: fiveMinutes,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useLiveFixtures = (leagueIds?: number[], enabled = true) =>
@@ -40,6 +44,9 @@ export const useLiveFixtures = (leagueIds?: number[], enabled = true) =>
     refetchIntervalInBackground: false,
     staleTime: config.app.liveRefreshMs / 2,
     enabled: enabled,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useFixture = (id: number | undefined) =>
@@ -47,6 +54,10 @@ export const useFixture = (id: number | undefined) =>
     queryKey: ['fixture', id],
     queryFn: () => fetchFixtureById(id!),
     enabled: typeof id === 'number',
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     refetchInterval: (query) => {
       const data = query.state.data;
       if (data && isLive(data.fixture.status.short)) return config.app.liveRefreshMs;
@@ -59,6 +70,10 @@ export const useFixtureEvents = (id: number | undefined, isLiveFixture: boolean)
     queryKey: ['fixture', id, 'events'],
     queryFn: () => fetchFixtureEvents(id!),
     enabled: typeof id === 'number',
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     refetchInterval: isLiveFixture ? config.app.liveRefreshMs : false,
   });
 
@@ -67,6 +82,10 @@ export const useFixtureStats = (id: number | undefined, isLiveFixture: boolean) 
     queryKey: ['fixture', id, 'stats'],
     queryFn: () => fetchFixtureStatistics(id!),
     enabled: typeof id === 'number',
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     refetchInterval: isLiveFixture ? config.app.liveRefreshMs : false,
   });
 
@@ -74,7 +93,10 @@ export const useStandings = (leagueId: number, season?: number) =>
   useQuery({
     queryKey: ['standings', leagueId, season ?? config.app.defaultSeason],
     queryFn: () => fetchStandings(leagueId, season),
-    staleTime: oneHour,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useTeamLastFixtures = (teamId: number | undefined, last = 10) =>
@@ -82,7 +104,10 @@ export const useTeamLastFixtures = (teamId: number | undefined, last = 10) =>
     queryKey: ['team', teamId, 'last', last],
     queryFn: () => fetchTeamLastFixtures(teamId!, last),
     enabled: typeof teamId === 'number',
-    staleTime: oneHour,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useTeamStats = (
@@ -94,7 +119,10 @@ export const useTeamStats = (
     queryKey: ['team', teamId, 'stats', leagueId, season ?? config.app.defaultSeason],
     queryFn: () => fetchTeamStatistics(teamId!, leagueId!, season),
     enabled: typeof teamId === 'number' && typeof leagueId === 'number',
-    staleTime: oneHour,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
 export const useH2H = (homeId: number | undefined, awayId: number | undefined) =>
@@ -102,5 +130,8 @@ export const useH2H = (homeId: number | undefined, awayId: number | undefined) =
     queryKey: ['h2h', homeId, awayId],
     queryFn: () => fetchHeadToHead(homeId!, awayId!),
     enabled: typeof homeId === 'number' && typeof awayId === 'number',
-    staleTime: oneDay,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
