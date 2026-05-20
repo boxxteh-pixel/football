@@ -34,7 +34,7 @@ export default function ProfileTab() {
   }, [user]);
 
   return (
-    <ScreenContainer title="BORO">
+    <ScreenContainer title="BORO" rightSlot={<View />}>
       <View style={{ gap: 24 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
           {t('profile.title')}
