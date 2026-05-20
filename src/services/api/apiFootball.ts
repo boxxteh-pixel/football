@@ -139,10 +139,23 @@ export const fetchTeamLastFixtures = async (
     if (!hasApiKey()) {
       return getMockTeamLastFixtures(teamId, last);
     }
-    const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-      params: { team: teamId, last },
-    });
-    return unwrap(data);
+    try {
+      const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
+        params: { team: teamId, last },
+      });
+      return unwrap(data);
+    } catch (error: any) {
+      if (error?.message?.toLowerCase().includes('last parameter') || error?.message?.toLowerCase().includes('free plan')) {
+        const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
+          params: { team: teamId, season: config.app.defaultSeason },
+        });
+        const all = unwrap(data);
+        return all
+          .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
+          .slice(0, last);
+      }
+      throw error;
+    }
   });
 };
 
@@ -156,10 +169,23 @@ export const fetchHeadToHead = async (
     if (!hasApiKey()) {
       return getMockHeadToHead(team1, team2, last);
     }
-    const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
-      params: { h2h: `${team1}-${team2}`, last },
-    });
-    return unwrap(data);
+    try {
+      const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
+        params: { h2h: `${team1}-${team2}`, last },
+      });
+      return unwrap(data);
+    } catch (error: any) {
+      if (error?.message?.toLowerCase().includes('last parameter') || error?.message?.toLowerCase().includes('free plan')) {
+        const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
+          params: { h2h: `${team1}-${team2}` },
+        });
+        const all = unwrap(data);
+        return all
+          .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
+          .slice(0, last);
+      }
+      throw error;
+    }
   });
 };
 

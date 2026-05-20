@@ -72,6 +72,7 @@ const createClient = (): AxiosInstance => {
       if (data && data.errors && (Array.isArray(data.errors) ? data.errors.length > 0 : Object.keys(data.errors).length > 0)) {
         const errorMsg = typeof data.errors === 'object' ? Object.values(data.errors).join(', ') : String(data.errors);
         if (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('quota')) {
+          await writeQuota({ date: todayStr(), used: config.app.dailyQuota });
           return Promise.reject(new QuotaExceededError());
         }
         return Promise.reject(new Error(errorMsg));
@@ -91,6 +92,7 @@ const createClient = (): AxiosInstance => {
     },
     (error: AxiosError) => {
       if (error.response?.status === 429) {
+        writeQuota({ date: todayStr(), used: config.app.dailyQuota }).catch(() => {});
         return Promise.reject(new QuotaExceededError());
       }
       return Promise.reject(error);
