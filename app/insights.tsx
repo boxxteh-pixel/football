@@ -279,6 +279,8 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
               fontSize: 10,
               letterSpacing: 0.5,
             }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {league.toUpperCase()}
           </Text>

@@ -15,11 +15,19 @@ import {
   HankenGrotesk_800ExtraBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import { useColors} from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
+
+// Prevent text word-breaking / character-wrapping on Android globally
+const anyText = Text as any;
+if (anyText.defaultProps == null) {
+  anyText.defaultProps = {};
+}
+anyText.defaultProps.textBreakStrategy = 'simple';
+anyText.defaultProps.android_hyphenationFrequency = 'none';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

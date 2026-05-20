@@ -160,7 +160,12 @@ const ProfileStat: React.FC<{ label: string; value: number | string }> = ({ labe
         gap: 4,
       }}
     >
-      <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5 }}>
+      <Text
+        style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5 }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
         {label}
       </Text>
       <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 16 }} numberOfLines={1}>
