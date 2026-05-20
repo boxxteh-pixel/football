@@ -5,13 +5,18 @@ import { useAuthStore } from '@/store/authStore';
 
 const setNativeAppIcon = async (themeName: string | null) => {
   try {
+    const hasModule = typeof global !== 'undefined' && (
+      ((global as any).ExpoModules && (global as any).ExpoModules.ExpoDynamicAppIcon) ||
+      ((global as any).ExpoModules && (global as any).ExpoModules.ExpoDynamicAppIconModule)
+    );
+    if (!hasModule) return;
+
     const ExpoDynamicAppIcon = require('@variant-systems/expo-dynamic-app-icon');
     if (ExpoDynamicAppIcon && typeof ExpoDynamicAppIcon.setAppIcon === 'function') {
       await ExpoDynamicAppIcon.setAppIcon(themeName);
     }
   } catch (err) {
-    // Silently handle native module unavailability in Expo Go
-    console.log('Dynamic app icon not supported in this environment (e.g. Expo Go):', err);
+    // Silently ignore to avoid triggering red boxes or terminal formatting errors
   }
 };
 
