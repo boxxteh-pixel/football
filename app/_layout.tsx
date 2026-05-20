@@ -15,7 +15,7 @@ import {
   HankenGrotesk_800ExtraBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
-import { View, Text } from 'react-native';
+import { View, Text, LogBox } from 'react-native';
 import { useColors} from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -23,13 +23,17 @@ import { useFavoritesStore } from '@/store/favoritesStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Suppress warning overlays in development that can freeze touch interactions in Expo Go
+LogBox.ignoreAllLogs();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 60 * 1000,
+      staleTime: Infinity,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     },
   },
 });
@@ -79,26 +83,24 @@ export default function RootLayout() {
           client={queryClient}
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
-          <QueryClientProvider client={queryClient}>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="match/[id]"
-                options={{ animation: 'slide_from_right', presentation: 'card' }}
-              />
-              <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
-            </Stack>
-          </QueryClientProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+              animation: 'fade',
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="match/[id]"
+              options={{ animation: 'slide_from_right', presentation: 'card' }}
+            />
+            <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
+          </Stack>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
