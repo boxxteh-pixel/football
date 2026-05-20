@@ -143,18 +143,6 @@ export default function ProfileTab() {
             onPress={() => router.push('/profile')}
           />
         </View>
-
-        <View style={{ gap: 16 }}>
-          <SectionHeader title={t('profile.settings')} />
-          <ActionRow
-            icon="settings"
-            label={t('settings.title')}
-            onPress={() => {
-              haptics.light();
-              router.push('/settings');
-            }}
-          />
-        </View>
       </View>
     </ScreenContainer>
   );
