@@ -108,17 +108,16 @@ export default function LoginScreen() {
         <GlassCard padding={24} style={{ gap: 20 }}>
           <View style={{ gap: 6 }}>
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1 }}>
-              {t('auth.email')}
+              {t('auth.name')}
             </Text>
             <View style={fieldShell}>
-              <MaterialIcons name="mail-outline" size={20} color={colors.onSurfaceVariant} />
+              <MaterialIcons name="person-outline" size={20} color={colors.onSurfaceVariant} />
               <TextInput
                 value={name}
                 onChangeText={setName}
-                placeholder="you@domain.com"
+                placeholder="Enter your username"
                 placeholderTextColor="rgba(196,201,172,0.5)"
                 autoCapitalize="none"
-                keyboardType="email-address"
                 style={fieldText}
               />
             </View>
