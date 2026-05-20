@@ -21,14 +21,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 
-// Prevent text word-breaking / character-wrapping on Android globally
-const anyText = Text as any;
-if (anyText.defaultProps == null) {
-  anyText.defaultProps = {};
-}
-anyText.defaultProps.textBreakStrategy = 'simple';
-anyText.defaultProps.android_hyphenationFrequency = 'none';
-
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient({

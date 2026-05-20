@@ -62,7 +62,7 @@ export default function LiveTab() {
             ))}
           </View>
         ) : error ? (
-          <ErrorState onRetry={refetch} />
+          <ErrorState error={error} onRetry={refetch} />
         ) : fixtures.length === 0 ? (
           <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
             <MaterialIcons name="sports-soccer" size={40} color={colors.onSurfaceVariant} />
@@ -91,18 +91,25 @@ export default function LiveTab() {
   );
 }
 
-const ErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
+const ErrorState: React.FC<{ error?: any; onRetry: () => void }> = ({ error, onRetry }) => {
   const colors = useColors();
   const t = useT();
+  const isQuota =
+    error?.name === 'QuotaExceededError' ||
+    error?.message?.toLowerCase().includes('quota') ||
+    error?.message?.toLowerCase().includes('limit');
+
   return (
     <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-      <MaterialIcons name="error-outline" size={40} color={colors.error} />
+      <MaterialIcons name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
-          {t('common.errorTitle')}
+          {isQuota ? "API Limit Reached" : t('common.errorTitle')}
         </Text>
-        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12 }}>
-          {t('common.errorSub')}
+        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12, lineHeight: 18 }}>
+          {isQuota
+            ? "You have reached the daily limit of 100 requests on API-Football's free tier. Please wait until midnight UTC or upgrade your plan."
+            : t('common.errorSub')}
         </Text>
       </View>
       <View style={{ marginTop: 4 }}>
