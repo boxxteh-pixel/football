@@ -19,7 +19,7 @@ import {
 interface ApiResponse<T> {
   get: string;
   parameters: Record<string, string>;
-  errors: unknown[];
+  errors: unknown[] | Record<string, string>;
   results: number;
   paging: { current: number; total: number };
   response: T;
@@ -47,54 +47,79 @@ export const fetchFixturesByDate = async (
   if (!hasApiKey()) {
     return getMockFixtures(date, leagueId);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-    params: {
-      date,
-      ...(leagueId ? { league: leagueId, season } : {}),
-      timezone: 'Europe/London',
-    },
-  });
-  return unwrap(data);
+  try {
+    const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
+      params: {
+        date,
+        ...(leagueId ? { league: leagueId, season } : {}),
+        timezone: 'Europe/London',
+      },
+    });
+    return unwrap(data);
+  } catch (error) {
+    console.log('fetchFixturesByDate failed, falling back to mock data:', error);
+    return getMockFixtures(date, leagueId);
+  }
 };
 
 export const fetchLiveFixtures = async (leagueIds?: number[]): Promise<Fixture[]> => {
   if (!hasApiKey()) {
     return getMockLiveFixtures(leagueIds);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-    params: {
-      live: leagueIds && leagueIds.length > 0 ? leagueIds.join('-') : 'all',
-    },
-  });
-  return unwrap(data);
+  try {
+    const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
+      params: {
+        live: leagueIds && leagueIds.length > 0 ? leagueIds.join('-') : 'all',
+      },
+    });
+    return unwrap(data);
+  } catch (error) {
+    console.log('fetchLiveFixtures failed, falling back to mock data:', error);
+    return getMockLiveFixtures(leagueIds);
+  }
 };
 
 export const fetchFixtureById = async (id: number): Promise<Fixture | null> => {
   if (!hasApiKey()) {
     return getMockFixtureById(id);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', { params: { id } });
-  return unwrap(data)[0] ?? null;
+  try {
+    const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', { params: { id } });
+    return unwrap(data)[0] ?? null;
+  } catch (error) {
+    console.log('fetchFixtureById failed, falling back to mock data:', error);
+    return getMockFixtureById(id);
+  }
 };
 
 export const fetchFixtureEvents = async (fixtureId: number): Promise<FixtureEvent[]> => {
   if (!hasApiKey()) {
     return getMockFixtureEvents(fixtureId);
   }
-  const { data } = await apiClient.get<ApiResponse<FixtureEvent[]>>('/fixtures/events', {
-    params: { fixture: fixtureId },
-  });
-  return unwrap(data);
+  try {
+    const { data } = await apiClient.get<ApiResponse<FixtureEvent[]>>('/fixtures/events', {
+      params: { fixture: fixtureId },
+    });
+    return unwrap(data);
+  } catch (error) {
+    console.log('fetchFixtureEvents failed, falling back to mock data:', error);
+    return getMockFixtureEvents(fixtureId);
+  }
 };
 
 export const fetchFixtureStatistics = async (fixtureId: number): Promise<FixtureStatistic[]> => {
   if (!hasApiKey()) {
     return getMockFixtureStats(fixtureId);
   }
-  const { data } = await apiClient.get<ApiResponse<FixtureStatistic[]>>('/fixtures/statistics', {
-    params: { fixture: fixtureId },
-  });
-  return unwrap(data);
+  try {
+    const { data } = await apiClient.get<ApiResponse<FixtureStatistic[]>>('/fixtures/statistics', {
+      params: { fixture: fixtureId },
+    });
+    return unwrap(data);
+  } catch (error) {
+    console.log('fetchFixtureStatistics failed, falling back to mock data:', error);
+    return getMockFixtureStats(fixtureId);
+  }
 };
 
 export const fetchStandings = async (
@@ -106,10 +131,15 @@ export const fetchStandings = async (
     if (!hasApiKey()) {
       return getMockStandings(leagueId);
     }
-    const { data } = await apiClient.get<
-      ApiResponse<Array<{ league: { standings: StandingRow[][] } }>>
-    >('/standings', { params: { league: leagueId, season } });
-    return unwrap(data)[0]?.league?.standings?.[0] ?? [];
+    try {
+      const { data } = await apiClient.get<
+        ApiResponse<Array<{ league: { standings: StandingRow[][] } }>>
+      >('/standings', { params: { league: leagueId, season } });
+      return unwrap(data)[0]?.league?.standings?.[0] ?? [];
+    } catch (error) {
+      console.log('fetchStandings failed, falling back to mock data:', error);
+      return getMockStandings(leagueId);
+    }
   });
 };
 
@@ -123,10 +153,15 @@ export const fetchTeamStatistics = async (
     if (!hasApiKey()) {
       return getMockTeamStats(teamId, leagueId);
     }
-    const { data } = await apiClient.get<ApiResponse<TeamStatistics>>('/teams/statistics', {
-      params: { team: teamId, league: leagueId, season },
-    });
-    return data.response ?? null;
+    try {
+      const { data } = await apiClient.get<ApiResponse<TeamStatistics>>('/teams/statistics', {
+        params: { team: teamId, league: leagueId, season },
+      });
+      return data.response ?? null;
+    } catch (error) {
+      console.log('fetchTeamStatistics failed, falling back to mock data:', error);
+      return getMockTeamStats(teamId, leagueId);
+    }
   });
 };
 
@@ -139,10 +174,15 @@ export const fetchTeamLastFixtures = async (
     if (!hasApiKey()) {
       return getMockTeamLastFixtures(teamId, last);
     }
-    const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-      params: { team: teamId, last },
-    });
-    return unwrap(data);
+    try {
+      const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
+        params: { team: teamId, last },
+      });
+      return unwrap(data);
+    } catch (error) {
+      console.log('fetchTeamLastFixtures failed, falling back to mock data:', error);
+      return getMockTeamLastFixtures(teamId, last);
+    }
   });
 };
 
@@ -156,10 +196,15 @@ export const fetchHeadToHead = async (
     if (!hasApiKey()) {
       return getMockHeadToHead(team1, team2, last);
     }
-    const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
-      params: { h2h: `${team1}-${team2}`, last },
-    });
-    return unwrap(data);
+    try {
+      const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
+        params: { h2h: `${team1}-${team2}`, last },
+      });
+      return unwrap(data);
+    } catch (error) {
+      console.log('fetchHeadToHead failed, falling back to mock data:', error);
+      return getMockHeadToHead(team1, team2, last);
+    }
   });
 };
 
@@ -175,8 +220,21 @@ export const fetchLeagues = async (current = true): Promise<Array<{ league: Leag
       },
     }));
   }
-  const { data } = await apiClient.get<ApiResponse<Array<{ league: League }>>>('/leagues', {
-    params: current ? { current: 'true' } : {},
-  });
-  return unwrap(data);
+  try {
+    const { data } = await apiClient.get<ApiResponse<Array<{ league: League }>>>('/leagues', {
+      params: current ? { current: 'true' } : {},
+    });
+    return unwrap(data);
+  } catch (error) {
+    console.log('fetchLeagues failed, falling back to mock data:', error);
+    return Object.values(MOCK_LEAGUES).map((league) => ({
+      league: {
+        id: league.id,
+        name: league.name,
+        country: league.country,
+        logo: league.logo,
+        season: league.season,
+      },
+    }));
+  }
 };

@@ -68,6 +68,15 @@ const createClient = (): AxiosInstance => {
 
   instance.interceptors.response.use(
     async (res) => {
+      const data = res.data;
+      if (data && data.errors && (Array.isArray(data.errors) ? data.errors.length > 0 : Object.keys(data.errors).length > 0)) {
+        const errorMsg = typeof data.errors === 'object' ? Object.values(data.errors).join(', ') : String(data.errors);
+        if (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('quota')) {
+          return Promise.reject(new QuotaExceededError());
+        }
+        return Promise.reject(new Error(errorMsg));
+      }
+
       const quota = await readQuota();
       await writeQuota({ date: quota.date, used: quota.used + 1 });
       // Surface quota headers if present (RapidAPI exposes them)
