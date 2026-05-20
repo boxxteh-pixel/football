@@ -12,6 +12,7 @@ interface ScreenContainerProps extends ScrollViewProps {
   bottomSafe?: boolean;
   topBar?: boolean;
   rightSlot?: React.ReactNode;
+  hideAvatar?: boolean;
   children?: React.ReactNode;
 }
 
@@ -23,6 +24,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   bottomSafe = true,
   topBar = true,
   rightSlot,
+  hideAvatar = false,
   children,
   contentContainerStyle,
   ...rest
@@ -35,7 +37,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   if (scroll) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} />}
+        {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={hideAvatar} />}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
@@ -56,7 +58,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} />}
+      {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={hideAvatar} />}
       <View style={{ flex: 1, paddingTop, paddingBottom, paddingHorizontal: 16 }}>{children}</View>
     </View>
   );

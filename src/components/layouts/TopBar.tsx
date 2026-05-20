@@ -14,6 +14,7 @@ interface TopBarProps {
   showBack?: boolean;
   showLive?: boolean;
   rightSlot?: React.ReactNode;
+  hideAvatar?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -21,6 +22,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   showBack = false,
   showLive = false,
   rightSlot,
+  hideAvatar = false,
 }) => {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -70,7 +72,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {showLive && <LivePulse label="" />}
-          {rightSlot ?? <AvatarMenu />}
+          {rightSlot}
+          {!hideAvatar && <AvatarMenu />}
         </View>
       </View>
     </View>
