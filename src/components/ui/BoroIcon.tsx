@@ -66,5 +66,5 @@ interface BoroIconProps {
 
 export const BoroIcon: React.FC<BoroIconProps> = ({ name, size = 24, color = '#ffffff', fill, style }) => {
   const IconComponent = ICON_MAP[name] || Lucide.HelpCircle;
-  return <IconComponent size={size} color={color} fill={fill} style={style} />;
+  return <IconComponent size={size} color={color} stroke={color} fill={fill || 'none'} style={style} />;
 };
