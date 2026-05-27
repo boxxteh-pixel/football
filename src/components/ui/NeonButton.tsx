@@ -83,11 +83,8 @@ export const NeonButton: React.FC<NeonButtonProps> = ({
           ...(fullWidth ? { width: '100%' } : {}),
           ...(isPrimary
             ? {
-                shadowColor: colors.primaryFixedDim,
-                shadowOpacity: 0.5,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 0 },
-                elevation: 6,
+                shadowColor: 'transparent',
+                elevation: 0,
               }
             : {}),
           opacity: disabled || loading ? 0.5 : 1,

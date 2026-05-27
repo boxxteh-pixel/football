@@ -16,6 +16,8 @@ export const LEAGUE_MAP: Record<number, number> = {
   2: 2,      // UEFA Champions League
   3: 5,      // UEFA Europa League
   253: 779,  // Major League Soccer (MLS)
+  13: 14,    // UEFA Conference League
+  17: 244,   // Copa Libertadores
 };
 
 export const INVERSE_LEAGUE_MAP: Record<number, number> = Object.fromEntries(

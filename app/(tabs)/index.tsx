@@ -223,7 +223,7 @@ const ErrorState: React.FC<{ error?: any; onRetry: () => void }> = ({ error, onR
 
   return (
     <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-      <BoroIcon name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
+      <BoroIcon name={isQuota ? "schedule" : "error-outline"} size={40} color={colors.onSurfaceVariant} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
           {isQuota ? t('common.apiLimitTitle') : t('common.errorTitle')}
@@ -235,7 +235,7 @@ const ErrorState: React.FC<{ error?: any; onRetry: () => void }> = ({ error, onR
         </Text>
       </View>
       <View style={{ marginTop: 4 }}>
-        <NeonButton label={t('common.retry')} onPress={onRetry} size="sm" fullWidth={false} />
+        <NeonButton label={t('common.retry')} onPress={onRetry} size="sm" variant="outline" fullWidth={false} />
       </View>
     </GlassCard>
   );

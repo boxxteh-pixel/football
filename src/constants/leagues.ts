@@ -24,6 +24,8 @@ export const DEFAULT_LEAGUES: TrackedLeague[] = [
   { id: 307, name: 'Saudi Professional League', shortName: 'Saudi Pro', country: 'Saudi Arabia', countryCode: 'SA', emoji: '' },
   { id: 2, name: 'UEFA Champions League', shortName: 'UCL', country: 'Europe', emoji: '', isInternational: true },
   { id: 3, name: 'UEFA Europa League', shortName: 'UEL', country: 'Europe', emoji: '', isInternational: true },
+  { id: 13, name: 'UEFA Conference League', shortName: 'UECL', country: 'Europe', emoji: '', isInternational: true },
+  { id: 17, name: 'Copa Libertadores', shortName: 'Libertadores', country: 'South America', emoji: '', isInternational: true },
   { id: 253, name: 'Major League Soccer', shortName: 'MLS', country: 'USA', countryCode: 'US', emoji: '' },
 ];
 

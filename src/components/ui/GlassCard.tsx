@@ -69,11 +69,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           backgroundColor: bg,
           ...(glow
             ? {
-                shadowColor: colors.primaryFixedDim,
-                shadowOpacity: 0.35,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 0 },
-                elevation: 8,
+                shadowColor: 'transparent',
+                elevation: 0,
               }
             : {}),
           ...(padding !== undefined ? { padding } : {}),
