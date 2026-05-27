@@ -57,24 +57,18 @@ export const fetchFixturesByDate = async (
       leagueResults.flat().forEach((fixture) => byId.set(fixture.fixture.id, fixture));
       const smResults = [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
       
-      // Fallback to mock data if there are absolutely no real scheduled matches today (off-season)
-      if (smResults.length === 0) {
-        console.log('[apiFootball] No real scheduled matches today (off-season), providing mock demo fixtures.');
-        return getMockFixtures(date, leagueId);
-      }
+      // If there are no matches today, return empty — do NOT inject fake mock data
       return smResults;
     }
     
-    const smLeagueResults = await fetchSportmonksFixturesByDate(date, leagueId);
-    if (smLeagueResults.length === 0) {
-      return getMockFixtures(date, leagueId);
-    }
-    return smLeagueResults;
+    // Single league query — return whatever the API gives (even if empty)
+    return await fetchSportmonksFixturesByDate(date, leagueId);
   } catch (err) {
     console.error('[apiFootball] fetchFixturesByDate failed, falling back to mock:', err);
     return getMockFixtures(date, leagueId);
   }
 };
+
 
 export const fetchLiveFixtures = async (leagueIds?: number[]): Promise<Fixture[]> => {
   if (!hasApiKey()) {

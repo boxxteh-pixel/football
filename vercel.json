@@ -1,7 +1,6 @@
 {
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/sportmonks/(.*)", "destination": "https://api.sportmonks.com/v3/football/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

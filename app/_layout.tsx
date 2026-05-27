@@ -61,10 +61,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: Infinity,
+      staleTime: 10 * 60 * 1000, // 10 minutes default
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
     },
   },
 });
@@ -229,7 +229,7 @@ export default function RootLayout() {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDesktop ? '#0c0b0b' : colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDesktop ? '#0c0b0b' : colors.background, overflow: 'hidden' as any }}>
       <SafeAreaProvider>
         <PersistQueryClientProvider
           client={queryClient}
@@ -238,7 +238,7 @@ export default function RootLayout() {
           <StatusBar style="light" />
 
           {isDesktop ? (
-            <View style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+            <View style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
               {/* Ambient Background Glows */}
               <View style={{
                 position: 'absolute',

@@ -3,13 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    background-color: #0c0b0b !important;
+  html, body, #root {
+    height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow: hidden;
+    background-color: #0c0b0b !important;
+    /* Prevent pull-to-refresh and bounce on mobile browsers */
+    overscroll-behavior: none;
   }
-  
+
   /* Custom scrollbar for a premium look */
   ::-webkit-scrollbar {
     width: 6px;
@@ -26,4 +30,3 @@
     background: rgba(255, 255, 255, 0.24);
   }
 }
-

@@ -20,10 +20,10 @@ export const useTodayFixtures = (leagueId?: number) =>
   useQuery({
     queryKey: ['fixtures', 'today', todayIsoDate(), leagueId ?? 'all'],
     queryFn: () => fetchFixturesByDate(todayIsoDate(), leagueId),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes — ensures fresh data on each visit
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
   });
 
 export const useFixturesByDate = (date: string, leagueId?: number) =>
