@@ -94,7 +94,8 @@ export const fetchSportmonksPredictions = async (
     const cleanDate = date.split('T')[0];
     const sportmonksLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
 
-    const baseUrl = Platform.OS === 'web' ? '/api/sportmonks' : config.sportmonks.baseUrl;
+    const isLocalWeb = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const baseUrl = (Platform.OS === 'web' && !isLocalWeb) ? '/api/sportmonks' : config.sportmonks.baseUrl;
     let url = `${baseUrl}/fixtures/date/${cleanDate}?include=participants;predictions.type`;
     if (sportmonksLeagueId) {
       url += `&filters=fixtureLeagues:${sportmonksLeagueId}`;
@@ -293,8 +294,10 @@ import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord, FixtureStatus 
 import type { StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
 
+const isLocalWebClient = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 const sportmonksClient = axios.create({
-  baseURL: Platform.OS === 'web' ? '/api/sportmonks' : config.sportmonks.baseUrl,
+  baseURL: (Platform.OS === 'web' && !isLocalWebClient) ? '/api/sportmonks' : config.sportmonks.baseUrl,
   headers: {
     'Authorization': config.sportmonks.key,
   },
