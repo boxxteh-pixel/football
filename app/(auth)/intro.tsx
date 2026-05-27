@@ -58,41 +58,14 @@ export default function IntroScreen() {
         justifyContent: 'space-between',
       }}
     >
-      <AmbientOrb top={-80} left={-80} opacity={0.45} color={colors.primaryFixedDim} />
-      <AmbientOrb bottom={100} right={-100} opacity={0.3} color={colors.primaryFixed} delay={1200} />
-
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
-        <Animated.View
-          style={[
-            {
-              shadowColor: colors.primaryFixedDim,
-              shadowOpacity: 0.8,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: 20,
-            },
-            logoStyle,
-          ]}
-        >
-          <View
-            style={{
-              width: 168,
-              height: 168,
-              borderRadius: 84,
-              borderWidth: 1,
-              borderColor: colors.accent20,
-              backgroundColor: colors.accent04,
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              key={colorTheme}
-              source={logoSource}
-              style={{ width: 140, height: 140 }}
-              resizeMode="contain"
-            />
-          </View>
+        <Animated.View style={logoStyle}>
+          <Image
+            key={colorTheme}
+            source={logoSource}
+            style={{ width: 120, height: 120 }}
+            resizeMode="contain"
+          />
         </Animated.View>
 
         <View style={{ alignItems: 'center', gap: 6 }}>
@@ -102,8 +75,6 @@ export default function IntroScreen() {
               fontFamily: fonts.display,
               fontSize: 44,
               letterSpacing: -1.2,
-              textShadowColor: colors.textShadow,
-              textShadowRadius: 20,
             }}
           >
             BORO

@@ -196,22 +196,7 @@ export default function RootLayout() {
             animatedStyle,
           ]}
         >
-          <Animated.View
-            style={[
-              {
-                width: 168,
-                height: 168,
-                borderRadius: 84,
-                borderWidth: 1,
-                borderColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.2)' : 'rgba(195,244,0,0.2)',
-                backgroundColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.04)' : 'rgba(195,244,0,0.04)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              },
-              logoAnimatedStyle,
-            ]}
-          >
+          <Animated.View style={logoAnimatedStyle}>
             <Image
               key={colorTheme}
               source={
@@ -219,7 +204,7 @@ export default function RootLayout() {
                   ? require('../assets/images/logo2.png')
                   : require('../assets/images/logo.png')
               }
-              style={{ width: 140, height: 140 }}
+              style={{ width: 120, height: 120 }}
               resizeMode="contain"
             />
           </Animated.View>
