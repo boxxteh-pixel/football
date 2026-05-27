@@ -40,7 +40,6 @@ export default function IntroScreen() {
 
   const logoStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    shadowRadius: glow.value,
   }));
 
   const logoSource = colorTheme === 'purple'
