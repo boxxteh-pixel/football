@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { config } from '@/constants/config';
 
 // Maps API-Football league IDs to Sportmonks league IDs
@@ -91,7 +92,8 @@ export const fetchSportmonksPredictions = async (
     const cleanDate = date.split('T')[0];
     const sportmonksLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
 
-    let url = `${config.sportmonks.baseUrl}/fixtures/date/${cleanDate}?include=participants;predictions.type`;
+    const baseUrl = Platform.OS === 'web' ? '/api/sportmonks' : config.sportmonks.baseUrl;
+    let url = `${baseUrl}/fixtures/date/${cleanDate}?include=participants;predictions.type`;
     if (sportmonksLeagueId) {
       url += `&filters=fixtureLeagues:${sportmonksLeagueId}`;
     }
@@ -290,7 +292,7 @@ import type { StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
 
 const sportmonksClient = axios.create({
-  baseURL: config.sportmonks.baseUrl,
+  baseURL: Platform.OS === 'web' ? '/api/sportmonks' : config.sportmonks.baseUrl,
   headers: {
     'Authorization': config.sportmonks.key,
   },
