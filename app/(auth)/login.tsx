@@ -78,8 +78,6 @@ export default function LoginScreen() {
           flexGrow: 1,
         }}
       >
-        <AmbientOrb top={-60} left={-60} opacity={0.35} />
-
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}

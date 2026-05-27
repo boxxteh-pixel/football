@@ -96,21 +96,7 @@ const BoroWordmark: React.FC<{ colorTheme: 'green' | 'purple' }> = ({ colorTheme
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 17,
-          borderWidth: 1,
-          borderColor: colors.accent30,
-          backgroundColor: colors.accent08,
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        <Image source={logoSource} style={{ width: 31, height: 31 }} resizeMode="cover" />
-      </View>
+      <Image source={logoSource} style={{ width: 24, height: 24 }} resizeMode="contain" />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
         <Text
@@ -124,30 +110,17 @@ const BoroWordmark: React.FC<{ colorTheme: 'green' | 'purple' }> = ({ colorTheme
         >
           BORO
         </Text>
-        <View
+        <Text
           style={{
-            width: 20,
-            height: 18,
-            borderRadius: 6,
-            backgroundColor: colors.accent18,
-            borderWidth: 1,
-            borderColor: colors.accent30,
-            alignItems: 'center',
-            justifyContent: 'center',
+            color: colors.primaryFixed,
+            fontFamily: fonts.label,
+            fontSize: 12,
+            opacity: 0.8,
+            marginLeft: 4,
           }}
         >
-          <Text
-            style={{
-              color: colors.primaryFixed,
-              fontFamily: fonts.label,
-              fontSize: 9,
-              letterSpacing: 0,
-              lineHeight: 11,
-            }}
-          >
-            AI
-          </Text>
-        </View>
+          AI
+        </Text>
       </View>
     </View>
   );

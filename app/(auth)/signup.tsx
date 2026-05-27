@@ -72,8 +72,6 @@ export default function SignUpScreen() {
           flexGrow: 1,
         }}
       >
-        <AmbientOrb top={-80} right={-80} opacity={0.3} />
-
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
