@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Platform } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
@@ -77,7 +77,7 @@ export default function PredictorTab() {
         <View style={{ gap: 24 }}>
           <View style={{ gap: 16 }}>
             <SearchBar value={search} onChangeText={setSearch} placeholder={t('predictor.search')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={{ gap: 12, paddingRight: 16 }}>
               <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
               {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
                 <Chip
@@ -115,7 +115,7 @@ export default function PredictorTab() {
             ) : (
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={false}
+                showsHorizontalScrollIndicator={Platform.OS === 'web'}
                 contentContainerStyle={{ paddingRight: 16 }}
               >
                 {bestPicks.map((f) => (
@@ -175,7 +175,7 @@ export default function PredictorTab() {
 }
 
 const BestPicksSkeleton: React.FC = () => (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+  <ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={{ paddingRight: 16 }}>
     {[0, 1, 2].map((i) => (
       <View key={i} style={{ marginRight: 16, width: 300 }}>
         <Skeleton height={220} radius={16} />
