@@ -228,87 +228,77 @@ export default function RootLayout() {
     </View>
   );
 
-  if (isDesktop) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0c0b0b', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-        <SafeAreaProvider>
-          <PersistQueryClientProvider
-            client={queryClient}
-            persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
-          >
-            <StatusBar style="light" />
-            
-            {/* Ambient Background Glows */}
-            <View style={{
-              position: 'absolute',
-              top: '-10%',
-              left: '-5%',
-              width: '50%',
-              height: '50%',
-              borderRadius: 999,
-              backgroundColor: colorTheme === 'purple' ? 'rgba(167, 139, 250, 0.06)' : 'rgba(195, 244, 0, 0.04)',
-              ...Platform.select({
-                web: {
-                  filter: 'blur(100px)',
-                  WebkitFilter: 'blur(100px)',
-                } as any
-              }),
-              pointerEvents: 'none',
-            }} />
-            <View style={{
-              position: 'absolute',
-              bottom: '-10%',
-              right: '-5%',
-              width: '50%',
-              height: '50%',
-              borderRadius: 999,
-              backgroundColor: colorTheme === 'purple' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(195, 244, 0, 0.03)',
-              ...Platform.select({
-                web: {
-                  filter: 'blur(120px)',
-                  WebkitFilter: 'blur(120px)',
-                } as any
-              }),
-              pointerEvents: 'none',
-            }} />
-
-            {/* Mockup Container for Desktop */}
-            <View
-              style={{
-                width: '100%',
-                maxWidth: 440,
-                height: '92%',
-                maxHeight: 900,
-                borderRadius: 40,
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.08)',
-                backgroundColor: colors.background,
-                ...Platform.select({
-                  web: {
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                  } as any
-                }),
-                overflow: 'hidden',
-                position: 'relative',
-              }}
-            >
-              {content}
-            </View>
-          </PersistQueryClientProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    );
-  }
-
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDesktop ? '#0c0b0b' : colors.background }}>
       <SafeAreaProvider>
         <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
           <StatusBar style="light" />
-          {content}
+
+          {isDesktop ? (
+            <View style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+              {/* Ambient Background Glows */}
+              <View style={{
+                position: 'absolute',
+                top: '-10%',
+                left: '-5%',
+                width: '50%',
+                height: '50%',
+                borderRadius: 999,
+                backgroundColor: colorTheme === 'purple' ? 'rgba(167, 139, 250, 0.06)' : 'rgba(195, 244, 0, 0.04)',
+                ...Platform.select({
+                  web: {
+                    filter: 'blur(100px)',
+                    WebkitFilter: 'blur(100px)',
+                  } as any
+                }),
+                pointerEvents: 'none',
+              }} />
+              <View style={{
+                position: 'absolute',
+                bottom: '-10%',
+                right: '-5%',
+                width: '50%',
+                height: '50%',
+                borderRadius: 999,
+                backgroundColor: colorTheme === 'purple' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(195, 244, 0, 0.03)',
+                ...Platform.select({
+                  web: {
+                    filter: 'blur(120px)',
+                    WebkitFilter: 'blur(120px)',
+                  } as any
+                }),
+                pointerEvents: 'none',
+              }} />
+
+              {/* Mockup Container for Desktop */}
+              <View
+                style={{
+                  width: '100%',
+                  maxWidth: 440,
+                  height: '92%',
+                  maxHeight: 900,
+                  borderRadius: 40,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.08)',
+                  backgroundColor: colors.background,
+                  ...Platform.select({
+                    web: {
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                    } as any
+                  }),
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}
+              >
+                {content}
+              </View>
+            </View>
+          ) : (
+            content
+          )}
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
