@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -14,8 +14,9 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import { useT } from '@/theme/i18n';
+import { formatPredictionSelection } from '@/utils/predictionText';
 
-const TRENDS_ICON: keyof typeof MaterialIcons.glyphMap = 'insights';
+const TRENDS_ICON: string = 'insights';
 
 export default function InsightsScreen() {
   const colors = useColors();
@@ -73,7 +74,7 @@ export default function InsightsScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1, gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <MaterialIcons name="bolt" size={22} color={colors.primaryFixed} />
+                <BoroIcon name="bolt" size={22} color={colors.primaryFixed} />
                 <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 20, letterSpacing: -0.3 }}>
                   {t('predictor.accumulator')}
                 </Text>
@@ -158,7 +159,7 @@ export default function InsightsScreen() {
 
         <GlassCard padding={20} style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name="warning" size={22} color={colors.error} />
+            <BoroIcon name="warning" size={22} color={colors.error} />
             <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}>
               {t('insights.highRiskTitle')}
             </Text>
@@ -190,7 +191,7 @@ export default function InsightsScreen() {
 
         <GlassCard padding={20} style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name={TRENDS_ICON} size={22} color={colors.secondaryFixed} />
+            <BoroIcon name={TRENDS_ICON} size={22} color={colors.secondaryFixed} />
             <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}>
               {t('insights.trendsTitle')}
             </Text>
@@ -219,7 +220,7 @@ export default function InsightsScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <MaterialIcons name={tr.icon as keyof typeof MaterialIcons.glyphMap} size={20} color={colors.secondaryFixed} />
+                    <BoroIcon name={tr.icon} size={20} color={colors.secondaryFixed} />
                   </View>
                   <View>
                     <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
@@ -254,6 +255,7 @@ interface AccumulatorRowProps {
 
 const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, probability, onPress }) => {
   const colors = useColors();
+  const t = useT();
   const probColor = probability >= 80 ? colors.probHigh : probability >= 60 ? colors.probMid : colors.error;
   return (
     <View
@@ -288,7 +290,7 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
             style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}
             numberOfLines={1}
           >
-            {pick}
+            {formatPredictionSelection(pick, t)}
           </Text>
         </View>
       </View>
@@ -297,7 +299,7 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
           {odds.toFixed(2)}
         </Text>
         <Text style={{ color: probColor, fontFamily: fonts.body, fontSize: 11 }}>
-          {Math.round(probability)}% prob
+          {Math.round(probability)}% {t('insights.probabilityShort')}
         </Text>
       </View>
     </View>
@@ -335,7 +337,7 @@ const ValueAlertRow: React.FC<ValueAlertRowProps> = ({ tag, title, sub, odds, im
       </View>
       <View>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }} numberOfLines={1}>
-          {title}
+          {formatPredictionSelection(title, t)}
         </Text>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }} numberOfLines={1}>
           {sub}

@@ -11,8 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_FOOTBALL_KEY": "636bcacca596a13ba3b4c5f9a82e732c",
-        "EXPO_PUBLIC_API_FOOTBALL_HOST": "v3.football.api-sports.io",
+        "EXPO_PUBLIC_SPORTMONKS_KEY": "vIPRgqtcB3MivtuDSJ9Xv82CjkPfF8nUXFiF6AfV9Z7egDDCx8FMGcRbTPZm",
         "EXPO_PUBLIC_SPORTSDB_KEY": "3",
         "EXPO_PUBLIC_DEFAULT_SEASON": "2024",
         "EXPO_PUBLIC_LIVE_REFRESH_MS": "1200000",
@@ -25,8 +24,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_FOOTBALL_KEY": "636bcacca596a13ba3b4c5f9a82e732c",
-        "EXPO_PUBLIC_API_FOOTBALL_HOST": "v3.football.api-sports.io",
+        "EXPO_PUBLIC_SPORTMONKS_KEY": "vIPRgqtcB3MivtuDSJ9Xv82CjkPfF8nUXFiF6AfV9Z7egDDCx8FMGcRbTPZm",
         "EXPO_PUBLIC_SPORTSDB_KEY": "3",
         "EXPO_PUBLIC_DEFAULT_SEASON": "2024",
         "EXPO_PUBLIC_LIVE_REFRESH_MS": "1200000",
@@ -39,8 +37,7 @@
       },
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_FOOTBALL_KEY": "636bcacca596a13ba3b4c5f9a82e732c",
-        "EXPO_PUBLIC_API_FOOTBALL_HOST": "v3.football.api-sports.io",
+        "EXPO_PUBLIC_SPORTMONKS_KEY": "vIPRgqtcB3MivtuDSJ9Xv82CjkPfF8nUXFiF6AfV9Z7egDDCx8FMGcRbTPZm",
         "EXPO_PUBLIC_SPORTSDB_KEY": "3",
         "EXPO_PUBLIC_DEFAULT_SEASON": "2024",
         "EXPO_PUBLIC_LIVE_REFRESH_MS": "1200000",

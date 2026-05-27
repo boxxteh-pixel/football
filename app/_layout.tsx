@@ -14,13 +14,43 @@ import {
   HankenGrotesk_700Bold,
   HankenGrotesk_800ExtraBold,
 } from '@expo-google-fonts/hanken-grotesk';
-import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
-import { View, Text, LogBox, StyleSheet, Image } from 'react-native';
+import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
+import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, LogBox, StyleSheet, Image, Platform, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
 import { useColors} from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useLearningStore } from '@/store/learningStore';
+import { withTimeout } from '@/utils/async';
+
+// On Web, react-native-vector-icons needs its CSS stylesheet injected dynamically.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  try {
+    const fontAsset = MaterialIcons.font['material-icons'] || MaterialIcons.font.MaterialIcons;
+    const fontUrl = typeof fontAsset === 'string' ? fontAsset : (fontAsset?.uri || fontAsset);
+    if (fontUrl) {
+      const iconFontStyles = `
+        @font-face {
+          src: url(${fontUrl});
+          font-family: MaterialIcons;
+        }
+      `;
+      const style = document.createElement('style');
+      style.type = 'text/css';
+      if ((style as any).styleSheet) {
+        (style as any).styleSheet.cssText = iconFontStyles;
+      } else {
+        style.appendChild(document.createTextNode(iconFontStyles));
+      }
+      document.head.appendChild(style);
+    }
+  } catch (err) {
+    console.warn('Failed to inject web icon styles:', err);
+  }
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -52,6 +82,7 @@ export default function RootLayout() {
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
   const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+  const hydrateLearning = useLearningStore((s) => s.hydrate);
 
   const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
   const opacity = useSharedValue(1);
@@ -63,31 +94,55 @@ export default function RootLayout() {
     HankenGrotesk_800ExtraBold,
     Inter_400Regular,
     Inter_600SemiBold,
+    'MaterialIcons': MaterialIcons.font.material,
+    'Material Icons': MaterialIcons.font.material,
+    ...MaterialIcons.font,
   });
 
   useEffect(() => {
     (async () => {
-      await Promise.all([hydrateAuth(), hydrateSettings(), hydrateFavorites()]);
-      setStoresReady(true);
+      try {
+        await withTimeout(hydrateAuth(), 2500, undefined);
+        await Promise.allSettled([
+          withTimeout(hydrateSettings(), 2500, undefined),
+          withTimeout(hydrateFavorites(), 2500, undefined),
+          withTimeout(hydrateLearning(), 2500, undefined),
+        ]);
+      } finally {
+        setStoresReady(true);
+      }
     })();
-  }, [hydrateAuth, hydrateSettings, hydrateFavorites]);
+  }, [hydrateAuth, hydrateSettings, hydrateFavorites, hydrateLearning]);
+
+  useEffect(() => {
+    console.log('[FONT DIAGNOSTIC] fontsLoaded:', fontsLoaded, 'fontError:', fontError);
+    if (fontError) {
+      console.error('[FONT DIAGNOSTIC] Failed to load fonts:', fontError);
+    }
+  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && storesReady) {
       // Hide the native splash screen immediately
       SplashScreen.hideAsync().catch(() => {});
 
-      // Animate the custom JS splash screen
+      // Animate the custom JS splash screen scale
       scale.value = withTiming(1, { duration: 600 });
-      const timer = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 400 }, (finished) => {
-          if (finished) {
-            runOnJS(setSplashVisible)(false);
-          }
-        });
+      
+      // Animate opacity
+      const opacityTimer = setTimeout(() => {
+        opacity.value = withTiming(0, { duration: 400 });
       }, 1000);
 
-      return () => clearTimeout(timer);
+      // Dismiss splash screen on JS thread to avoid any thread crossing / callback failure
+      const hideTimer = setTimeout(() => {
+        setSplashVisible(false);
+      }, 1400);
+
+      return () => {
+        clearTimeout(opacityTimer);
+        clearTimeout(hideTimer);
+      };
     }
   }, [fontsLoaded, fontError, storesReady]);
 
@@ -103,6 +158,148 @@ export default function RootLayout() {
     return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
   }
 
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && windowWidth > 768;
+
+  const content = (
+    <View style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+          animation: 'fade',
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="match/[id]"
+          options={{ animation: 'slide_from_right', presentation: 'card' }}
+        />
+        <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
+      </Stack>
+
+      {splashVisible && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: '#000000',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+            },
+            animatedStyle,
+          ]}
+        >
+          <Animated.View
+            style={[
+              {
+                width: 168,
+                height: 168,
+                borderRadius: 84,
+                borderWidth: 1,
+                borderColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.2)' : 'rgba(195,244,0,0.2)',
+                backgroundColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.04)' : 'rgba(195,244,0,0.04)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              },
+              logoAnimatedStyle,
+            ]}
+          >
+            <Image
+              key={colorTheme}
+              source={
+                colorTheme === 'purple'
+                  ? require('../assets/images/logo2.png')
+                  : require('../assets/images/logo.png')
+              }
+              style={{ width: 140, height: 140 }}
+              resizeMode="contain"
+            />
+          </Animated.View>
+        </Animated.View>
+      )}
+    </View>
+  );
+
+  if (isDesktop) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0c0b0b', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+        <SafeAreaProvider>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+          >
+            <StatusBar style="light" />
+            
+            {/* Ambient Background Glows */}
+            <View style={{
+              position: 'absolute',
+              top: '-10%',
+              left: '-5%',
+              width: '50%',
+              height: '50%',
+              borderRadius: 999,
+              backgroundColor: colorTheme === 'purple' ? 'rgba(167, 139, 250, 0.06)' : 'rgba(195, 244, 0, 0.04)',
+              ...Platform.select({
+                web: {
+                  filter: 'blur(100px)',
+                  WebkitFilter: 'blur(100px)',
+                } as any
+              }),
+              pointerEvents: 'none',
+            }} />
+            <View style={{
+              position: 'absolute',
+              bottom: '-10%',
+              right: '-5%',
+              width: '50%',
+              height: '50%',
+              borderRadius: 999,
+              backgroundColor: colorTheme === 'purple' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(195, 244, 0, 0.03)',
+              ...Platform.select({
+                web: {
+                  filter: 'blur(120px)',
+                  WebkitFilter: 'blur(120px)',
+                } as any
+              }),
+              pointerEvents: 'none',
+            }} />
+
+            {/* Mockup Container for Desktop */}
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 440,
+                height: '92%',
+                maxHeight: 900,
+                borderRadius: 40,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: colors.background,
+                ...Platform.select({
+                  web: {
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                  } as any
+                }),
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+            >
+              {content}
+            </View>
+          </PersistQueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
@@ -111,67 +308,7 @@ export default function RootLayout() {
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
           <StatusBar style="light" />
-          <View style={{ flex: 1 }}>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="match/[id]"
-                options={{ animation: 'slide_from_right', presentation: 'card' }}
-              />
-              <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
-            </Stack>
-
-            {splashVisible && (
-              <Animated.View
-                style={[
-                  {
-                    ...StyleSheet.absoluteFillObject,
-                    backgroundColor: '#000000',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 99999,
-                  },
-                  animatedStyle,
-                ]}
-              >
-                <Animated.View
-                  style={[
-                    {
-                      width: 168,
-                      height: 168,
-                      borderRadius: 84,
-                      borderWidth: 1,
-                      borderColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.2)' : 'rgba(195,244,0,0.2)',
-                      backgroundColor: colorTheme === 'purple' ? 'rgba(167,139,250,0.04)' : 'rgba(195,244,0,0.04)',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                    },
-                    logoAnimatedStyle,
-                  ]}
-                >
-                  <Image
-                    source={
-                      colorTheme === 'purple'
-                        ? require('../assets/images/logo2.png')
-                        : require('../assets/images/logo.png')
-                    }
-                    style={{ width: 140, height: 140 }}
-                    resizeMode="contain"
-                  />
-                </Animated.View>
-              </Animated.View>
-            )}
-          </View>
+          {content}
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AmbientOrb } from '@/components/ui/AmbientOrb';
 import { NeonButton } from '@/components/ui/NeonButton';
@@ -79,7 +79,7 @@ export default function SignUpScreen() {
           hitSlop={12}
           style={{ alignSelf: 'flex-start', marginBottom: 24 }}
         >
-          <MaterialIcons name="arrow-back" size={26} color={colors.primaryFixed} />
+          <BoroIcon name="arrow-back" size={26} color={colors.primaryFixed} />
         </Pressable>
 
         <View style={{ alignItems: 'center', marginBottom: 24, gap: 16 }}>
@@ -198,8 +198,8 @@ interface FormFieldProps {
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address';
   autoCapitalize?: 'none' | 'sentences';
-  icon: keyof typeof MaterialIcons.glyphMap;
-  trailingIcon?: keyof typeof MaterialIcons.glyphMap;
+  icon: string;
+  trailingIcon?: string;
   onTrailingPress?: () => void;
   error?: string;
 }
@@ -241,7 +241,7 @@ const FormField: React.FC<FormFieldProps> = ({
           paddingHorizontal: 12,
         }}
       >
-        <MaterialIcons name={icon} size={18} color={colors.onSurfaceVariant} />
+        <BoroIcon name={icon} size={18} color={colors.onSurfaceVariant} />
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -261,7 +261,7 @@ const FormField: React.FC<FormFieldProps> = ({
         />
         {trailingIcon ? (
           <Pressable onPress={onTrailingPress} hitSlop={10}>
-            <MaterialIcons name={trailingIcon} size={20} color={colors.onSurfaceVariant} />
+            <BoroIcon name={trailingIcon} size={20} color={colors.onSurfaceVariant} />
           </Pressable>
         ) : null}
       </View>

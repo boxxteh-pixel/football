@@ -2,28 +2,30 @@ import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useAuthStore } from '@/store/authStore';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useT } from '@/theme/i18n';
 
 const TABS: Array<{
   name: string;
-  label: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
+  labelKey: string;
+  icon: string;
 }> = [
-  { name: 'index', label: 'Predictor', icon: 'analytics' },
-  { name: 'live', label: 'Live', icon: 'live-tv' },
-  { name: 'chat', label: 'BORO AI', icon: 'psychology' },
-  { name: 'stats', label: 'Stats', icon: 'leaderboard' },
-  { name: 'profile', label: 'Profile', icon: 'person' },
+  { name: 'index', labelKey: 'tabs.predictor', icon: 'analytics' },
+  { name: 'live', labelKey: 'tabs.live', icon: 'live-tv' },
+  { name: 'chat', labelKey: 'tabs.chat', icon: 'psychology' },
+  { name: 'stats', labelKey: 'tabs.stats', icon: 'leaderboard' },
+  { name: 'profile', labelKey: 'tabs.profile', icon: 'person' },
 ];
 
 export default function TabsLayout() {
   const colors = useColors();
   const session = useAuthStore((s) => s.session);
+  const t = useT();
   if (!session) return <Redirect href="/(auth)/intro" />;
 
   return (
@@ -32,7 +34,7 @@ export default function TabsLayout() {
       tabBar={(props) => <GlassTabBar {...props} />}
     >
       {TABS.map((tab) => (
-        <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.label }} />
+        <Tabs.Screen key={tab.name} name={tab.name} options={{ title: t(tab.labelKey) }} />
       ))}
     </Tabs>
   );
@@ -114,7 +116,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
                   borderColor: colors.accent30,
                 }}
               >
-                <MaterialIcons
+                <BoroIcon
                   name={tab.icon}
                   size={24}
                   color={focused ? colors.primaryFixed : colors.onSurfaceVariant}

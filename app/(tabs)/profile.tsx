@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { NeonButton } from '@/components/ui/NeonButton';
@@ -34,7 +34,7 @@ export default function ProfileTab() {
   }, [user]);
 
   return (
-    <ScreenContainer title="BORO" hideAvatar={true}>
+    <ScreenContainer title="BORO">
       <View style={{ gap: 24 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
           {t('profile.title')}
@@ -63,7 +63,7 @@ export default function ProfileTab() {
                 style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}
                 numberOfLines={1}
               >
-                {user?.name ?? 'Guest'}
+                {user?.name ?? t('common.guest')}
               </Text>
               <Pressable
                 onPress={() => {
@@ -83,7 +83,7 @@ export default function ProfileTab() {
                   }}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <MaterialIcons name="lock" size={14} color={colors.primaryFixed} />
+                    <BoroIcon name="lock" size={14} color={colors.primaryFixed} />
                     <Text
                       style={{
                         color: colors.onSurfaceVariant,
@@ -96,7 +96,7 @@ export default function ProfileTab() {
                       {revealPwd ? (storedPwd ?? '—') : '••••••••'}
                     </Text>
                   </View>
-                  <MaterialIcons
+                  <BoroIcon
                     name={revealPwd ? 'visibility-off' : 'visibility'}
                     size={24}
                     color={colors.onSurfaceVariant}
@@ -110,7 +110,7 @@ export default function ProfileTab() {
         <GlassCard padding={16}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <ProfileStat label={t('profile.leagues')} value={settings.selectedLeagueIds.length} />
-            <ProfileStat label={t('profile.favorites')} value={favorites.teams.length + favorites.fixtures.length} />
+            <ProfileStat label={t('profile.favorites')} value={favorites.fixtures.length} />
             <ProfileStat
               label={t('profile.memberSince')}
               value={
@@ -139,8 +139,11 @@ export default function ProfileTab() {
           <ActionRow
             icon="favorite"
             label={t('profile.myFavorites')}
-            value={`${favorites.teams.length + favorites.fixtures.length} ${t('tabs.leagues').toLowerCase()}`}
-            onPress={() => router.push('/profile')}
+            value={String(favorites.fixtures.length)}
+            onPress={() => {
+              haptics.light();
+              router.push('/favorites');
+            }}
           />
         </View>
       </View>
@@ -192,7 +195,7 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => {
 };
 
 interface ActionRowProps {
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: string;
   label: string;
   value?: string;
   onPress?: () => void;
@@ -204,7 +207,7 @@ const ActionRow: React.FC<ActionRowProps> = ({ icon, label, value, onPress }) =>
     <Pressable onPress={onPress} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <GlassCard padding={16}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <MaterialIcons name={icon} size={22} color={colors.primaryFixed} />
+          <BoroIcon name={icon} size={22} color={colors.primaryFixed} />
           <Text style={{ flex: 1, color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
             {label}
           </Text>
@@ -213,7 +216,7 @@ const ActionRow: React.FC<ActionRowProps> = ({ icon, label, value, onPress }) =>
               {value}
             </Text>
           ) : null}
-          <MaterialIcons name="chevron-right" size={20} color={colors.onSurfaceVariant} />
+          <BoroIcon name="chevron-right" size={20} color={colors.onSurfaceVariant} />
         </View>
       </GlassCard>
     </Pressable>

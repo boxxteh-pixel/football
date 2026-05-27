@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ProbabilityRing } from '@/components/ui/ProbabilityRing';
 import { useColors} from '@/theme/colors';
@@ -11,7 +11,7 @@ interface AIInsightCardProps {
   title: string;
   subLabel?: string;
   subLabelColor?: string;
-  subIcon?: keyof typeof MaterialIcons.glyphMap | null;
+  subIcon?: string | null;
   probability: number;
   accentLeft?: boolean;
   ringColor?: string;
@@ -31,7 +31,7 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
   const resolvedSubLabelColor = subLabelColor || colors.primaryFixedDim;
   const resolvedRingColor = ringColor || colors.primaryFixed;
   return (
-    <GlassCard padding={16} style={{ position: 'relative', overflow: 'hidden' }}>
+    <GlassCard padding={0} style={{ position: 'relative', overflow: 'hidden' }}>
       {accentLeft && (
         <View
           style={{
@@ -41,6 +41,7 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
             bottom: 0,
             width: 4,
             backgroundColor: resolvedRingColor,
+            zIndex: 2,
           }}
         />
       )}
@@ -49,7 +50,9 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          paddingLeft: accentLeft ? 8 : 0,
+          paddingVertical: 16,
+          paddingRight: 16,
+          paddingLeft: accentLeft ? 20 : 16,
         }}
       >
         <View style={{ flex: 1, gap: 4 }}>
@@ -72,7 +75,7 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
           {subLabel ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               {subIcon ? (
-                <MaterialIcons name={subIcon} size={14} color={resolvedSubLabelColor} />
+                <BoroIcon name={subIcon} size={14} color={resolvedSubLabelColor} />
               ) : null}
               <Text style={{ color: resolvedSubLabelColor, fontFamily: fonts.body, fontSize: 13 }}>{subLabel}</Text>
             </View>

@@ -1,8 +1,8 @@
-import { apiClient } from './client';
 import { config, hasApiKey } from '@/constants/config';
 import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord } from '@/types/match';
 import type { League, StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
+import { DEFAULT_LEAGUES, DEFAULT_LEAGUE_IDS } from '@/constants/leagues';
 import {
   getMockFixtures,
   getMockLiveFixtures,
@@ -15,17 +15,17 @@ import {
   getMockHeadToHead,
   MOCK_LEAGUES,
 } from './mockData';
-
-interface ApiResponse<T> {
-  get: string;
-  parameters: Record<string, string>;
-  errors: unknown[] | Record<string, string>;
-  results: number;
-  paging: { current: number; total: number };
-  response: T;
-}
-
-const unwrap = <T>(data: ApiResponse<T>): T => data.response;
+import {
+  fetchSportmonksFixturesByDate,
+  fetchSportmonksLiveFixtures,
+  fetchSportmonksFixtureById,
+  fetchSportmonksFixtureEvents,
+  fetchSportmonksFixtureStatistics,
+  fetchSportmonksStandings,
+  fetchSportmonksTeamStatistics,
+  fetchSportmonksTeamLastFixtures,
+  fetchSportmonksHeadToHead,
+} from './sportmonks';
 
 // In-memory cache to prevent repetitive static calls during a single app session
 const memoryCache = new Map<string, any>();
@@ -47,54 +47,75 @@ export const fetchFixturesByDate = async (
   if (!hasApiKey()) {
     return getMockFixtures(date, leagueId);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-    params: {
-      date,
-      ...(leagueId ? { league: leagueId, season } : {}),
-      timezone: 'Europe/London',
-    },
-  });
-  return unwrap(data);
+  
+  try {
+    // Return only real Sportmonks data — if a league has no games today, that's correct.
+    // Do NOT inject mock fixtures for "missing" leagues.
+    if (!leagueId) {
+      const leagueResults = await Promise.all(
+        DEFAULT_LEAGUE_IDS.map((id) => fetchSportmonksFixturesByDate(date, id)),
+      );
+      const byId = new Map<number, Fixture>();
+      leagueResults.flat().forEach((fixture) => byId.set(fixture.fixture.id, fixture));
+      return [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
+    }
+    return await fetchSportmonksFixturesByDate(date, leagueId);
+  } catch (err) {
+    console.error('[apiFootball] fetchFixturesByDate failed, falling back to mock:', err);
+    return getMockFixtures(date, leagueId);
+  }
 };
 
 export const fetchLiveFixtures = async (leagueIds?: number[]): Promise<Fixture[]> => {
   if (!hasApiKey()) {
     return getMockLiveFixtures(leagueIds);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-    params: {
-      live: leagueIds && leagueIds.length > 0 ? leagueIds.join('-') : 'all',
-    },
-  });
-  return unwrap(data);
+  
+  try {
+    // Return only real live fixtures — no mock injection
+    return await fetchSportmonksLiveFixtures(leagueIds ?? DEFAULT_LEAGUE_IDS);
+  } catch (err) {
+    console.error('[apiFootball] fetchLiveFixtures failed, falling back to mock:', err);
+    return getMockLiveFixtures(leagueIds);
+  }
 };
 
 export const fetchFixtureById = async (id: number): Promise<Fixture | null> => {
   if (!hasApiKey()) {
     return getMockFixtureById(id);
   }
-  const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', { params: { id } });
-  return unwrap(data)[0] ?? null;
+  
+  try {
+    const smFix = await fetchSportmonksFixtureById(id);
+    if (smFix) return smFix;
+    return getMockFixtureById(id);
+  } catch (err) {
+    return getMockFixtureById(id);
+  }
 };
 
 export const fetchFixtureEvents = async (fixtureId: number): Promise<FixtureEvent[]> => {
   if (!hasApiKey()) {
     return getMockFixtureEvents(fixtureId);
   }
-  const { data } = await apiClient.get<ApiResponse<FixtureEvent[]>>('/fixtures/events', {
-    params: { fixture: fixtureId },
-  });
-  return unwrap(data);
+  
+  try {
+    return await fetchSportmonksFixtureEvents(fixtureId);
+  } catch (err) {
+    return getMockFixtureEvents(fixtureId);
+  }
 };
 
 export const fetchFixtureStatistics = async (fixtureId: number): Promise<FixtureStatistic[]> => {
   if (!hasApiKey()) {
     return getMockFixtureStats(fixtureId);
   }
-  const { data } = await apiClient.get<ApiResponse<FixtureStatistic[]>>('/fixtures/statistics', {
-    params: { fixture: fixtureId },
-  });
-  return unwrap(data);
+  
+  try {
+    return await fetchSportmonksFixtureStatistics(fixtureId);
+  } catch (err) {
+    return getMockFixtureStats(fixtureId);
+  }
 };
 
 export const fetchStandings = async (
@@ -106,10 +127,13 @@ export const fetchStandings = async (
     if (!hasApiKey()) {
       return getMockStandings(leagueId);
     }
-    const { data } = await apiClient.get<
-      ApiResponse<Array<{ league: { standings: StandingRow[][] } }>>
-    >('/standings', { params: { league: leagueId, season } });
-    return unwrap(data)[0]?.league?.standings?.[0] ?? [];
+    try {
+      const smStandings = await fetchSportmonksStandings(leagueId);
+      if (smStandings && smStandings.length > 0) return smStandings;
+      return getMockStandings(leagueId);
+    } catch (err) {
+      return getMockStandings(leagueId);
+    }
   });
 };
 
@@ -120,13 +144,16 @@ export const fetchTeamStatistics = async (
 ): Promise<TeamStatistics | null> => {
   const cacheKey = `teamStats-${teamId}-${leagueId}-${season}`;
   return cachedCall(cacheKey, async () => {
-    if (!hasApiKey()) {
+    if (!hasApiKey() || teamId >= 9000) {
       return getMockTeamStats(teamId, leagueId);
     }
-    const { data } = await apiClient.get<ApiResponse<TeamStatistics>>('/teams/statistics', {
-      params: { team: teamId, league: leagueId, season },
-    });
-    return data.response ?? null;
+    try {
+      const smStats = await fetchSportmonksTeamStatistics(teamId, leagueId);
+      if (smStats) return smStats;
+      return getMockTeamStats(teamId, leagueId);
+    } catch (err) {
+      return getMockTeamStats(teamId, leagueId);
+    }
   });
 };
 
@@ -136,25 +163,15 @@ export const fetchTeamLastFixtures = async (
 ): Promise<Fixture[]> => {
   const cacheKey = `teamLast-${teamId}-${last}`;
   return cachedCall(cacheKey, async () => {
-    if (!hasApiKey()) {
+    if (!hasApiKey() || teamId >= 9000) {
       return getMockTeamLastFixtures(teamId, last);
     }
     try {
-      const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-        params: { team: teamId, last },
-      });
-      return unwrap(data);
-    } catch (error: any) {
-      if (error?.message?.toLowerCase().includes('last parameter') || error?.message?.toLowerCase().includes('free plan')) {
-        const { data } = await apiClient.get<ApiResponse<Fixture[]>>('/fixtures', {
-          params: { team: teamId, season: config.app.defaultSeason },
-        });
-        const all = unwrap(data);
-        return all
-          .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
-          .slice(0, last);
-      }
-      throw error;
+      const smLast = await fetchSportmonksTeamLastFixtures(teamId, last);
+      if (smLast && smLast.length > 0) return smLast;
+      return getMockTeamLastFixtures(teamId, last);
+    } catch (err) {
+      return getMockTeamLastFixtures(teamId, last);
     }
   });
 };
@@ -166,43 +183,27 @@ export const fetchHeadToHead = async (
 ): Promise<H2HRecord[]> => {
   const cacheKey = `h2h-${team1}-${team2}-${last}`;
   return cachedCall(cacheKey, async () => {
-    if (!hasApiKey()) {
+    if (!hasApiKey() || team1 >= 9000 || team2 >= 9000) {
       return getMockHeadToHead(team1, team2, last);
     }
     try {
-      const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
-        params: { h2h: `${team1}-${team2}`, last },
-      });
-      return unwrap(data);
-    } catch (error: any) {
-      if (error?.message?.toLowerCase().includes('last parameter') || error?.message?.toLowerCase().includes('free plan')) {
-        const { data } = await apiClient.get<ApiResponse<H2HRecord[]>>('/fixtures/headtohead', {
-          params: { h2h: `${team1}-${team2}` },
-        });
-        const all = unwrap(data);
-        return all
-          .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
-          .slice(0, last);
-      }
-      throw error;
+      const smH2h = await fetchSportmonksHeadToHead(team1, team2, last);
+      if (smH2h && smH2h.length > 0) return smH2h;
+      return getMockHeadToHead(team1, team2, last);
+    } catch (err) {
+      return getMockHeadToHead(team1, team2, last);
     }
   });
 };
 
 export const fetchLeagues = async (current = true): Promise<Array<{ league: League }>> => {
-  if (!hasApiKey()) {
-    return Object.values(MOCK_LEAGUES).map((league) => ({
-      league: {
-        id: league.id,
-        name: league.name,
-        country: league.country,
-        logo: league.logo,
-        season: league.season,
-      },
-    }));
-  }
-  const { data } = await apiClient.get<ApiResponse<Array<{ league: League }>>>('/leagues', {
-    params: current ? { current: 'true' } : {},
-  });
-  return unwrap(data);
+  return DEFAULT_LEAGUES.map((league) => ({
+    league: {
+      id: league.id,
+      name: league.name,
+      country: league.country,
+      logo: `https://media.api-sports.io/football/leagues/${league.id}.png`,
+      season: config.app.defaultSeason,
+    },
+  }));
 };

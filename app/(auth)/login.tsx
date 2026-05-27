@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AmbientOrb } from '@/components/ui/AmbientOrb';
 import { NeonButton } from '@/components/ui/NeonButton';
@@ -85,7 +85,7 @@ export default function LoginScreen() {
           hitSlop={12}
           style={{ alignSelf: 'flex-start', marginBottom: 24 }}
         >
-          <MaterialIcons name="arrow-back" size={26} color={colors.primaryFixed} />
+          <BoroIcon name="arrow-back" size={26} color={colors.primaryFixed} />
         </Pressable>
 
         <View style={{ alignItems: 'center', marginBottom: 28, gap: 16 }}>
@@ -111,7 +111,7 @@ export default function LoginScreen() {
               {t('auth.name')}
             </Text>
             <View style={fieldShell}>
-              <MaterialIcons name="person-outline" size={20} color={colors.onSurfaceVariant} />
+              <BoroIcon name="person-outline" size={20} color={colors.onSurfaceVariant} />
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -128,7 +128,7 @@ export default function LoginScreen() {
               {t('auth.password')}
             </Text>
             <View style={fieldShell}>
-              <MaterialIcons name="lock-outline" size={20} color={colors.onSurfaceVariant} />
+              <BoroIcon name="lock-outline" size={20} color={colors.onSurfaceVariant} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -138,7 +138,7 @@ export default function LoginScreen() {
                 style={fieldText}
               />
               <Pressable onPress={() => setShowPwd((v) => !v)} hitSlop={10}>
-                <MaterialIcons
+                <BoroIcon
                   name={showPwd ? 'visibility-off' : 'visibility'}
                   size={20}
                   color={colors.onSurfaceVariant}

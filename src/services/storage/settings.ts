@@ -25,9 +25,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 export const readSettings = async (): Promise<AppSettings> => {
   try {
     const raw = await AsyncStorage.getItem(SETTINGS_KEY);
-    return raw
-      ? { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<AppSettings>) }
-      : DEFAULT_SETTINGS;
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    const selectedLeagueIds = parsed.selectedLeagueIds || [];
+    const mergedLeagueIds = Array.from(new Set([...selectedLeagueIds, ...DEFAULT_LEAGUE_IDS]));
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      selectedLeagueIds: mergedLeagueIds,
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }

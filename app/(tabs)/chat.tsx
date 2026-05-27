@@ -9,7 +9,7 @@ import {
   View,
   FlatList,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MatchListItem } from '@/components/match/MatchListItem';
@@ -20,6 +20,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { quickPredict } from '@/services/ai/predictor';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
+import { useT } from '@/theme/i18n';
+import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface Message {
   id: string;
@@ -34,6 +36,7 @@ export default function ChatScreen() {
   const haptics = useHaptics();
   const settings = useSettingsStore((s) => s.settings);
   const isIt = settings.language === 'it';
+  const t = useT();
   const selectedLeagueIds = settings.selectedLeagueIds;
 
   const { data: todayFixtures = [], isLoading } = useTodayFixtures();
@@ -137,11 +140,12 @@ export default function ChatScreen() {
             .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability);
 
           const top = sorted[0];
+          const topSelection = formatPredictionSelection(top.prediction.topPick.selection, t);
           matchedFixtures = [top.fixture];
 
           replyText = isIt
-            ? `🛡️ **Il pronostico più sicuro di oggi:**\n\nHo scansionato il palinsesto odierno. La partita con la probabilità matematica più alta è **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Pronostico:** ${top.prediction.topPick.selection}\n• **Probabilità:** ${Math.round(top.prediction.topPick.probability)}%\n• **Quota:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidenza:** ELEVATA\n\nTocca la scheda qui sotto per l'analisi ELO e xG completa!`
-            : `🛡️ **The safest match today:**\n\nI scanned today's schedule. The match with the highest mathematical probability is **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Model Prediction:** ${top.prediction.topPick.selection}\n• **Probability:** ${Math.round(top.prediction.topPick.probability)}%\n• **Odds:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidence:** HIGH\n\nTap the match card below to see the complete ELO & xG analysis!`;
+            ? `🛡️ **Il pronostico più sicuro di oggi:**\n\nHo scansionato il palinsesto odierno. La partita con la probabilità matematica più alta è **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Pronostico:** ${topSelection}\n• **Probabilità:** ${Math.round(top.prediction.topPick.probability)}%\n• **Quota:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidenza:** ELEVATA\n\nTocca la scheda qui sotto per l'analisi ELO e xG completa!`
+            : `🛡️ **The safest match today:**\n\nI scanned today's schedule. The match with the highest mathematical probability is **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Model Prediction:** ${topSelection}\n• **Probability:** ${Math.round(top.prediction.topPick.probability)}%\n• **Odds:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidence:** HIGH\n\nTap the match card below to see the complete ELO & xG analysis!`;
         }
       }
       // 2. ACCUMULATOR
@@ -170,7 +174,7 @@ export default function ChatScreen() {
           const matchLines = sorted
             .map(
               (s) =>
-                `• ${s.fixture.teams.home.name} vs ${s.fixture.teams.away.name}: **${s.prediction.topPick.selection}** (${s.prediction.topPick.odds.toFixed(2)})`
+                `• ${s.fixture.teams.home.name} vs ${s.fixture.teams.away.name}: **${formatPredictionSelection(s.prediction.topPick.selection, t)}** (${s.prediction.topPick.odds.toFixed(2)})`
             )
             .join('\n');
 
@@ -208,7 +212,7 @@ export default function ChatScreen() {
           const matchLines = valuePicks
             .map(
               (s) =>
-                `• ${s.fixture.teams.home.name} vs ${s.fixture.teams.away.name}: **${s.prediction.topPick.selection}** (Quota: **${s.prediction.topPick.odds.toFixed(2)}** | Prob: ${Math.round(s.prediction.topPick.probability)}%)`
+                `• ${s.fixture.teams.home.name} vs ${s.fixture.teams.away.name}: **${formatPredictionSelection(s.prediction.topPick.selection, t)}** (Quota: **${s.prediction.topPick.odds.toFixed(2)}** | Prob: ${Math.round(s.prediction.topPick.probability)}%)`
             )
             .join('\n');
 
@@ -322,7 +326,7 @@ export default function ChatScreen() {
                           marginTop: 4,
                         }}
                       >
-                        <MaterialIcons name="psychology" size={18} color={colors.primaryFixed} />
+                        <BoroIcon name="psychology" size={18} color={colors.primaryFixed} />
                       </View>
                     )}
 
@@ -377,7 +381,7 @@ export default function ChatScreen() {
                         gap: 6,
                       }}
                     >
-                      <MaterialIcons
+                      <BoroIcon
                         name="hourglass-top"
                         size={14}
                         color={colors.primaryFixed}
@@ -464,7 +468,7 @@ export default function ChatScreen() {
                     transform: [{ scale: pressed ? 0.9 : 1 }],
                   })}
                 >
-                  <MaterialIcons
+                  <BoroIcon
                     name="send"
                     size={16}
                     color={inputText.trim() ? colors.background : colors.onSurfaceVariant}

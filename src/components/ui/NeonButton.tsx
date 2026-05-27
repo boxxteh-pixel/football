@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,8 +15,8 @@ interface NeonButtonProps extends PressableProps {
   loading?: boolean;
   variant?: 'primary' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
-  iconRight?: keyof typeof MaterialIcons.glyphMap;
-  iconLeft?: keyof typeof MaterialIcons.glyphMap;
+  iconRight?: string;
+  iconLeft?: string;
   fullWidth?: boolean;
 }
 
@@ -99,7 +99,7 @@ export const NeonButton: React.FC<NeonButtonProps> = ({
         <ActivityIndicator color={textColor} />
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {iconLeft && <MaterialIcons name={iconLeft} size={fontSizes[size] + 4} color={textColor} />}
+          {iconLeft && <BoroIcon name={iconLeft} size={fontSizes[size] + 4} color={textColor} />}
           <Text
             style={{
               color: textColor,
@@ -110,7 +110,7 @@ export const NeonButton: React.FC<NeonButtonProps> = ({
           >
             {label}
           </Text>
-          {iconRight && <MaterialIcons name={iconRight} size={fontSizes[size] + 4} color={textColor} />}
+          {iconRight && <BoroIcon name={iconRight} size={fontSizes[size] + 4} color={textColor} />}
         </View>
       )}
     </AnimatedPressable>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Pressable } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView } from 'react-native';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -18,13 +18,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { quickPredict } from '@/services/ai/predictor';
 import { hasApiKey } from '@/constants/config';
-import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import { useT } from '@/theme/i18n';
 
 export default function PredictorTab() {
   const colors = useColors();
-  const haptics = useHaptics();
   const [search, setSearch] = useState('');
   const [activeLeague, setActiveLeague] = useState<number | null>(null);
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
@@ -68,22 +66,6 @@ export default function PredictorTab() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenContainer
         title="BORO"
-        rightSlot={
-          <Pressable
-            onPress={() => {
-              haptics.light();
-              refetch();
-            }}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.6 : 1,
-              padding: 8,
-              borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.05)',
-            })}
-          >
-            <MaterialIcons name="refresh" size={22} color={colors.primaryFixed} />
-          </Pressable>
-        }
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
@@ -119,7 +101,6 @@ export default function PredictorTab() {
               <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
                 {t('predictor.bestPicks')}
               </Text>
-              <LivePulse />
             </View>
             {isLoading ? (
               <BestPicksSkeleton />
@@ -170,7 +151,7 @@ export default function PredictorTab() {
             <GlassCard padding={20} activeBorder style={{ gap: 16 }}>
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <MaterialIcons name="auto-awesome" size={20} color={colors.primaryFixed} />
+                  <BoroIcon name="auto-awesome" size={20} color={colors.primaryFixed} />
                   <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16 }}>
                     {t('predictor.accumulator')}
                   </Text>
@@ -212,7 +193,7 @@ const ListSkeleton: React.FC = () => (
 );
 
 interface EmptyStateProps {
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: string;
   title: string;
   subtitle: string;
 }
@@ -221,7 +202,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, subtitle }) => {
   const colors = useColors();
   return (
     <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-      <MaterialIcons name={icon} size={40} color={colors.onSurfaceVariant} />
+      <BoroIcon name={icon} size={40} color={colors.onSurfaceVariant} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>{title}</Text>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12 }}>
@@ -242,14 +223,14 @@ const ErrorState: React.FC<{ error?: any; onRetry: () => void }> = ({ error, onR
 
   return (
     <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-      <MaterialIcons name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
+      <BoroIcon name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
-          {isQuota ? "API Limit Reached" : t('common.errorTitle')}
+          {isQuota ? t('common.apiLimitTitle') : t('common.errorTitle')}
         </Text>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12, lineHeight: 18 }}>
           {isQuota
-            ? "You have reached the daily limit of 100 requests on API-Football's free tier. Please wait until midnight UTC or upgrade your plan."
+            ? t('common.apiLimitSub')
             : t('common.errorSub')}
         </Text>
       </View>
@@ -267,30 +248,23 @@ const MissingKeyNotice: React.FC = () => {
       <GlassCard padding={20} activeBorder glow style={{ gap: 12 }}>
         <View style={{ gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <MaterialIcons name="key" size={20} color={colors.primaryFixed} />
+            <BoroIcon name="key" size={20} color={colors.primaryFixed} />
             <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}>
-              API key required
+              Sportmonks Token Required
             </Text>
           </View>
           <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 14, lineHeight: 22 }}>
-            BORO fetches real football data from API-Football. Add your free key to
+            BORO fetches live football predictions and match data from Sportmonks Pro. Add your API token to
             <Text style={{ color: colors.primaryFixed }}> .env</Text> under
-            <Text style={{ color: colors.primaryFixed }}> EXPO_PUBLIC_API_FOOTBALL_KEY</Text>, then restart
-            the dev server.
+            <Text style={{ color: colors.primaryFixed }}> EXPO_PUBLIC_SPORTMONKS_KEY</Text>, then restart the dev server.
           </Text>
         </View>
         <View style={{ marginTop: 14, gap: 6 }}>
           <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 0.5 }}>
-            STEP 1
+            ACTIVATION STEP
           </Text>
           <Text style={{ color: colors.onSurface, fontFamily: fonts.body, fontSize: 13 }}>
-            Sign up at api-football.com (free 100 req/day)
-          </Text>
-          <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 0.5, marginTop: 8 }}>
-            STEP 2
-          </Text>
-          <Text style={{ color: colors.onSurface, fontFamily: fonts.body, fontSize: 13 }}>
-            Copy your key, paste it into .env, restart Expo.
+            Copy your Sportmonks Pro API token and paste it as <Text style={{ color: colors.primaryFixed }}>EXPO_PUBLIC_SPORTMONKS_KEY</Text>.
           </Text>
         </View>
       </GlassCard>

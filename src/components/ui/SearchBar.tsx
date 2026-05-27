@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TextInput, View, type TextInputProps } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 
@@ -27,7 +27,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         borderColor: focused ? colors.glassBorderActive : 'rgba(255,255,255,0.08)',
       }}
     >
-      <MaterialIcons
+      <BoroIcon
         name="search"
         size={20}
         color={colors.onSurfaceVariant}

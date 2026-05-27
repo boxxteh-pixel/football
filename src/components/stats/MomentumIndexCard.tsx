@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MomentumBars } from '@/components/ui/MomentumBars';
 import { useColors} from '@/theme/colors';
@@ -34,7 +34,7 @@ export const MomentumIndexCard: React.FC<MomentumIndexCardProps> = ({
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <MaterialIcons name="bolt" size={20} color={colors.primaryFixed} />
+          <BoroIcon name="bolt" size={20} color={colors.primaryFixed} />
           <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16 }}>
             {t('stats.momentum.index')}
           </Text>

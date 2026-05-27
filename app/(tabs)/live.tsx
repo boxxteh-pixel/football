@@ -1,7 +1,7 @@
 'use no memo';
 import React from 'react';
-import { RefreshControl, Text, View, Pressable } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { RefreshControl, Text, View } from 'react-native';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { MatchListItem } from '@/components/match/MatchListItem';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -14,14 +14,12 @@ import { useLiveFixtures } from '@/hooks/useFixtures';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/theme/i18n';
 import { useIsFocused } from '@react-navigation/native';
-import { useHaptics } from '@/hooks/useHaptics';
 
 export default function LiveTab() {
   const colors = useColors();
-  const haptics = useHaptics();
   const isFocused = useIsFocused();
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
-  const { data, isLoading, refetch, isRefetching, error } = useLiveFixtures(undefined, isFocused);
+  const { data, isLoading, refetch, isRefetching, error } = useLiveFixtures(selectedLeagueIds, isFocused);
   const t = useT();
 
   const fixtures = (data ?? []).filter((f) => selectedLeagueIds.includes(f.league.id));
@@ -30,22 +28,6 @@ export default function LiveTab() {
     <ScreenContainer
       title="BORO"
       showLive
-      rightSlot={
-        <Pressable
-          onPress={() => {
-            haptics.light();
-            refetch();
-          }}
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.6 : 1,
-            padding: 8,
-            borderRadius: 20,
-            backgroundColor: 'rgba(255,255,255,0.05)',
-          })}
-        >
-          <MaterialIcons name="refresh" size={22} color={colors.primaryFixed} />
-        </Pressable>
-      }
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}
@@ -83,7 +65,7 @@ export default function LiveTab() {
           <ErrorState error={error} onRetry={refetch} />
         ) : fixtures.length === 0 ? (
           <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-            <MaterialIcons name="sports-soccer" size={40} color={colors.onSurfaceVariant} />
+            <BoroIcon name="sports-soccer" size={40} color={colors.onSurfaceVariant} />
             <View style={{ alignItems: 'center', gap: 6 }}>
               <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
                 {t('live.empty.title')}
@@ -119,14 +101,14 @@ const ErrorState: React.FC<{ error?: any; onRetry: () => void }> = ({ error, onR
 
   return (
     <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
-      <MaterialIcons name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
+      <BoroIcon name={isQuota ? "schedule" : "error-outline"} size={40} color={isQuota ? colors.primaryFixed : colors.error} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
-          {isQuota ? "API Limit Reached" : t('common.errorTitle')}
+          {isQuota ? t('common.apiLimitTitle') : t('common.errorTitle')}
         </Text>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12, lineHeight: 18 }}>
           {isQuota
-            ? "You have reached the daily limit of 100 requests on API-Football's free tier. Please wait until midnight UTC or upgrade your plan."
+            ? t('common.apiLimitSub')
             : t('common.errorSub')}
         </Text>
       </View>

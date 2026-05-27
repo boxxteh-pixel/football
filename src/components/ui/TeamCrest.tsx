@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useColors} from '@/theme/colors';
 
 interface TeamCrestProps {
@@ -36,7 +36,7 @@ export const TeamCrest: React.FC<TeamCrestProps> = ({ uri, size = 48, glow = fal
           transition={150}
         />
       ) : (
-        <MaterialIcons name="sports-soccer" size={size * 0.55} color={colors.onSurfaceVariant} />
+        <BoroIcon name="sports-soccer" size={size * 0.55} color={colors.onSurfaceVariant} />
       )}
     </View>
   );

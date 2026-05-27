@@ -7,6 +7,8 @@ import {
   fetchTeamLastFixtures,
   fetchTeamStatistics,
 } from '@/services/api/apiFootball';
+import { fetchSportmonksPredictions } from '@/services/api/sportmonks';
+import { useLearningStore } from '@/store/learningStore';
 
 /**
  * Lightweight, synchronous prediction used in list rows and cards.
@@ -35,21 +37,37 @@ export const useFullPrediction = (fixture: Fixture | null | undefined) => {
     refetchOnMount: false,
     refetchOnReconnect: false,
     queryFn: async () => {
-      const [homeHistory, awayHistory, homeStats, awayStats, h2h] = await Promise.all([
+      const [homeHistory, awayHistory, homeStats, awayStats, h2h, sportmonksPred] = await Promise.all([
         fetchTeamLastFixtures(homeId!, 10).catch(() => []),
         fetchTeamLastFixtures(awayId!, 10).catch(() => []),
         fetchTeamStatistics(homeId!, leagueId!, season).catch(() => null),
         fetchTeamStatistics(awayId!, leagueId!, season).catch(() => null),
         fetchHeadToHead(homeId!, awayId!, 5).catch(() => []),
+        fetchSportmonksPredictions(
+          fixture!.fixture.date,
+          fixture!.teams.home.name,
+          fixture!.teams.away.name,
+          fixture!.league.id
+        ).catch(() => null),
       ]);
-      return predictFixture({
+      const result = predictFixture({
         fixture: fixture!,
         homeHistory,
         awayHistory,
         homeStats,
         awayStats,
         h2h,
+        sportmonksPred,
       });
+
+      // Self-learning feedback loop: record outcome of completed matches to refine biases
+      const statusShort = fixture!.fixture.status.short;
+      const isMatchFinished = ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(statusShort);
+      if (isMatchFinished && fixture!.goals.home !== null && fixture!.goals.away !== null) {
+        useLearningStore.getState().recordOutcome(fixture!, result).catch(() => {});
+      }
+
+      return result;
     },
   });
 };

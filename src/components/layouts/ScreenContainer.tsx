@@ -24,7 +24,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   bottomSafe = true,
   topBar = true,
   rightSlot,
-  hideAvatar = false,
+  hideAvatar,
   children,
   contentContainerStyle,
   ...rest
@@ -33,11 +33,12 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   const insets = useSafeAreaInsets();
   const paddingTop = topBar ? 16 : insets.top + 16;
   const paddingBottom = bottomSafe ? insets.bottom + 24 : 16;
+  const shouldHideAvatar = hideAvatar ?? showBack;
 
   if (scroll) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={hideAvatar} />}
+        {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
@@ -58,7 +59,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={hideAvatar} />}
+      {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
       <View style={{ flex: 1, paddingTop, paddingBottom, paddingHorizontal: 16 }}>{children}</View>
     </View>
   );

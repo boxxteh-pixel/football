@@ -1,13 +1,14 @@
 import React from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Image, Platform, Pressable, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { LivePulse } from '@/components/ui/LivePulse';
 import { AvatarMenu } from '@/components/ui/AvatarMenu';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface TopBarProps {
   title?: string;
@@ -25,7 +26,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   hideAvatar = false,
 }) => {
   const colors = useColors();
+  const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
   const insets = useSafeAreaInsets();
+  const showWordmark = title === 'BORO' || title === 'BORO AI';
 
   return (
     <View
@@ -55,25 +58,95 @@ export const TopBar: React.FC<TopBarProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {showBack ? (
             <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialIcons name="arrow-back" size={26} color={colors.primaryFixed} />
+              <BoroIcon name="arrow-back" size={26} color={colors.primaryFixed} />
             </Pressable>
           ) : null}
-          <Text
-            style={{
-              fontFamily: fonts.display,
-              fontSize: 22,
-              letterSpacing: -0.5,
-              color: colors.primaryFixed,
-            }}
-          >
-            {title}
-          </Text>
+          {showWordmark ? (
+            <BoroWordmark colorTheme={colorTheme} />
+          ) : (
+            <Text
+              style={{
+                fontFamily: fonts.display,
+                fontSize: 22,
+                letterSpacing: 0,
+                color: colors.primaryFixed,
+              }}
+            >
+              {title}
+            </Text>
+          )}
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {showLive && <LivePulse label="" />}
           {rightSlot}
           {!hideAvatar && <AvatarMenu />}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const BoroWordmark: React.FC<{ colorTheme: 'green' | 'purple' }> = ({ colorTheme }) => {
+  const colors = useColors();
+  const logoSource =
+    colorTheme === 'purple'
+      ? require('../../../assets/images/logo2.png')
+      : require('../../../assets/images/logo.png');
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          borderWidth: 1,
+          borderColor: colors.accent30,
+          backgroundColor: colors.accent08,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <Image source={logoSource} style={{ width: 31, height: 31 }} resizeMode="cover" />
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <Text
+          style={{
+            color: colors.onSurface,
+            fontFamily: fonts.display,
+            fontSize: 22,
+            letterSpacing: 0,
+            lineHeight: 26,
+          }}
+        >
+          BORO
+        </Text>
+        <View
+          style={{
+            width: 20,
+            height: 18,
+            borderRadius: 6,
+            backgroundColor: colors.accent18,
+            borderWidth: 1,
+            borderColor: colors.accent30,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{
+              color: colors.primaryFixed,
+              fontFamily: fonts.label,
+              fontSize: 9,
+              letterSpacing: 0,
+              lineHeight: 11,
+            }}
+          >
+            AI
+          </Text>
         </View>
       </View>
     </View>

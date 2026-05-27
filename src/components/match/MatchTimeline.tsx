@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
@@ -11,7 +11,7 @@ interface MatchTimelineProps {
   homeTeamId: number;
 }
 
-const iconFor = (event: FixtureEvent): keyof typeof MaterialIcons.glyphMap => {
+const iconFor = (event: FixtureEvent): string => {
   if (event.type === 'Goal') return 'sports-soccer';
   if (event.type === 'Card') {
     return event.detail === 'Red Card' || event.detail === 'Second Yellow card' ? 'square' : 'square';
@@ -80,7 +80,7 @@ export const MatchTimeline: React.FC<MatchTimelineProps> = ({ events, homeTeamId
                   gap: 8,
                 }}
               >
-                {isHome && <MaterialIcons name={iconFor(event)} size={18} color={colorFor(event, colors)} />}
+                {isHome && <BoroIcon name={iconFor(event)} size={18} color={colorFor(event, colors)} />}
                 <Text
                   style={{
                     color: colors.onSurface,
@@ -93,7 +93,7 @@ export const MatchTimeline: React.FC<MatchTimelineProps> = ({ events, homeTeamId
                   {event.player.name ?? '—'}
                   {event.detail ? ` (${event.detail})` : ''}
                 </Text>
-                {!isHome && <MaterialIcons name={iconFor(event)} size={18} color={colorFor(event, colors)} />}
+                {!isHome && <BoroIcon name={iconFor(event)} size={18} color={colorFor(event, colors)} />}
               </View>
             </View>
           );

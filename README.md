@@ -1,7 +1,7 @@
 # BORO AI — Premium Football Prediction App
 
 > Pixel-faithful React Native + Expo implementation of the BORO AI design system.
-> Real API-Football data, on-device AI prediction engine, glassmorphic dark UI, neon-green accent.
+> Real Sportmonks Pro data, on-device AI prediction engine, glassmorphic dark UI, neon-green accent.
 
 ![BORO AI](./assets/images/logo.png)
 
@@ -10,7 +10,7 @@
 ## Features
 
 - **5 production screens** matching the original HTML designs 1:1 (Intro / Predictor / Live / Stats / Match Detail) plus Leagues, Profile, Settings, and AI Insights.
-- **Real football data** via API-Football (live scores, lineups, statistics, standings, H2H).
+- **Real football data** via Sportmonks Pro (live scores, lineups, statistics, standings, H2H).
 - **On-device AI prediction engine** combining ELO + form + xG + momentum + Poisson goal model.
 - **Local-only authentication** (sign up / log in via AsyncStorage + SHA-256, zero backend).
 - **Glassmorphism** with `expo-blur`, animated momentum bars and ambient orbs via Reanimated 3.
@@ -63,9 +63,9 @@ npm install
 
 ## 3. Configure your API key
 
-BORO AI uses the free tier of **API-Football** (100 requests/day, no credit card).
+BORO AI uses **Sportmonks Pro** as its live data and predictions provider.
 
-1. Sign up at https://www.api-football.com/ and copy your `x-apisports-key`.
+1. Sign up at https://www.sportmonks.com/ and copy your API token.
 2. Create `.env` in the project root:
 
 ```bash
@@ -75,10 +75,10 @@ cp .env.example .env
 3. Open `.env` and paste your key:
 
 ```env
-EXPO_PUBLIC_API_FOOTBALL_KEY=your_real_key_here
+EXPO_PUBLIC_SPORTMONKS_KEY=your_real_token_here
 ```
 
-The app will boot without a key (you'll see a setup card on the home tab), but no fixtures or AI predictions will load until the key is set.
+The app will boot without a key (you'll see a setup card on the home tab), but will fall back to offline mock data until a valid token is set.
 
 ---
 
@@ -231,7 +231,7 @@ Pipeline:
 
 1. **ELO** — `computeEloFromHistory()` walks every finished fixture in both teams' last 10 matches, k-factor=20, +100 home bonus, goal-diff multiplier.
 2. **Form** — weighted score across last 5 matches with recency decay `[1.0, 0.85, 0.7, 0.55, 0.4]`.
-3. **xG / goal averages** — pulled from API-Football team statistics, falls back to historical averages.
+3. **xG / goal averages** — pulled from Sportmonks Pro team statistics, falls back to historical averages.
 4. **Poisson scoreline matrix** — `computeMatchProbabilities(λ_home, λ_away)` with home advantage of +0.25 goals, generates W/D/L + BTTS + Over 2.5 + most likely score.
 5. **H2H bias** — last 5 head-to-heads add a ±2% nudge per result.
 6. **Form boost** — `(form - 0.5) * 0.08` widens decisive games.
@@ -246,8 +246,7 @@ Live matches also use `computeMomentumWindows()` to bucket events into 5-min win
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `EXPO_PUBLIC_API_FOOTBALL_KEY` | _(required)_ | Your `x-apisports-key` |
-| `EXPO_PUBLIC_API_FOOTBALL_HOST` | `v3.football.api-sports.io` | Override for RapidAPI host |
+| `EXPO_PUBLIC_SPORTMONKS_KEY` | _(required)_ | Your Sportmonks Pro API token |
 | `EXPO_PUBLIC_SPORTSDB_KEY` | `3` | TheSportsDB (free, no signup) |
 | `EXPO_PUBLIC_DEFAULT_SEASON` | `2024` | Default season for standings/stats |
 | `EXPO_PUBLIC_LIVE_REFRESH_MS` | `15000` | Live fixture polling interval |
@@ -261,8 +260,8 @@ Live matches also use `computeMomentumWindows()` to bucket events into 5-min win
 - Make sure `npm install` finished without errors.
 - Delete `node_modules` and `.expo` directories, re-install.
 
-**"API key missing" banner**
-- Confirm `.env` exists in the project root with `EXPO_PUBLIC_API_FOOTBALL_KEY`.
+**"Sportmonks Token Required" banner**
+- Confirm `.env` exists in the project root with `EXPO_PUBLIC_SPORTMONKS_KEY`.
 - Restart `npm run start` — env vars are read at boot.
 
 **Quota exceeded**

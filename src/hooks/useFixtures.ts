@@ -53,7 +53,7 @@ export const useFixture = (id: number | undefined) =>
   useQuery({
     queryKey: ['fixture', id],
     queryFn: () => fetchFixtureById(id!),
-    enabled: typeof id === 'number',
+    enabled: typeof id === 'number' && Number.isFinite(id),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -69,7 +69,7 @@ export const useFixtureEvents = (id: number | undefined, isLiveFixture: boolean)
   useQuery({
     queryKey: ['fixture', id, 'events'],
     queryFn: () => fetchFixtureEvents(id!),
-    enabled: typeof id === 'number',
+    enabled: typeof id === 'number' && Number.isFinite(id),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -81,7 +81,7 @@ export const useFixtureStats = (id: number | undefined, isLiveFixture: boolean) 
   useQuery({
     queryKey: ['fixture', id, 'stats'],
     queryFn: () => fetchFixtureStatistics(id!),
-    enabled: typeof id === 'number',
+    enabled: typeof id === 'number' && Number.isFinite(id),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -103,7 +103,7 @@ export const useTeamLastFixtures = (teamId: number | undefined, last = 10) =>
   useQuery({
     queryKey: ['team', teamId, 'last', last],
     queryFn: () => fetchTeamLastFixtures(teamId!, last),
-    enabled: typeof teamId === 'number',
+    enabled: typeof teamId === 'number' && Number.isFinite(teamId),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -118,7 +118,11 @@ export const useTeamStats = (
   useQuery({
     queryKey: ['team', teamId, 'stats', leagueId, season ?? config.app.defaultSeason],
     queryFn: () => fetchTeamStatistics(teamId!, leagueId!, season),
-    enabled: typeof teamId === 'number' && typeof leagueId === 'number',
+    enabled:
+      typeof teamId === 'number' &&
+      Number.isFinite(teamId) &&
+      typeof leagueId === 'number' &&
+      Number.isFinite(leagueId),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -129,7 +133,11 @@ export const useH2H = (homeId: number | undefined, awayId: number | undefined) =
   useQuery({
     queryKey: ['h2h', homeId, awayId],
     queryFn: () => fetchHeadToHead(homeId!, awayId!),
-    enabled: typeof homeId === 'number' && typeof awayId === 'number',
+    enabled:
+      typeof homeId === 'number' &&
+      Number.isFinite(homeId) &&
+      typeof awayId === 'number' &&
+      Number.isFinite(awayId),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

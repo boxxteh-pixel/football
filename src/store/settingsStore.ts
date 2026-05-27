@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { DEFAULT_SETTINGS, readSettings, updateSettings, type AppSettings, type ColorTheme } from '@/services/storage/settings';
 import { supabase } from '@/services/supabase/client';
 import { useAuthStore } from '@/store/authStore';
+import { DEFAULT_LEAGUE_IDS } from '@/constants/leagues';
+import { withTimeout } from '@/utils/async';
 
 const setNativeAppIcon = async (themeName: string | null) => {
   try {
@@ -33,10 +35,14 @@ const syncProfileSettings = async (patch: Partial<AppSettings>) => {
   if (Object.keys(dbPatch).length === 0) return;
 
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update(dbPatch)
-      .eq('id', session.user.id);
+    const { error } = await withTimeout(
+      supabase
+        .from('profiles')
+        .update(dbPatch)
+        .eq('id', session.user.id),
+      2500,
+      { error: null } as any,
+    );
     if (error) console.warn('Supabase settings sync error:', error.message);
   } catch (err) {
     console.warn('Failed to sync settings to Supabase:', err);
@@ -60,63 +66,74 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   hydrate: async () => {
     const local = await readSettings();
     const session = useAuthStore.getState().session;
+    set({ settings: local, hydrated: true });
     
     // Make sure native app icon matches the hydrated setting
-    await setNativeAppIcon(local.colorTheme === 'purple' ? 'purple' : null);
+    setNativeAppIcon(local.colorTheme === 'purple' ? 'purple' : null).catch(() => {});
     
     if (session?.user?.id) {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('language, odds_format, live_notifications, selected_league_ids')
-          .eq('id', session.user.id)
-          .single();
+        const { data, error } = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('language, odds_format, live_notifications, selected_league_ids')
+            .eq('id', session.user.id)
+            .single(),
+          2500,
+          { data: null, error: null } as any,
+        );
           
         if (data && !error) {
+          const supabaseIds = data.selected_league_ids || [];
+          const mergedLeagueIds = Array.from(new Set([...supabaseIds, ...DEFAULT_LEAGUE_IDS]));
+          
           const merged: AppSettings = {
             ...local,
             language: (data.language as AppSettings['language']) || local.language,
             oddsFormat: (data.odds_format as AppSettings['oddsFormat']) || local.oddsFormat,
             liveNotifications: data.live_notifications !== null ? data.live_notifications : local.liveNotifications,
-            selectedLeagueIds: data.selected_league_ids || local.selectedLeagueIds,
+            selectedLeagueIds: mergedLeagueIds,
           };
           await updateSettings(merged);
           set({ settings: merged, hydrated: true });
+          
+          // If the merged list contains new default leagues, sync them back to Supabase
+          if (mergedLeagueIds.length > supabaseIds.length) {
+            syncProfileSettings({ selectedLeagueIds: mergedLeagueIds }).catch(() => {});
+          }
           return;
         }
       } catch (err) {
         console.warn('Failed to fetch settings from Supabase on hydration:', err);
       }
     }
-    
-    set({ settings: local, hydrated: true });
   },
   toggleLeague: async (id) => {
     const current = get().settings.selectedLeagueIds;
     const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
     const settings = await updateSettings({ selectedLeagueIds: next });
     set({ settings });
-    await syncProfileSettings({ selectedLeagueIds: next });
+    syncProfileSettings({ selectedLeagueIds: next }).catch(() => {});
   },
   setOddsFormat: async (format) => {
     const settings = await updateSettings({ oddsFormat: format });
     set({ settings });
-    await syncProfileSettings({ oddsFormat: format });
+    syncProfileSettings({ oddsFormat: format }).catch(() => {});
   },
   setLiveNotifications: async (enabled) => {
     const settings = await updateSettings({ liveNotifications: enabled });
     set({ settings });
-    await syncProfileSettings({ liveNotifications: enabled });
+    syncProfileSettings({ liveNotifications: enabled }).catch(() => {});
   },
   setLanguage: async (language) => {
     const settings = await updateSettings({ language });
     set({ settings });
-    await syncProfileSettings({ language });
+    syncProfileSettings({ language }).catch(() => {});
   },
   setColorTheme: async (theme) => {
     const settings = await updateSettings({ colorTheme: theme });
     set({ settings });
     // Note: colorTheme is kept local-only since it is a device appearance config.
-    await setNativeAppIcon(theme === 'purple' ? 'purple' : null);
+    setNativeAppIcon(theme === 'purple' ? 'purple' : null).catch(() => {});
   },
 }));

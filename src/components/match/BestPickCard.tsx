@@ -10,6 +10,8 @@ import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useQuickPrediction } from '@/hooks/usePrediction';
 import type { Fixture } from '@/types/match';
+import { useT } from '@/theme/i18n';
+import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface BestPickCardProps {
   fixture: Fixture;
@@ -18,6 +20,7 @@ interface BestPickCardProps {
 export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture }) => {
   const colors = useColors();
   const haptics = useHaptics();
+  const t = useT();
   const prediction = useQuickPrediction(fixture);
   const isHigh = prediction.topPick.probability >= 80;
   const accentColor = isHigh ? colors.primaryFixed : colors.secondaryFixed;
@@ -37,7 +40,6 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture }) => {
         rounded="2xl"
         padding={16}
         activeBorder={isHigh}
-        glow={isHigh}
         style={{ width: 280, marginRight: 14 }}
       >
         {/* Card Header: League & Kickoff */}
@@ -138,7 +140,7 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture }) => {
                 letterSpacing: 0.5,
               }}
             >
-              PROBABILITY
+              {t('match.probability')}
             </Text>
           </View>
 
@@ -178,15 +180,15 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture }) => {
           >
             <View style={{ gap: 2 }}>
               <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
-                Selection
+                {t('match.selection')}
               </Text>
               <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13 }} numberOfLines={1}>
-                {prediction.topPick.selection}
+                {formatPredictionSelection(prediction.topPick.selection, t)}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end', gap: 2 }}>
               <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
-                Odds
+                {t('match.odds')}
               </Text>
               <Text style={{ color: accentColor, fontFamily: fonts.bodyBold, fontSize: 13 }}>
                 {prediction.topPick.odds.toFixed(2)}

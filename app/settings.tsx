@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors } from '@/theme/colors';
@@ -10,7 +10,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { config, hasApiKey } from '@/constants/config';
 import { useEffect, useState } from 'react';
-import { getQuota } from '@/services/api/client';
 import { LOCALES, useT } from '@/theme/i18n';
 
 export default function SettingsScreen() {
@@ -22,12 +21,7 @@ export default function SettingsScreen() {
   const setLiveNotifications = useSettingsStore((s) => s.setLiveNotifications);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setColorTheme = useSettingsStore((s) => s.setColorTheme);
-  const [quota, setQuota] = useState({ used: 0, date: '' });
   const t = useT();
-
-  useEffect(() => {
-    getQuota().then(setQuota);
-  }, []);
 
   return (
     <ScreenContainer showBack title={t('settings.title')}>
@@ -66,7 +60,7 @@ export default function SettingsScreen() {
                       borderTopColor: 'rgba(255,255,255,0.04)',
                     }}
                   >
-                    <MaterialIcons
+                    <BoroIcon
                       name={league.isInternational ? 'public' : 'sports-soccer'}
                       size={22}
                       color={active ? colors.primaryFixed : colors.onSurfaceVariant}
@@ -153,7 +147,9 @@ export default function SettingsScreen() {
                   {t('settings.oddsFormat')}
                 </Text>
                 <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12, marginTop: 2 }}>
-                  {settings.oddsFormat === 'decimal' ? 'Decimal (1.85)' : 'Fractional (17/20)'}
+                  {settings.oddsFormat === 'decimal'
+                    ? `${t('settings.decimal')} (1.85)`
+                    : `${t('settings.fractional')} (17/20)`}
                 </Text>
               </View>
               <Pressable
@@ -230,7 +226,7 @@ export default function SettingsScreen() {
                         {loc.label}
                       </Text>
                       {active && (
-                        <MaterialIcons name="check" size={20} color={colors.primaryFixed} />
+                        <BoroIcon name="check" size={20} color={colors.primaryFixed} />
                       )}
                     </View>
                   </Pressable>
@@ -296,7 +292,7 @@ export default function SettingsScreen() {
                         {label}
                       </Text>
                       {active && (
-                        <MaterialIcons name="check" size={20} color={colors.primaryFixed} />
+                        <BoroIcon name="check" size={20} color={colors.primaryFixed} />
                       )}
                     </View>
                   </Pressable>
@@ -324,16 +320,16 @@ export default function SettingsScreen() {
             <View style={{ gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>
-                  {t('settings.quotaToday')}
+                  {t('settings.quotaLimit')}
                 </Text>
                 <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 14 }}>
-                  {quota.used} / {config.app.dailyQuota}
+                  {hasApiKey() ? t('settings.unlimitedPro') : '0 / 0'}
                 </Text>
               </View>
               <View style={{ height: 6, borderRadius: 9999, backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                 <View
                   style={{
-                    width: `${Math.min(100, (quota.used / config.app.dailyQuota) * 100)}%`,
+                    width: hasApiKey() ? '100%' : '0%',
                     height: '100%',
                     backgroundColor: colors.primaryFixed,
                   }}
@@ -342,6 +338,7 @@ export default function SettingsScreen() {
             </View>
           </GlassCard>
         </Section>
+
 
         <Section title={t('settings.about')}>
           <GlassCard padding={16} style={{ gap: 4 }}>

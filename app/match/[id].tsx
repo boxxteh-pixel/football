@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View, Pressable } from 'react-native';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { useHaptics } from '@/hooks/useHaptics';
 import { LiveScoreHero } from '@/components/match/LiveScoreHero';
 import { AIInsightCard } from '@/components/match/AIInsightCard';
 import { StatComparison } from '@/components/match/StatComparison';
@@ -20,14 +21,20 @@ import {
 } from '@/hooks/useFixtures';
 import { useFullPrediction } from '@/hooks/usePrediction';
 import { useT } from '@/theme/i18n';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { computeMomentumWindows, computePressureSwing, extractStatNumber } from '@/services/ai/momentum';
 import { isLive } from '@/types/match';
+import { formatPredictionSelection, formatReasoningLine } from '@/utils/predictionText';
 
 export default function MatchDetailScreen() {
   const colors = useColors();
   const params = useLocalSearchParams<{ id: string }>();
   const id = Number(params.id);
   const t = useT();
+  const haptics = useHaptics();
+  const favorites = useFavoritesStore();
+  const isFav = favorites.isFavorite('fixtures', id);
+  const [activeMarketTab, setActiveMarketTab] = useState<'dc' | 'goals' | 'corners' | 'fh' | 'firstScore'>('dc');
 
   const { data: fixture, isLoading, refetch, isRefetching } = useFixture(id);
   const live = fixture ? isLive(fixture.fixture.status.short) : false;
@@ -71,6 +78,14 @@ export default function MatchDetailScreen() {
   const possessionPct = possessionTotal > 0 ? (homePoss / possessionTotal) * 100 : 50;
   const xgTotal = homeXg + awayXg;
   const xgPct = xgTotal > 0 ? (homeXg / xgTotal) * 100 : 50;
+  const confidenceKey = prediction
+    ? ({
+        ELITE: 'confidence.elite',
+        HIGH: 'confidence.highShort',
+        MEDIUM: 'confidence.mediumShort',
+        LOW: 'confidence.lowShort',
+      } as const)[prediction.confidence]
+    : 'confidence.mediumShort';
 
   return (
     <ScreenContainer
@@ -80,13 +95,33 @@ export default function MatchDetailScreen() {
       refreshControl={
         <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primaryFixed} />
       }
+      rightSlot={
+        <Pressable
+          onPress={async () => {
+            haptics.light();
+            await favorites.toggle('fixtures', id);
+          }}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.7 : 1,
+            padding: 8,
+            marginRight: -8,
+          })}
+        >
+          <BoroIcon
+            name={isFav ? 'favorite' : 'favorite-border'}
+            size={24}
+            color={isFav ? '#FF3B30' : colors.onSurfaceVariant}
+            fill={isFav ? '#FF3B30' : 'none'}
+          />
+        </Pressable>
+      }
     >
       <View style={{ gap: 20 }}>
         <LiveScoreHero fixture={fixture} momentumValues={momentumValues} pressureSwing={pressureSwing} />
 
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <MaterialIcons name="psychology" size={22} color={colors.primaryFixed} />
+            <BoroIcon name="psychology" size={22} color={colors.primaryFixed} />
             <Text
               style={{
                 color: colors.onSurface,
@@ -106,10 +141,43 @@ export default function MatchDetailScreen() {
             </View>
           ) : (
             <View style={{ gap: 12 }}>
+              {/* Premium Trial Banner */}
+              {prediction.source === 'HYBRID' && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    alignSelf: 'flex-start',
+                    backgroundColor: `${colors.primaryFixed}1A`,
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: `${colors.primaryFixed}33`,
+                    marginTop: -4,
+                    marginBottom: 4,
+                  }}
+                >
+                  <BoroIcon name="workspace-premium" size={14} color={colors.primaryFixed} />
+                  <Text
+                    style={{
+                      color: colors.primaryFixed,
+                      fontFamily: fonts.label,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {t('match.proPowered')}
+                  </Text>
+                </View>
+              )}
+
               <AIInsightCard
                 label={t('match.matchResult')}
-                title={prediction.topPick.selection}
-                subLabel={`${prediction.confidence.toLowerCase()} confidence`}
+                title={formatPredictionSelection(prediction.topPick.selection, t)}
+                subLabel={`${t(confidenceKey).toLowerCase()} ${t('match.confidence')}`}
                 subIcon={null}
                 probability={prediction.topPick.probability}
                 accentLeft
@@ -118,18 +186,128 @@ export default function MatchDetailScreen() {
               <AIInsightCard
                 label={t('match.predictedScore')}
                 title={`${prediction.predictedScore.home} - ${prediction.predictedScore.away}`}
-                subLabel={`Over 2.5: ${Math.round(prediction.over25Pct)}%`}
+                subLabel={`${t('match.over25')}: ${Math.round(prediction.over25Pct)}%`}
                 subIcon="trending-up"
                 probability={prediction.over25Pct}
                 ringColor={colors.secondaryFixed}
               />
               <AIInsightCard
                 label={t('match.btts')}
-                title={prediction.bttsPct >= 50 ? 'Yes — Likely' : 'No — Unlikely'}
-                subLabel={`xG total: ${(prediction.metrics.homeXg + prediction.metrics.awayXg).toFixed(2)}`}
+                title={prediction.bttsPct >= 50 ? t('match.yesLikely') : t('match.noUnlikely')}
+                subLabel={`${t('match.xgTotal')}: ${(prediction.metrics.homeXg + prediction.metrics.awayXg).toFixed(2)}`}
                 subIcon="analytics"
                 probability={prediction.bttsPct}
               />
+
+              {/* Top Correct Scores */}
+              {prediction.correctScores && prediction.correctScores.length > 0 && (
+                <View style={{ gap: 12, marginTop: 8 }}>
+                  <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, letterSpacing: -0.3 }}>
+                    {t('match.correctScores')}
+                  </Text>
+                  <GlassCard padding={16} style={{ gap: 10 }}>
+                    {prediction.correctScores.slice(0, 5).map((scoreItem, idx) => (
+                      <View key={idx} style={{ position: 'relative', height: 40, borderRadius: 8, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', justifyContent: 'center', paddingHorizontal: 12 }}>
+                        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${scoreItem.probability}%`, backgroundColor: idx === 0 ? `${colors.primaryFixed}33` : 'rgba(255, 255, 255, 0.08)' }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 15 }}>{scoreItem.score}</Text>
+                          <Text style={{ color: idx === 0 ? colors.primaryFixed : colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 13 }}>{scoreItem.probability.toFixed(1)}%</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </GlassCard>
+                </View>
+              )}
+
+              {/* Advanced Pro Forecasts */}
+              {(() => {
+                const tabs = [];
+                if (prediction.doubleChance) tabs.push({ id: 'dc', label: t('match.market.doubleChance') });
+                if (prediction.overUnderGoals && prediction.overUnderGoals.length > 0) tabs.push({ id: 'goals', label: t('match.market.goals') });
+                if (prediction.cornersOverUnder && prediction.cornersOverUnder.length > 0) tabs.push({ id: 'corners', label: t('match.market.corners') });
+                if (prediction.halfTimeResult) tabs.push({ id: 'fh', label: t('match.market.halfTime') });
+                if (prediction.teamToScoreFirst) tabs.push({ id: 'firstScore', label: t('match.market.firstGoal') });
+
+                if (tabs.length === 0) return null;
+
+                return (
+                  <View style={{ gap: 12, marginTop: 8 }}>
+                    <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, letterSpacing: -0.3 }}>
+                      {t('match.advancedForecasts')}
+                    </Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
+                      {tabs.map((tab) => {
+                        const active = activeMarketTab === tab.id;
+                        return (
+                          <Pressable
+                            key={tab.id}
+                            onPress={() => {
+                              haptics.light();
+                              setActiveMarketTab(tab.id as any);
+                            }}
+                            style={{
+                              paddingHorizontal: 14,
+                              paddingVertical: 7,
+                              borderRadius: 18,
+                              backgroundColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.05)',
+                              borderWidth: 1,
+                              borderColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.1)',
+                            }}
+                          >
+                            <Text style={{ color: active ? colors.onPrimaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 11 }}>
+                              {tab.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+
+                    <GlassCard padding={16} style={{ gap: 12 }}>
+                      {activeMarketTab === 'dc' && prediction.doubleChance && (
+                        <View style={{ gap: 10 }}>
+                          <MarketRow label={t('match.homeDraw')} value={prediction.doubleChance.homeDraw} color={colors.primaryFixed} />
+                          <MarketRow label={t('match.awayDraw')} value={prediction.doubleChance.awayDraw} color={colors.secondaryFixed} />
+                          <MarketRow label={t('match.homeAway')} value={prediction.doubleChance.homeAway} color={colors.primaryFixed} />
+                        </View>
+                      )}
+
+                      {activeMarketTab === 'goals' && prediction.overUnderGoals && (
+                        <View style={{ gap: 10 }}>
+                          {prediction.overUnderGoals.map((g, idx) => (
+                            <MarketRow key={idx} label={g.label} value={g.probability} color={colors.primaryFixed} />
+                          ))}
+                        </View>
+                      )}
+
+                      {activeMarketTab === 'corners' && prediction.cornersOverUnder && (
+                        <View style={{ gap: 10 }}>
+                          {prediction.cornersOverUnder.map((c, idx) => (
+                            <MarketRow key={idx} label={c.label} value={c.probability} color={colors.secondaryFixed} />
+                          ))}
+                        </View>
+                      )}
+
+                      {activeMarketTab === 'fh' && prediction.halfTimeResult && (
+                        <View style={{ gap: 10 }}>
+                          <MarketRow label={t('match.homeWinHt')} value={prediction.halfTimeResult.home} color={colors.primaryFixed} />
+                          <MarketRow label={t('match.drawHt')} value={prediction.halfTimeResult.draw} color="rgba(255,255,255,0.4)" />
+                          <MarketRow label={t('match.awayWinHt')} value={prediction.halfTimeResult.away} color={colors.secondaryFixed} />
+                        </View>
+                      )}
+
+                      {activeMarketTab === 'firstScore' && prediction.teamToScoreFirst && (
+                        <View style={{ gap: 10 }}>
+                          <MarketRow label={t('match.homeScoresFirst')} value={prediction.teamToScoreFirst.home} color={colors.primaryFixed} />
+                          <MarketRow label={t('match.awayScoresFirst')} value={prediction.teamToScoreFirst.away} color={colors.secondaryFixed} />
+                          {prediction.teamToScoreFirst.draw > 0 && (
+                            <MarketRow label={t('match.noGoalsDraw')} value={prediction.teamToScoreFirst.draw} color="rgba(255,255,255,0.4)" />
+                          )}
+                        </View>
+                      )}
+                    </GlassCard>
+                  </View>
+                );
+              })()}
             </View>
           )}
         </View>
@@ -209,7 +387,7 @@ export default function MatchDetailScreen() {
                   <Text
                     style={{ flex: 1, color: colors.onSurface, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 }}
                   >
-                    {line}
+                    {formatReasoningLine(line, t)}
                   </Text>
                 </View>
               ))}
@@ -223,8 +401,8 @@ export default function MatchDetailScreen() {
                   gap: 16,
                 }}
               >
-                <MetricChip label="HOME ELO" value={prediction.metrics.homeElo} />
-                <MetricChip label="AWAY ELO" value={prediction.metrics.awayElo} />
+                <MetricChip label={t('match.homeElo')} value={prediction.metrics.homeElo} />
+                <MetricChip label={t('match.awayElo')} value={prediction.metrics.awayElo} />
               </View>
             </GlassCard>
           </View>
@@ -234,16 +412,16 @@ export default function MatchDetailScreen() {
           <QuickBetSlip
             options={[
               {
-                label: prediction.over25Pct >= 50 ? 'Over 2.5' : 'Under 2.5',
+                label: prediction.over25Pct >= 50 ? t('match.over25') : t('match.under25'),
                 odds: Number((100 / Math.max(prediction.over25Pct, prediction.under25Pct)).toFixed(2)),
                 highlight: true,
               },
               {
-                label: prediction.topPick.selection.replace('to Win', '').trim() || 'Result',
+                label: formatPredictionSelection(prediction.topPick.selection, t).trim() || t('match.result'),
                 odds: prediction.topPick.odds,
               },
               {
-                label: prediction.bttsPct >= 50 ? 'BTTS - Yes' : 'BTTS - No',
+                label: prediction.bttsPct >= 50 ? t('match.bttsYes') : t('match.bttsNo'),
                 odds: Number((100 / Math.max(prediction.bttsPct, 100 - prediction.bttsPct)).toFixed(2)),
               },
             ]}
@@ -273,6 +451,21 @@ const MetricChip: React.FC<{ label: string; value: number | string }> = ({ label
       <Text style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 16, marginTop: 2 }}>
         {value}
       </Text>
+    </View>
+  );
+};
+
+const MarketRow: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => {
+  const colors = useColors();
+  return (
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: colors.onSurface, fontFamily: fonts.body, fontSize: 14 }}>{label}</Text>
+        <Text style={{ color: color, fontFamily: fonts.stats, fontSize: 14 }}>{value.toFixed(1)}%</Text>
+      </View>
+      <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${value}%`, backgroundColor: color, borderRadius: 3 }} />
+      </View>
     </View>
   );
 };

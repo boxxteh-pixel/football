@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors} from '@/theme/colors';
@@ -65,7 +65,7 @@ export const XgEloBento: React.FC<XgEloBentoProps> = ({
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <MaterialIcons name="trending-up" size={12} color={colors.primaryFixedDim} />
+          <BoroIcon name="trending-up" size={12} color={colors.primaryFixedDim} />
           <Text style={{ color: colors.primaryFixedDim, fontFamily: fonts.label, fontSize: 10 }}>
             {t('stats.bento.aboveAverage')}
           </Text>
@@ -76,7 +76,7 @@ export const XgEloBento: React.FC<XgEloBentoProps> = ({
         padding={16}
         style={{ flex: 1, aspectRatio: 1, justifyContent: 'space-between', overflow: 'hidden' }}
       >
-        <MaterialIcons
+        <BoroIcon
           name="language"
           size={72}
           color={colors.onSurfaceVariant}

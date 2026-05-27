@@ -42,7 +42,7 @@ export const LiveScoreHero: React.FC<LiveScoreHeroProps> = ({
           width: 128,
           height: 128,
           borderRadius: 64,
-          backgroundColor: colors.primaryFixed,
+          backgroundColor: colors.onSurfaceVariant,
           opacity: 0.05,
         }}
       />
@@ -68,14 +68,16 @@ export const LiveScoreHero: React.FC<LiveScoreHeroProps> = ({
           {live && (
             <View
               style={{
-                backgroundColor: colors.accent10,
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.2)',
                 paddingHorizontal: 10,
-                paddingVertical: 4,
+                paddingVertical: 3,
                 borderRadius: 9999,
                 marginBottom: 8,
               }}
             >
-              <LivePulse label={elapsed ? `LIVE ${elapsed}'` : 'LIVE'} />
+              <LivePulse label={elapsed ? `LIVE ${elapsed}'` : 'LIVE'} color={colors.onSurface} />
             </View>
           )}
           {finished && (
@@ -148,7 +150,7 @@ export const LiveScoreHero: React.FC<LiveScoreHeroProps> = ({
             >
               MATCH MOMENTUM
             </Text>
-            <Text style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 11 }}>
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 11 }}>
               {swingLabel}
             </Text>
           </View>

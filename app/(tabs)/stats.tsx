@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Chip } from '@/components/ui/Chip';
@@ -169,7 +169,7 @@ export default function StatsTab() {
             <StandingsTable rows={standings} aiPositions={aiPositions} maxRows={8} />
           ) : (
             <GlassCard padding={24} style={{ alignItems: 'center' }}>
-              <MaterialIcons name="auto-graph" size={32} color={colors.onSurfaceVariant} />
+              <BoroIcon name="auto-graph" size={32} color={colors.onSurfaceVariant} />
               <Text
                 style={{
                   color: colors.onSurfaceVariant,

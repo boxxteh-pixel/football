@@ -27,6 +27,15 @@ export interface PredictionResult {
     homeAdvantage: number;
   };
   computedAt: number;
+
+  // Sportmonks Pro Predictions (Optional/Extended markets)
+  correctScores?: Array<{ score: string; probability: number }>;
+  doubleChance?: { homeDraw: number; awayDraw: number; homeAway: number };
+  halfTimeResult?: { home: number; draw: number; away: number };
+  teamToScoreFirst?: { home: number; away: number; draw: number };
+  cornersOverUnder?: Array<{ label: string; probability: number }>;
+  overUnderGoals?: Array<{ label: string; probability: number }>;
+  source?: 'BORO_AI' | 'SPORTMONKS_PRO' | 'HYBRID';
 }
 
 export interface TeamFormSnapshot {

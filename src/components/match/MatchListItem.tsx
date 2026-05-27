@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { format, parseISO } from 'date-fns';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -11,6 +11,8 @@ import { useQuickPrediction } from '@/hooks/usePrediction';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import { isLive } from '@/types/match';
+import { useT } from '@/theme/i18n';
+import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface MatchListItemProps {
   fixture: Fixture;
@@ -19,6 +21,7 @@ interface MatchListItemProps {
 export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
   const colors = useColors();
   const haptics = useHaptics();
+  const t = useT();
   const prediction = useQuickPrediction(fixture);
   const live = isLive(fixture.fixture.status.short);
   const time = format(parseISO(fixture.fixture.date), 'HH:mm');
@@ -40,7 +43,12 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
       }}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], marginBottom: 10 })}
     >
-      <GlassCard padding={12}>
+      <GlassCard
+        padding={12}
+        style={live ? {
+          borderColor: 'rgba(171, 214, 0, 0.25)',
+        } : undefined}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           
           {/* 1. Time / Live Status Column */}
@@ -58,17 +66,19 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
               <View style={{ alignItems: 'center', gap: 2 }}>
                 <View
                   style={{
-                    backgroundColor: colors.accent15,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
                     paddingHorizontal: 5,
-                    paddingVertical: 2,
+                    paddingVertical: 1,
                     borderRadius: 4,
                   }}
                 >
                   <Text
                     style={{
-                      color: colors.primaryFixed,
+                      color: colors.onSurfaceVariant,
                       fontFamily: fonts.label,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: 'bold',
                     }}
                   >
@@ -77,9 +87,9 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
                 </View>
                 <Text
                   style={{
-                    color: colors.primaryFixed,
+                    color: colors.onSurface,
                     fontFamily: fonts.stats,
-                    fontSize: 11,
+                    fontSize: 12,
                   }}
                 >
                   {fixture.fixture.status.elapsed}'
@@ -104,7 +114,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
                     marginTop: 2,
                   }}
                 >
-                  KICKOFF
+                  {t('match.kickoff')}
                 </Text>
               </View>
             )}
@@ -173,7 +183,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
               {tagLabel && (
                 <View
                   style={{
-                    backgroundColor: colors.accent10,
+                    backgroundColor: live ? 'rgba(255, 255, 255, 0.06)' : colors.accent10,
                     paddingHorizontal: 4,
                     paddingVertical: 1,
                     borderRadius: 3,
@@ -182,7 +192,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
                 >
                   <Text
                     style={{
-                      color: colors.primaryFixed,
+                      color: live ? colors.onSurfaceVariant : colors.primaryFixed,
                       fontFamily: fonts.label,
                       fontSize: 8,
                       letterSpacing: 0.5,
@@ -194,7 +204,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
               )}
               <Text
                 style={{
-                  color: probColor,
+                  color: live ? colors.onSurface : probColor,
                   fontFamily: fonts.stats,
                   fontSize: 14,
                 }}
@@ -220,7 +230,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
                 }}
                 numberOfLines={1}
               >
-                {prediction.topPick.selection} • {prediction.topPick.odds.toFixed(2)}
+                {formatPredictionSelection(prediction.topPick.selection, t)} • {prediction.topPick.odds.toFixed(2)}
               </Text>
             </View>
           </View>

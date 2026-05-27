@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -126,15 +126,15 @@ export default function IntroScreen() {
       <View style={{ width: '100%', maxWidth: 360, alignSelf: 'center', gap: 24 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, opacity: 0.5 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name="security" size={16} color={colors.onSurfaceVariant} />
+            <BoroIcon name="security" size={16} color={colors.onSurfaceVariant} />
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>Secure</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name="bolt" size={16} color={colors.onSurfaceVariant} />
+            <BoroIcon name="bolt" size={16} color={colors.onSurfaceVariant} />
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>Real-time</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name="insights" size={16} color={colors.onSurfaceVariant} />
+            <BoroIcon name="insights" size={16} color={colors.onSurfaceVariant} />
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>Accurate</Text>
           </View>
         </View>

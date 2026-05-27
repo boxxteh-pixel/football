@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { readFavorites, toggleFavorite, writeFavorites } from '@/services/storage/favorites';
 import { supabase } from '@/services/supabase/client';
 import { useAuthStore } from '@/store/authStore';
+import { withTimeout } from '@/utils/async';
 
 const syncProfileFavorites = async (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => {
   const session = useAuthStore.getState().session;
@@ -14,10 +15,14 @@ const syncProfileFavorites = async (kind: 'teams' | 'fixtures' | 'leagues', ids:
     : 'favorite_league_ids';
 
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ [dbField]: ids })
-      .eq('id', session.user.id);
+    const { error } = await withTimeout(
+      supabase
+        .from('profiles')
+        .update({ [dbField]: ids })
+        .eq('id', session.user.id),
+      2500,
+      { error: null } as any,
+    );
     if (error) console.warn('Supabase favorites sync error:', error.message);
   } catch (err) {
     console.warn('Failed to sync favorites to Supabase:', err);
@@ -42,14 +47,19 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   hydrate: async () => {
     const local = await readFavorites();
     const session = useAuthStore.getState().session;
+    set({ ...local, hydrated: true });
     
     if (session?.user?.id) {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('favorite_team_ids, favorite_fixture_ids, favorite_league_ids')
-          .eq('id', session.user.id)
-          .single();
+        const { data, error } = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('favorite_team_ids, favorite_fixture_ids, favorite_league_ids')
+            .eq('id', session.user.id)
+            .single(),
+          2500,
+          { data: null, error: null } as any,
+        );
           
         if (data && !error) {
           const merged = {
@@ -65,13 +75,11 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         console.warn('Failed to fetch favorites from Supabase on hydration:', err);
       }
     }
-    
-    set({ ...local, hydrated: true });
   },
   toggle: async (kind, id) => {
     const state = await toggleFavorite(kind, id);
     set(state);
-    await syncProfileFavorites(kind, state[kind]);
+    syncProfileFavorites(kind, state[kind]).catch(() => {});
   },
   isFavorite: (kind, id) => get()[kind].includes(id),
 }));

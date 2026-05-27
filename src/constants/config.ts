@@ -6,12 +6,9 @@
  */
 
 export const config = {
-  apiFootball: {
-    host: process.env.EXPO_PUBLIC_API_FOOTBALL_HOST || 'v3.football.api-sports.io',
-    key: process.env.EXPO_PUBLIC_API_FOOTBALL_KEY || '',
-    get baseUrl() {
-      return `https://${this.host}`;
-    },
+  sportmonks: {
+    key: process.env.EXPO_PUBLIC_SPORTMONKS_KEY || 'vIPRgqtcB3MivtuDSJ9Xv82CjkPfF8nUXFiF6AfV9Z7egDDCx8FMGcRbTPZm',
+    baseUrl: 'https://api.sportmonks.com/v3/football',
   },
   sportsDb: {
     key: process.env.EXPO_PUBLIC_SPORTSDB_KEY || '3',
@@ -23,7 +20,6 @@ export const config = {
     defaultSeason: Number(process.env.EXPO_PUBLIC_DEFAULT_SEASON || '2024'),
     liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '1200000'),
     fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '3600000'),
-    dailyQuota: 100, // API-Football free tier
   },
   supabase: {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://bhzdkjiisgntqpdgrjpq.supabase.co',
@@ -31,4 +27,4 @@ export const config = {
   },
 } as const;
 
-export const hasApiKey = (): boolean => config.apiFootball.key.length > 0;
+export const hasApiKey = (): boolean => config.sportmonks.key.length > 0;

@@ -114,6 +114,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         issuedAt: Date.now(),
       };
       set({ session: mappedSession, loading: false });
+      
+      // Trigger dynamic cloud settings and favorites hydration upon signup
+      try {
+        const { useSettingsStore } = require('./settingsStore');
+        const { useFavoritesStore } = require('./favoritesStore');
+        useSettingsStore.getState().hydrate().catch(() => {});
+        useFavoritesStore.getState().hydrate().catch(() => {});
+      } catch (err) {
+        // Silently ignore dynamic load issues
+      }
     } catch (e: unknown) {
       set({ loading: false, error: e instanceof Error ? e.message : 'Sign up failed.' });
       throw e;
@@ -144,6 +154,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         issuedAt: Date.now(),
       };
       set({ session: mappedSession, loading: false });
+
+      // Trigger dynamic cloud settings and favorites hydration upon login
+      try {
+        const { useSettingsStore } = require('./settingsStore');
+        const { useFavoritesStore } = require('./favoritesStore');
+        useSettingsStore.getState().hydrate().catch(() => {});
+        useFavoritesStore.getState().hydrate().catch(() => {});
+      } catch (err) {
+        // Silently ignore dynamic load issues
+      }
     } catch (e: unknown) {
       set({ loading: false, error: e instanceof Error ? e.message : 'Login failed.' });
       throw e;
@@ -156,6 +176,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     await supabase.auth.signOut();
     set({ session: null });
+
+    // Trigger dynamic settings and favorites reset/rehydration upon logout
+    try {
+      const { useSettingsStore } = require('./settingsStore');
+      const { useFavoritesStore } = require('./favoritesStore');
+      useSettingsStore.getState().hydrate().catch(() => {});
+      useFavoritesStore.getState().hydrate().catch(() => {});
+    } catch (err) {
+      // Silently ignore dynamic load issues
+    }
   },
   clearError: () => set({ error: null }),
 }));

@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 
@@ -19,7 +19,7 @@ export default function NotFoundScreen() {
           gap: 16,
         }}
       >
-        <MaterialIcons name="search-off" size={64} color={colors.primaryFixed} />
+        <BoroIcon name="search-off" size={64} color={colors.primaryFixed} />
         <Text style={{ color: colors.onSurface, fontFamily: fonts.display, fontSize: 28 }}>404</Text>
         <Text
           style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 14, textAlign: 'center' }}

@@ -4,6 +4,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useT } from '@/theme/i18n';
 
 interface BetOption {
   label: string;
@@ -18,10 +19,11 @@ interface QuickBetSlipProps {
 
 export const QuickBetSlip: React.FC<QuickBetSlipProps> = ({
   options,
-  topValueLabel = 'TOP VALUE',
+  topValueLabel,
 }) => {
   const colors = useColors();
   const haptics = useHaptics();
+  const t = useT();
   return (
     <GlassCard padding={16} activeBorder>
       <View
@@ -33,7 +35,7 @@ export const QuickBetSlip: React.FC<QuickBetSlipProps> = ({
         }}
       >
         <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16 }}>
-          Quick Bet AI Suggestion
+          {t('match.aiSuggestion')}
         </Text>
         <View
           style={{
@@ -51,7 +53,7 @@ export const QuickBetSlip: React.FC<QuickBetSlipProps> = ({
               letterSpacing: 0.5,
             }}
           >
-            {topValueLabel}
+            {topValueLabel ?? t('match.topValue')}
           </Text>
         </View>
       </View>

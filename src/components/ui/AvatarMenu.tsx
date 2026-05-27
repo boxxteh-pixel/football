@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { MaterialIcons } from '@expo/vector-icons';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
@@ -15,6 +15,7 @@ import { useT } from '@/theme/i18n';
 export const AvatarMenu: React.FC = () => {
   const colors = useColors();
   const [open, setOpen] = useState(false);
+  const chevronProgress = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const session = useAuthStore((s) => s.session);
   const logOut = useAuthStore((s) => s.logOut);
@@ -22,6 +23,27 @@ export const AvatarMenu: React.FC = () => {
   const t = useT();
 
   const initial = session?.user.name?.[0]?.toUpperCase() ?? 'B';
+  const apiRequestsRemaining = '\u221e';
+  const apiProgress = 1;
+
+  useEffect(() => {
+    Animated.timing(chevronProgress, {
+      toValue: open ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [chevronProgress, open]);
+
+  const chevronStyle = {
+    transform: [
+      {
+        rotate: chevronProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        }),
+      },
+    ],
+  };
 
   const handle = (action: () => void) => {
     haptics.light();
@@ -38,36 +60,95 @@ export const AvatarMenu: React.FC = () => {
         }}
         hitSlop={8}
         style={({ pressed }) => ({
-          transform: [{ scale: pressed ? 0.92 : 1 }],
+          transform: [{ scale: pressed ? 0.97 : 1 }],
         })}
       >
         <View
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: colors.accent40,
-            backgroundColor: colors.accent08,
+            height: 38,
+            width: 148,
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
+            gap: 8,
           }}
         >
-          <Text style={{ color: colors.primaryFixed, fontFamily: fonts.display, fontSize: 15 }}>
-            {initial}
-          </Text>
-        </View>
-        <View 
-          style={{ 
-            position: 'absolute', 
-            bottom: -2, 
-            right: -2, 
-            backgroundColor: colors.background,
-            borderRadius: 10,
-          }}
-        >
-          <MaterialIcons name="arrow-drop-down" size={16} color={colors.primaryFixed} />
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              borderWidth: 1,
+              borderColor: colors.accent30,
+              backgroundColor: colors.accent08,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: colors.primaryFixed,
+                fontFamily: fonts.display,
+                fontSize: 18,
+                lineHeight: 22,
+                textAlign: 'center',
+              }}
+            >
+              {initial}
+            </Text>
+          </View>
+          <View style={{ flex: 1, gap: 5 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Text
+                style={{
+                  color: colors.onSurface,
+                  fontFamily: fonts.bodyBold,
+                  fontSize: 11,
+                  flexShrink: 1,
+                  maxWidth: 68,
+                }}
+                numberOfLines={1}
+              >
+                {session?.user.name ?? t('common.guest')}
+              </Text>
+              <View
+                style={{
+                  width: 17,
+                  height: 17,
+                  borderRadius: 5,
+                  backgroundColor: colors.accent20,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 11, lineHeight: 14 }}
+                  numberOfLines={1}
+                >
+                  {apiRequestsRemaining}
+                </Text>
+              </View>
+              <Animated.View style={chevronStyle}>
+                <BoroIcon name="chevron-down" size={14} color={colors.onSurfaceVariant} />
+              </Animated.View>
+            </View>
+            <View
+              style={{
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: colors.accent12,
+                overflow: 'hidden',
+              }}
+            >
+              <View
+                style={{
+                  width: `${apiProgress * 100}%`,
+                  height: '100%',
+                  borderRadius: 3,
+                  backgroundColor: colors.primaryFixed,
+                }}
+              />
+            </View>
+          </View>
         </View>
       </Pressable>
 
@@ -135,13 +216,13 @@ export const AvatarMenu: React.FC = () => {
                 <Text
                   style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 10, letterSpacing: 0.6 }}
                 >
-                  SIGNED IN AS
+                  {t('profile.signedInAs')}
                 </Text>
                 <Text
                   style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14, marginTop: 2 }}
                   numberOfLines={1}
                 >
-                  {session?.user.name ?? 'Guest'}
+                  {session?.user.name ?? t('common.guest')}
                 </Text>
               </View>
             </View>
@@ -174,7 +255,7 @@ export const AvatarMenu: React.FC = () => {
 };
 
 interface MenuItemProps {
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: string;
   label: string;
   onPress: () => void;
   danger?: boolean;
@@ -211,7 +292,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onPress, danger }) => 
         >
           {label}
         </Text>
-        <MaterialIcons name={icon} size={20} color={danger ? colors.error : colors.primaryFixed} />
+        <BoroIcon name={icon} size={20} color={danger ? colors.error : colors.primaryFixed} />
       </View>
     </Pressable>
   );
