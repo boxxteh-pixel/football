@@ -10,6 +10,7 @@
     "lint": "expo lint",
     "type-check": "tsc --noEmit",
     "test": "jest --passWithNoTests",
+    "build": "mkdir -p node_modules/.cache/nativewind && touch node_modules/.cache/nativewind/global.css && npx expo export --platform web",
     "build:android:preview": "eas build -p android --profile preview",
     "build:android:production": "eas build -p android --profile production"
   },
