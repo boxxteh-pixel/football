@@ -1,6 +1,7 @@
 {
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/sportmonks/:path*", "destination": "/api/sportmonks" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

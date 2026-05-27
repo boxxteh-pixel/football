@@ -19,16 +19,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Extract the path after /api/sportmonks/
-    const { path } = req.query;
-    const subPath = Array.isArray(path) ? path.join('/') : path || '';
+    // Extract the path after /api/sportmonks/ using req.url
+    const reqUrlObj = new URL(req.url || '', 'https://localhost');
+    const subPath = reqUrlObj.pathname.replace(/^\/api\/sportmonks\/?/, '');
 
-    // Rebuild query string, excluding the [...path] param
+    // Rebuild query string
     const url = new URL(`https://api.sportmonks.com/v3/football/${subPath}`);
-    Object.entries(req.query).forEach(([key, value]) => {
-      if (key !== 'path') {
-        url.searchParams.set(key, String(value));
-      }
+    reqUrlObj.searchParams.forEach((value, key) => {
+      url.searchParams.set(key, value);
     });
 
     // Use the token from env, fallback to hardcoded (same as config.ts)
