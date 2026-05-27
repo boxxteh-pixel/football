@@ -77,6 +77,7 @@ const persister = createAsyncStoragePersister({
 
 export default function RootLayout() {
   const colors = useColors();
+  const { width: windowWidth } = useWindowDimensions();
   const [storesReady, setStoresReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
@@ -158,7 +159,6 @@ export default function RootLayout() {
     return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
   }
 
-  const { width: windowWidth } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && windowWidth > 768;
 
   const content = (
