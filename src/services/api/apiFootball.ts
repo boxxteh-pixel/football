@@ -17,6 +17,7 @@ import {
 } from './mockData';
 import {
   fetchSportmonksFixturesByDate,
+  fetchSportmonksFixturesByDateMulti,
   fetchSportmonksLiveFixtures,
   fetchSportmonksFixtureById,
   fetchSportmonksFixtureEvents,
@@ -50,17 +51,17 @@ export const fetchFixturesByDate = async (
   
   try {
     if (!leagueId) {
-      const leagueResults = await Promise.all(
-        DEFAULT_LEAGUE_IDS.map((id) => fetchSportmonksFixturesByDate(date, id)),
-      );
+      // Batch ALL tracked leagues into a single paginated request instead of
+      // firing one HTTP call per league (avoids rate-limit blowups as the
+      // number of tracked leagues grows).
+      const smResults = await fetchSportmonksFixturesByDateMulti(date, DEFAULT_LEAGUE_IDS);
       const byId = new Map<number, Fixture>();
-      leagueResults.flat().forEach((fixture) => byId.set(fixture.fixture.id, fixture));
-      const smResults = [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
-      
+      smResults.forEach((fixture) => byId.set(fixture.fixture.id, fixture));
+
       // If there are no matches today, return empty — do NOT inject fake mock data
-      return smResults;
+      return [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
     }
-    
+
     // Single league query — return whatever the API gives (even if empty)
     return await fetchSportmonksFixturesByDate(date, leagueId);
   } catch (err) {

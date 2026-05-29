@@ -1,28 +1,13 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import { config } from '@/constants/config';
+import { LEAGUE_TO_SPORTMONKS, SPORTMONKS_TO_LEAGUE } from '@/constants/leagues';
 
-// Maps API-Football league IDs to Sportmonks league IDs
-export const LEAGUE_MAP: Record<number, number> = {
-  39: 8,     // Premier League (EPL)
-  140: 564,  // La Liga
-  135: 384,  // Serie A
-  136: 387,  // Serie B
-  78: 82,    // Bundesliga
-  61: 301,   // Ligue 1
-  88: 72,    // Eredivisie
-  94: 462,   // Liga Portugal / Primeira Liga
-  307: 944,  // Saudi Professional League (Saudi Pro)
-  2: 2,      // UEFA Champions League
-  3: 5,      // UEFA Europa League
-  253: 779,  // Major League Soccer (MLS)
-  13: 14,    // UEFA Conference League
-  17: 244,   // Copa Libertadores
-};
+// Maps internal (API-Football style) league IDs to Sportmonks league IDs.
+// Single source of truth lives in '@/constants/leagues'.
+export const LEAGUE_MAP: Record<number, number> = LEAGUE_TO_SPORTMONKS;
 
-export const INVERSE_LEAGUE_MAP: Record<number, number> = Object.fromEntries(
-  Object.entries(LEAGUE_MAP).map(([apiId, smId]) => [smId, Number(apiId)])
-);
+export const INVERSE_LEAGUE_MAP: Record<number, number> = SPORTMONKS_TO_LEAGUE;
 
 export interface SportmonksPredictionParsed {
   homeWinPct: number;
@@ -640,6 +625,47 @@ export const fetchSportmonksFixturesByDate = async (
     return data.map(mapSportmonksFixture);
   } catch (err: any) {
     console.error('[Sportmonks Adapter] Error in fetchSportmonksFixturesByDate:', err.message);
+    return [];
+  }
+};
+
+/**
+ * Fetches fixtures for a date across MANY leagues in a single batched request.
+ * Sportmonks supports a comma-separated `fixtureLeagues` filter, so instead of
+ * one HTTP call per league (which explodes rate-limit usage as leagues grow),
+ * we send all league IDs at once and follow pagination.
+ */
+export const fetchSportmonksFixturesByDateMulti = async (
+  date: string,
+  apiFootballLeagueIds: number[]
+): Promise<Fixture[]> => {
+  try {
+    const cleanDate = date.split('T')[0];
+    const smLeagueIds = apiFootballLeagueIds
+      .map((id) => LEAGUE_MAP[id])
+      .filter((id): id is number => typeof id === 'number');
+
+    if (smLeagueIds.length === 0) return [];
+
+    const filterIds = smLeagueIds.join(',');
+    const collected: any[] = [];
+    let page = 1;
+    let hasMore = true;
+    const MAX_PAGES = 8; // safety guard (8 * 50 = 400 fixtures/day is plenty)
+
+    while (hasMore && page <= MAX_PAGES) {
+      const url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${filterIds}&per_page=50&page=${page}`;
+      const response = await sportmonksClient.get(url);
+      const data = response.data?.data;
+      if (Array.isArray(data) && data.length > 0) collected.push(...data);
+      hasMore = Boolean(response.data?.pagination?.has_more);
+      page++;
+    }
+
+    console.log(`[Sportmonks Adapter] Multi-league date ${cleanDate}: ${collected.length} fixtures across ${smLeagueIds.length} leagues.`);
+    return collected.map(mapSportmonksFixture);
+  } catch (err: any) {
+    console.error('[Sportmonks Adapter] Error in fetchSportmonksFixturesByDateMulti:', err.message);
     return [];
   }
 };

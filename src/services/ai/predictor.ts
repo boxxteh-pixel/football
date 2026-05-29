@@ -1,7 +1,15 @@
 /**
  * Main prediction orchestrator.
- * Combines ELO, form, xG, home/away splits, H2H bias, and live momentum
+ * Combines ELO, recency-weighted form, attack/defense goal rates (Dixon-Coles),
+ * home/away splits, H2H bias, league context and Sportmonks Pro signals
  * into a single PredictionResult.
+ *
+ * Key modelling choices:
+ *  - Empirical-Bayes shrinkage pulls small-sample goal rates toward the league
+ *    mean, so a team with 2 games doesn't dominate the model with noise.
+ *  - Home advantage is league-aware (cups & international ties get less).
+ *  - ELO supplies a calibrated 1X2 prior; Poisson supplies goals + scorelines;
+ *    form is a light nudge. Weights adapt to how much history we actually have.
  */
 import type { Fixture, H2HRecord } from '@/types/match';
 import type { TeamStatistics } from '@/types/team';
@@ -15,19 +23,21 @@ import { buildFormSnapshot } from './form';
 import { computeMatchProbabilities } from './poisson';
 import { clampPercent, formatOdds } from '@/utils/format';
 import type { SportmonksPredictionParsed } from '../api/sportmonks';
+import { getLeagueById } from '@/constants/leagues';
 import { useLearningStore } from '@/store/learningStore';
 
-const HOME_ADVANTAGE_GOALS = 0.35;
-const DRAW_INFLATION = 0.05;
-const LEAGUE_AVG_HOME_GOALS = 1.55; // realistic top-5 league average
-const LEAGUE_AVG_AWAY_GOALS = 1.20;
-const MIN_LAMBDA = 0.7;
-const MAX_LAMBDA = 3.2;
+const HOME_ADVANTAGE_GOALS = 0.30;
+const LEAGUE_AVG_HOME_GOALS = 1.50; // realistic top-division home average
+const LEAGUE_AVG_AWAY_GOALS = 1.15;
+const MIN_LAMBDA = 0.35;
+const MAX_LAMBDA = 3.6;
+
+// Empirical-Bayes shrinkage strength: a team's goal rate is blended with the
+// league baseline as if it had played SHRINKAGE_GAMES of perfectly-average football.
+const SHRINKAGE_GAMES = 4;
 
 /**
  * Mulberry32 PRNG: deterministic [0,1) from any integer seed.
- * Used so every fixture gets a unique-but-stable variance even when
- * no historical data is available.
  */
 const seededRandom = (seed: number) => {
   let t = (seed + 0x6d2b79f5) >>> 0;
@@ -48,6 +58,17 @@ const eloToGoalMultiplier = (teamElo: number, oppElo: number): number => {
   return Math.max(0.6, Math.min(1.45, 1 + diff / 1200));
 };
 
+/**
+ * Empirical-Bayes shrinkage of a rate toward a prior.
+ * With n observations and pseudo-count k, returns
+ *   (n * observed + k * prior) / (n + k).
+ */
+const shrink = (observed: number, n: number, prior: number, k = SHRINKAGE_GAMES): number => {
+  if (!Number.isFinite(observed)) return prior;
+  if (n <= 0) return prior;
+  return (n * observed + k * prior) / (n + k);
+};
+
 export interface PredictorInputs {
   fixture: Fixture;
   homeHistory: Fixture[]; // last 10 of home team
@@ -64,21 +85,37 @@ const parseAvg = (raw?: string | number | null): number => {
   return Number.isFinite(n) ? n : NaN;
 };
 
-/** First defined finite number wins; otherwise the fallback. */
+/** First defined finite positive number wins; otherwise the fallback. */
 const coalesce = (...vals: number[]): number => {
   for (const v of vals) if (Number.isFinite(v) && v > 0) return v;
   return vals[vals.length - 1] ?? 0;
+};
+
+/**
+ * League-aware home advantage. Knockout cups are often played at neutral or
+ * single venues and international ties have travel/altitude effects that wash
+ * out classic home edge, so we shave it down.
+ */
+const homeAdvantageForLeague = (leagueId: number): number => {
+  const league = getLeagueById(leagueId);
+  if (!league) return HOME_ADVANTAGE_GOALS;
+  if (league.isInternational) return HOME_ADVANTAGE_GOALS * 0.5;
+  if (league.isCup) return HOME_ADVANTAGE_GOALS * 0.7;
+  return HOME_ADVANTAGE_GOALS;
 };
 
 const confidenceTier = (
   topProb: number,
   secondProb: number,
   matchesAnalyzed: number,
+  hasProSignal: boolean,
 ): ConfidenceTier => {
   const margin = topProb - secondProb;
-  if (topProb >= 65 && margin >= 25 && matchesAnalyzed >= 5) return 'ELITE';
-  if (topProb >= 55 && margin >= 15) return 'HIGH';
-  if (topProb >= 45) return 'MEDIUM';
+  // Require both a high peak AND a clear margin, scaled by how much data we trust.
+  const dataOk = matchesAnalyzed >= 4 || hasProSignal;
+  if (topProb >= 62 && margin >= 22 && dataOk) return 'ELITE';
+  if (topProb >= 52 && margin >= 12 && dataOk) return 'HIGH';
+  if (topProb >= 42) return 'MEDIUM';
   return 'LOW';
 };
 
@@ -157,6 +194,7 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const { fixture, homeHistory, awayHistory, homeStats, awayStats, h2h, sportmonksPred } = inputs;
   const homeId = fixture.teams.home.id;
   const awayId = fixture.teams.away.id;
+  const homeAdvantage = homeAdvantageForLeague(fixture.league.id);
 
   // 1. ELO from histories
   const combinedHistory = [...homeHistory, ...awayHistory].filter(
@@ -166,37 +204,43 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const awayElo = computeEloFromHistory(awayId, combinedHistory);
   const eloProb = eloWinProbability(homeElo, awayElo);
 
-  // 2. Form
+  // 2. Form (recency-weighted)
   const homeForm = buildFormSnapshot(homeId, homeHistory);
   const awayForm = buildFormSnapshot(awayId, awayHistory);
 
-  // 3. xG / goal averages — cascade: API stats -> recent form -> league baseline
-  const homeAvgFor = coalesce(
+  // 3. Goal rates — cascade: API season stats -> recent form -> league baseline,
+  //    then shrink toward the league mean based on sample size (empirical Bayes).
+  const homeAttackRaw = coalesce(
     parseAvg(homeStats?.goals?.for?.average?.home),
     parseAvg(homeStats?.goals?.for?.average?.total),
     homeForm.avgGoalsFor,
     LEAGUE_AVG_HOME_GOALS,
   );
-  const homeAvgAgainst = coalesce(
+  const homeConcedeRaw = coalesce(
     parseAvg(homeStats?.goals?.against?.average?.home),
     parseAvg(homeStats?.goals?.against?.average?.total),
     homeForm.avgGoalsAgainst,
     LEAGUE_AVG_AWAY_GOALS,
   );
-  const awayAvgFor = coalesce(
+  const awayAttackRaw = coalesce(
     parseAvg(awayStats?.goals?.for?.average?.away),
     parseAvg(awayStats?.goals?.for?.average?.total),
     awayForm.avgGoalsFor,
     LEAGUE_AVG_AWAY_GOALS,
   );
-  const awayAvgAgainst = coalesce(
+  const awayConcedeRaw = coalesce(
     parseAvg(awayStats?.goals?.against?.average?.away),
     parseAvg(awayStats?.goals?.against?.average?.total),
     awayForm.avgGoalsAgainst,
     LEAGUE_AVG_HOME_GOALS,
   );
 
-  // 4. Attacking and Defensive ratings (Dixon-Coles multiplicative style)
+  const homeAvgFor = shrink(homeAttackRaw, homeForm.matchesAnalyzed, LEAGUE_AVG_HOME_GOALS);
+  const homeAvgAgainst = shrink(homeConcedeRaw, homeForm.matchesAnalyzed, LEAGUE_AVG_AWAY_GOALS);
+  const awayAvgFor = shrink(awayAttackRaw, awayForm.matchesAnalyzed, LEAGUE_AVG_AWAY_GOALS);
+  const awayAvgAgainst = shrink(awayConcedeRaw, awayForm.matchesAnalyzed, LEAGUE_AVG_HOME_GOALS);
+
+  // 4. Attack/Defense strengths (Dixon-Coles multiplicative style)
   const homeAttack = homeAvgFor / LEAGUE_AVG_HOME_GOALS;
   const awayDefense = awayAvgAgainst / LEAGUE_AVG_HOME_GOALS;
   const awayAttack = awayAvgFor / LEAGUE_AVG_AWAY_GOALS;
@@ -212,76 +256,78 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   baseLambdaHome *= homeEloMult;
   baseLambdaAway *= awayEloMult;
 
-  // Per-fixture deterministic variance Seeded by fixture ID.
+  // Per-fixture deterministic micro-variance (tiny — keeps ties from being identical).
   const rng = seededRandom(fixture.fixture.id || (homeId * 1000 + awayId));
-  const noiseHome = (rng() - 0.5) * 0.05; // extremely low noise (±0.025 goals) for stability
-  const noiseAway = (rng() - 0.5) * 0.05;
+  const noiseHome = (rng() - 0.5) * 0.04;
+  const noiseAway = (rng() - 0.5) * 0.04;
 
-  const formBoostHome = (homeForm.weightedFormScore - 0.5) * 0.4;
-  const formBoostAway = (awayForm.weightedFormScore - 0.5) * 0.4;
+  // Form nudge (small, multiplicative-ish through addition on goals).
+  const formBoostHome = (homeForm.weightedFormScore - 0.5) * 0.35;
+  const formBoostAway = (awayForm.weightedFormScore - 0.5) * 0.35;
 
   const lambdaHome = Math.max(
     MIN_LAMBDA,
-    Math.min(
-      MAX_LAMBDA,
-      baseLambdaHome + HOME_ADVANTAGE_GOALS + formBoostHome + noiseHome,
-    ),
+    Math.min(MAX_LAMBDA, baseLambdaHome + homeAdvantage + formBoostHome + noiseHome),
   );
   const lambdaAway = Math.max(
     MIN_LAMBDA,
-    Math.min(
-      MAX_LAMBDA,
-      baseLambdaAway + formBoostAway + noiseAway,
-    ),
+    Math.min(MAX_LAMBDA, baseLambdaAway + formBoostAway + noiseAway),
   );
 
-  // 6. Poisson probabilities (with advanced Dixon-Coles adjustments)
+  // 6. Poisson probabilities (with Dixon-Coles low-score correction)
   const poissonProbs = computeMatchProbabilities(lambdaHome, lambdaAway);
 
-  // 7. H2H bias (subtle nudge based on last meetings)
+  // 7. H2H bias (subtle nudge based on last meetings, decayed by recency)
   let h2hHomeAdj = 0;
   let h2hAwayAdj = 0;
   if (h2h && h2h.length > 0) {
-    h2h.forEach((m) => {
+    const sortedH2h = [...h2h].sort((a, b) => b.fixture.timestamp - a.fixture.timestamp);
+    sortedH2h.forEach((m, idx) => {
+      const recencyW = 1 / (1 + idx); // 1, 0.5, 0.33...
       const isHomeNow = m.teams.home.id === homeId;
       const hg = m.goals.home ?? 0;
       const ag = m.goals.away ?? 0;
+      const delta = 0.025 * recencyW;
       if (hg > ag) {
-        if (isHomeNow) h2hHomeAdj += 0.03;
-        else h2hAwayAdj += 0.03;
+        if (isHomeNow) h2hHomeAdj += delta;
+        else h2hAwayAdj += delta;
       } else if (hg < ag) {
-        if (isHomeNow) h2hAwayAdj += 0.03;
-        else h2hHomeAdj += 0.03;
+        if (isHomeNow) h2hAwayAdj += delta;
+        else h2hHomeAdj += delta;
       }
     });
   }
 
-  // 8. Dynamic weights based on match history sample size (avoiding overfitting or noise)
-  const homeMatches = homeForm.matchesAnalyzed;
-  const awayMatches = awayForm.matchesAnalyzed;
-  const minMatches = Math.min(homeMatches, awayMatches);
+  // 8. Dynamic weights based on match-history sample size.
+  const minMatches = Math.min(homeForm.matchesAnalyzed, awayForm.matchesAnalyzed);
 
   let poissonWeight = 0.50;
   let eloWeight = 0.35;
   let formWeight = 0.15;
 
   if (minMatches >= 5) {
-    poissonWeight = 0.65;
-    eloWeight = 0.20;
+    poissonWeight = 0.62;
+    eloWeight = 0.23;
+    formWeight = 0.15;
+  } else if (minMatches >= 3) {
+    poissonWeight = 0.52;
+    eloWeight = 0.33;
     formWeight = 0.15;
   } else if (minMatches === 0) {
-    poissonWeight = 0.20;
-    eloWeight = 0.80;
+    // No history at all: lean almost entirely on the ELO prior (which itself
+    // falls back to a neutral 1500, giving a sane ~home-advantage-only split).
+    poissonWeight = 0.25;
+    eloWeight = 0.75;
     formWeight = 0.00;
   }
 
-  // Inject learned biases dynamically from the useLearningStore (Self-Learning feedback loop)
+  // Inject learned biases from the self-learning feedback loop.
   const { poissonBias, eloBias, formBias } = useLearningStore.getState();
   poissonWeight = Math.max(0.05, poissonWeight + poissonBias);
   eloWeight = Math.max(0.05, eloWeight + eloBias);
   formWeight = Math.max(0.00, formWeight + formBias);
 
-  // Re-normalize weights to sum to 1.0 to preserve probability distribution integrity
+  // Re-normalize weights to sum to 1.0.
   const weightTotal = poissonWeight + eloWeight + formWeight;
   if (weightTotal > 0) {
     poissonWeight /= weightTotal;
@@ -289,25 +335,41 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     formWeight /= weightTotal;
   }
 
-  // 9. Fuse Poisson + ELO + H2H + Form into final probabilities (mathematically balanced)
-  let homeRaw = (poissonProbs.homeWin * poissonWeight) + (eloProb.home * eloWeight) + (homeForm.weightedFormScore * formWeight) + h2hHomeAdj;
-  let awayRaw = (poissonProbs.awayWin * poissonWeight) + (eloProb.away * eloWeight) + (awayForm.weightedFormScore * formWeight) + h2hAwayAdj;
-  let drawRaw = (poissonProbs.draw * poissonWeight) + (eloProb.draw * eloWeight) + (0.5 * formWeight);
+  // 9. Fuse Poisson + ELO + Form + H2H into final 1X2 probabilities.
+  //    Form contributes to W/L (not draw) via its directional tilt.
+  const formHomeTilt = homeForm.weightedFormScore;
+  const formAwayTilt = awayForm.weightedFormScore;
+  const formSum = formHomeTilt + formAwayTilt || 1;
 
-  const total = homeRaw + awayRaw + drawRaw;
+  let homeRaw =
+    poissonProbs.homeWin * poissonWeight +
+    eloProb.home * eloWeight +
+    (formHomeTilt / formSum) * formWeight +
+    h2hHomeAdj;
+  let awayRaw =
+    poissonProbs.awayWin * poissonWeight +
+    eloProb.away * eloWeight +
+    (formAwayTilt / formSum) * formWeight +
+    h2hAwayAdj;
+  let drawRaw =
+    poissonProbs.draw * poissonWeight +
+    eloProb.draw * eloWeight +
+    0.26 * formWeight;
+
+  let total = homeRaw + awayRaw + drawRaw;
   homeRaw /= total;
   awayRaw /= total;
   drawRaw /= total;
 
-  // Blend Sportmonks Pro predictions (75% weight) with local BORO AI model (25% weight)
+  // Blend Sportmonks Pro predictions when available (weighted toward the pro model).
   if (sportmonksPred) {
     const smHome = sportmonksPred.homeWinPct / 100;
     const smAway = sportmonksPred.awayWinPct / 100;
     const smDraw = sportmonksPred.drawPct / 100;
 
-    homeRaw = homeRaw * 0.20 + smHome * 0.80;
-    awayRaw = awayRaw * 0.20 + smAway * 0.80;
-    drawRaw = drawRaw * 0.20 + smDraw * 0.80;
+    homeRaw = homeRaw * 0.30 + smHome * 0.70;
+    awayRaw = awayRaw * 0.30 + smAway * 0.70;
+    drawRaw = drawRaw * 0.30 + smDraw * 0.70;
 
     const hybridTotal = homeRaw + awayRaw + drawRaw;
     homeRaw /= hybridTotal;
@@ -324,12 +386,12 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   let under25Pct = clampPercent(poissonProbs.under25 * 100);
 
   if (sportmonksPred) {
-    bttsPct = clampPercent(bttsPct * 0.25 + sportmonksPred.bttsPct * 0.75);
-    over25Pct = clampPercent(over25Pct * 0.25 + sportmonksPred.over25Pct * 0.75);
-    under25Pct = clampPercent(under25Pct * 0.25 + sportmonksPred.under25Pct * 0.75);
+    bttsPct = clampPercent(bttsPct * 0.30 + sportmonksPred.bttsPct * 0.70);
+    over25Pct = clampPercent(over25Pct * 0.30 + sportmonksPred.over25Pct * 0.70);
+    under25Pct = clampPercent(under25Pct * 0.30 + sportmonksPred.under25Pct * 0.70);
   }
 
-  // 10. Unified correct scores list generation and blending
+  // 10. Correct scores list generation and blending
   const blendedScoresMap: Record<string, number> = {};
   poissonProbs.scores.forEach((s) => {
     const key = `${s.home}-${s.away}`;
@@ -345,7 +407,7 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     Object.keys(blendedScoresMap).forEach((key) => {
       const smVal = smMap[key] ?? 0;
       const localVal = blendedScoresMap[key];
-      blendedScoresMap[key] = localVal * 0.25 + smVal * 0.75;
+      blendedScoresMap[key] = localVal * 0.30 + smVal * 0.70;
     });
 
     const totalBlended = Object.values(blendedScoresMap).reduce((sum, v) => sum + v, 0);
@@ -385,11 +447,8 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     matchProbsSorted[0],
     matchProbsSorted[1],
     Math.min(homeForm.matchesAnalyzed, awayForm.matchesAnalyzed),
+    Boolean(sportmonksPred),
   );
-  
-  if (sportmonksPred && confidence === 'MEDIUM') {
-    confidence = 'HIGH';
-  }
 
   // 13. Reasoning bullets
   const reasoning: string[] = [];
@@ -422,10 +481,12 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     if (homeWins >= 3)
       reasoning.push(`${fixture.teams.home.name} won ${homeWins} of last ${h2h.length} H2H.`);
   }
+  if (minMatches < 3 && !sportmonksPred)
+    reasoning.push('Limited recent data — estimate leans on ELO prior and league averages.');
   if (reasoning.length === 0)
     reasoning.push('Model output based on team form + season-long goal averages.');
 
-  // 14. Determine predicted score aligned logically with top pick
+  // 14. Determine predicted score aligned with top pick
   const predictedScore = getConsistentPredictedScore(
     topPick.market,
     topPick.selection,
@@ -452,11 +513,11 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
       awayForm: awayForm.weightedFormScore,
       homeXg: Number(lambdaHome.toFixed(2)),
       awayXg: Number(lambdaAway.toFixed(2)),
-      homeAdvantage: HOME_ADVANTAGE_GOALS,
+      homeAdvantage,
     },
     computedAt: Date.now(),
-    
-    // Add Sportmonks Pro predictions fields
+
+    // Sportmonks Pro extended markets
     correctScores: correctScoresList.slice(0, 10),
     doubleChance: sportmonksPred?.doubleChance,
     halfTimeResult: sportmonksPred?.halfTimeResult,
