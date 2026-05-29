@@ -11,9 +11,12 @@
  * mapped 1:1 from SportMonks), we fetch by ID directly — far more accurate than
  * the legacy fuzzy date/name matching.
  */
-import { smGet, TTL } from './smClient';
+import { smGet, smGetAll, TTL } from './smClient';
 import { PRED, MARKET } from './smTypes';
 import { devigShin, devigProportional, valueEdge } from '@/services/ai/marketMath';
+import { LEAGUE_TO_SPORTMONKS } from '@/constants/leagues';
+import type { Fixture } from '@/types/match';
+import { mapSportmonksFixture } from './sportmonks';
 
 export interface OneXTwo {
   home: number;
@@ -270,7 +273,7 @@ export const fetchMatchInsights = async (
 ): Promise<MatchInsights> => {
   try {
     const include = 'predictions.type;odds';
-    const data = await smGet<any>(`/fixtures/${fixtureId}`, {
+    const data = await smGet(`/fixtures/${fixtureId}`, {
       params: { include },
       ttl: TTL.predictions,
     });
@@ -325,8 +328,6 @@ export const computeValueBets = (
 };
 
 
-import { LEAGUE_TO_SPORTMONKS } from '@/constants/leagues';
-
 export interface DiscoveryValuePick {
   fixtureId: number;
   homeName: string;
@@ -357,7 +358,6 @@ export const fetchValuePicksForDate = async (
     .filter((id): id is number => typeof id === 'number');
   if (smLeagueIds.length === 0) return [];
 
-  const { smGetAll, TTL: TTLref } = await import('./smClient');
   // Scan a forward window so value bets appear even when today is empty.
   const cleanDate = date.split('T')[0];
   const start = new Date(cleanDate + 'T00:00:00Z');
@@ -365,15 +365,14 @@ export const fetchValuePicksForDate = async (
   end.setUTCDate(end.getUTCDate() + 3);
   const toIso = end.toISOString().split('T')[0];
 
-  const rows = await smGetAll<any>(`/fixtures/between/${cleanDate}/${toIso}`, {
+  const rows = await smGetAll(`/fixtures/between/${cleanDate}/${toIso}`, {
     params: {
       include: 'participants;league;predictions.type;odds',
       filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
     },
-    ttl: TTLref.odds,
+    ttl: TTL.odds,
     maxPages: 8,
   });
-
   const picks: DiscoveryValuePick[] = [];
   for (const f of rows) {
     const participants = f.participants || [];
@@ -429,9 +428,6 @@ export const fetchValuePicksForDate = async (
 };
 
 
-import type { Fixture } from '@/types/match';
-import { mapSportmonksFixture } from './sportmonks';
-
 export interface RawFixtureInsights {
   fixture: Fixture;
   insights: MatchInsights;
@@ -457,15 +453,13 @@ export const fetchTodayInsights = async (
     .filter((id): id is number => typeof id === 'number');
   if (smLeagueIds.length === 0) return [];
 
-  const { smGetAll, TTL: TTLref } = await import('./smClient');
-
   const fetchForRange = async (from: string, to: string) =>
-    smGetAll<any>(`/fixtures/between/${from}/${to}`, {
+    smGetAll(`/fixtures/between/${from}/${to}`, {
       params: {
         include: 'participants;league;state;scores;predictions.type;odds',
         filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
       },
-      ttl: TTLref.fixturesToday,
+      ttl: TTL.fixturesToday,
       maxPages: 8,
     });
 

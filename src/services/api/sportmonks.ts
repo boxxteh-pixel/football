@@ -804,7 +804,7 @@ export const fetchSportmonksTeamLastFixtures = async (
     // The `teamFixtures` filter on /fixtures returns 400 on this API version.
     // The reliable way to get a team's recent matches is the team entity's
     // `latest` include, which returns finished fixtures with full scores.
-    const data = await smGet<any>(`/teams/${teamId}`, {
+    const data = await smGet(`/teams/${teamId}`, {
       params: { include: 'latest.participants;latest.scores;latest.state' },
       ttl: TTL.teamForm,
     });
@@ -831,7 +831,7 @@ export const fetchSportmonksHeadToHead = async (
   try {
     console.log(`[Sportmonks Adapter] Fetching head-to-head between ${team1} and ${team2}...`);
     // Dedicated H2H endpoint — returns past meetings with scores.
-    const data = await smGet<any>(`/fixtures/head-to-head/${team1}/${team2}`, {
+    const data = await smGet(`/fixtures/head-to-head/${team1}/${team2}`, {
       params: { include: 'participants;scores;state' },
       ttl: TTL.teamForm,
     });

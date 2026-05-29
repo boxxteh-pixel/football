@@ -121,24 +121,24 @@ const rawGet = async (
 /**
  * Cached, de-duplicated GET. Returns `response.data` (the array/object payload).
  */
-export const smGet = async <T = any>(
+export const smGet = async (
   path: string,
   options: { params?: Record<string, any>; ttl?: number } = {},
-): Promise<T> => {
+): Promise<any> => {
   const { params, ttl = TTL.fixtureDetail } = options;
   const key = buildKey(path, params);
 
   const cached = cache.get(key);
   if (cached && cached.expires > Date.now()) {
-    return cached.data as T;
+    return cached.data;
   }
 
   const existing = inflight.get(key);
-  if (existing) return existing as Promise<T>;
+  if (existing) return existing;
 
   const promise = rawGet(path, params)
     .then((body) => {
-      const data = (body?.data ?? null) as T;
+      const data = body?.data ?? null;
       cache.set(key, { expires: Date.now() + ttl, data });
       inflight.delete(key);
       return data;
@@ -156,19 +156,19 @@ export const smGet = async <T = any>(
  * Paginated GET — follows `pagination.has_more` and concatenates `data`.
  * Caps pages to avoid runaway loops. Caches the assembled result.
  */
-export const smGetAll = async <T = any>(
+export const smGetAll = async (
   path: string,
   options: { params?: Record<string, any>; ttl?: number; maxPages?: number } = {},
-): Promise<T[]> => {
+): Promise<any[]> => {
   const { params = {}, ttl = TTL.fixtureDetail, maxPages = 10 } = options;
   const cacheKey = buildKey(`${path}::all`, params);
 
   const cached = cache.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
-    return cached.data as T[];
+    return cached.data as any[];
   }
 
-  const collected: T[] = [];
+  const collected: any[] = [];
   let page = 1;
   let hasMore = true;
   while (hasMore && page <= maxPages) {
