@@ -18,8 +18,10 @@ export const config = {
   },
   app: {
     defaultSeason: Number(process.env.EXPO_PUBLIC_DEFAULT_SEASON || '2024'),
-    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '1200000'),
-    fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '3600000'),
+    // Live data polls every 60s (Pro plan has ample rate-limit headroom);
+    // scheduled fixtures refresh every 30 min.
+    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '60000'),
+    fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '1800000'),
   },
   supabase: {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://bhzdkjiisgntqpdgrjpq.supabase.co',

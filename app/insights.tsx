@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
+import { useValuePicks } from '@/hooks/useValuePicks';
 import { quickPredict } from '@/services/ai/predictor';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
@@ -23,6 +24,7 @@ export default function InsightsScreen() {
   const haptics = useHaptics();
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const { data, isLoading } = useTodayFixtures();
+  const { data: valuePicks = [], isLoading: valueLoading } = useValuePicks(0.05, 5);
   const t = useT();
 
   const enriched = useMemo(() => {
@@ -38,12 +40,6 @@ export default function InsightsScreen() {
     topPicks.length > 0
       ? topPicks.reduce((acc, p) => acc + p.prediction.topPick.probability, 0) / topPicks.length
       : 0;
-
-  const valueAlerts = useMemo(() => {
-    return enriched
-      .filter((p) => p.prediction.topPick.probability >= 38 && p.prediction.topPick.probability <= 55)
-      .slice(0, 3);
-  }, [enriched]);
 
   const localizedTrends = useMemo(() => [
     { icon: 'sports-soccer', league: 'Premier League', country: 'ENGLAND', body: t('insights.trendEpl') },
@@ -158,31 +154,55 @@ export default function InsightsScreen() {
         </GlassCard>
 
         <GlassCard padding={20} style={{ gap: 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <BoroIcon name="warning" size={22} color={colors.error} />
-            <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}>
-              {t('insights.highRiskTitle')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+              <BoroIcon name="paid" size={22} color={colors.primaryFixed} />
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18 }}>
+                {t('match.valueBets')}
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                backgroundColor: `${colors.primaryFixed}1A`,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: `${colors.primaryFixed}33`,
+              }}
+            >
+              <BoroIcon name="check-circle" size={11} color={colors.primaryFixed} />
+              <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5 }}>
+                {t('match.realData')}
+              </Text>
+            </View>
           </View>
           <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
-            {t('insights.highRiskSubtitle')}
+            {t('match.valueBetsSub')}
           </Text>
-          {isLoading ? (
+          {valueLoading ? (
             <Skeleton height={96} radius={10} />
-          ) : valueAlerts.length === 0 ? (
+          ) : valuePicks.length === 0 ? (
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
-              {t('insights.noValue')}
+              {t('match.noValue')}
             </Text>
           ) : (
-            valueAlerts.map(({ fixture, prediction }) => (
-              <ValueAlertRow
-                key={fixture.fixture.id}
-                tag={prediction.confidence === 'MEDIUM' ? t('insights.valueAlert') : t('insights.anomaly')}
-                title={prediction.topPick.selection}
-                sub={`${fixture.teams.home.name} vs ${fixture.teams.away.name}`}
-                odds={prediction.topPick.odds}
-                implied={prediction.topPick.probability}
-                onPress={() => router.push(`/match/${fixture.fixture.id}`)}
+            valuePicks.map((v) => (
+              <ValueBetRow
+                key={`${v.fixtureId}-${v.market}-${v.selection}`}
+                market={v.market}
+                title={v.selection}
+                sub={`${v.homeName} vs ${v.awayName}`}
+                odds={v.bestOdds}
+                edge={v.edge}
+                prob={v.modelProb}
+                onPress={() => {
+                  haptics.light();
+                  router.push(`/match/${v.fixtureId}`);
+                }}
                 t={t}
               />
             ))
@@ -306,58 +326,65 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
   );
 };
 
-interface ValueAlertRowProps {
-  tag: string;
+interface ValueBetRowProps {
+  market: string;
   title: string;
   sub: string;
   odds: number;
-  implied: number;
+  edge: number;
+  prob: number;
   onPress: () => void;
   t: (key: string) => string;
 }
 
-const ValueAlertRow: React.FC<ValueAlertRowProps> = ({ tag, title, sub, odds, implied, onPress, t }) => {
+const ValueBetRow: React.FC<ValueBetRowProps> = ({ market, title, sub, odds, edge, prob, onPress, t }) => {
   const colors = useColors();
   return (
-    <View
-      style={{
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 10,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.08)',
         padding: 14,
         gap: 10,
-      }}
+        transform: [{ scale: pressed ? 0.99 : 1 }],
+      })}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Text style={{ color: colors.error, fontFamily: fonts.label, fontSize: 10, letterSpacing: 0.5 }}>
-          {tag.toUpperCase()}
+        <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 10, letterSpacing: 0.5 }}>
+          {market.toUpperCase()}
         </Text>
-        <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 18 }}>{odds.toFixed(2)}</Text>
+        <View
+          style={{
+            backgroundColor: `${colors.primaryFixed}1F`,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderWidth: 1,
+            borderColor: `${colors.primaryFixed}40`,
+          }}
+        >
+          <Text style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 13 }}>
+            +{Math.round(edge * 100)}% {t('match.edgeCol').toLowerCase()}
+          </Text>
+        </View>
       </View>
       <View>
         <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }} numberOfLines={1}>
-          {formatPredictionSelection(title, t)}
+          {title}
         </Text>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }} numberOfLines={1}>
           {sub}
         </Text>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <View style={{ flex: 1, height: 5, borderRadius: 9999, backgroundColor: 'rgba(255,255,255,0.06)' }}>
-          <View
-            style={{
-              width: `${Math.min(100, implied)}%`,
-              height: '100%',
-              backgroundColor: colors.error,
-              borderRadius: 9999,
-            }}
-          />
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11 }}>
-          {Math.round(implied)}% {t('insights.implied')}
+          {Math.round(prob)}% {t('insights.probabilityShort')}
         </Text>
+        <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 18 }}>{odds.toFixed(2)}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 };

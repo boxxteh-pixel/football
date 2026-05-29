@@ -7,7 +7,7 @@ import {
   fetchTeamLastFixtures,
   fetchTeamStatistics,
 } from '@/services/api/apiFootball';
-import { fetchSportmonksPredictions } from '@/services/api/sportmonks';
+import { fetchMatchInsights } from '@/services/api/smInsights';
 import { useLearningStore } from '@/store/learningStore';
 
 /**
@@ -19,8 +19,9 @@ export const useQuickPrediction = (fixture: Fixture) => {
 };
 
 /**
- * Full prediction with histories + H2H + team season stats.
- * Used on Match Detail screen.
+ * Full ensemble prediction: team histories + H2H + season stats +
+ * real SportMonks insights (provider predictions, devigged bookmaker odds, xG).
+ * Used on the Match Detail screen.
  */
 export const useFullPrediction = (fixture: Fixture | null | undefined) => {
   const homeId = fixture?.teams.home.id;
@@ -32,24 +33,20 @@ export const useFullPrediction = (fixture: Fixture | null | undefined) => {
   return useQuery({
     queryKey: ['prediction', fixture?.fixture.id],
     enabled,
-    staleTime: Infinity,
+    staleTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
     queryFn: async () => {
-      const [homeHistory, awayHistory, homeStats, awayStats, h2h, sportmonksPred] = await Promise.all([
+      const [homeHistory, awayHistory, homeStats, awayStats, h2h, insights] = await Promise.all([
         fetchTeamLastFixtures(homeId!, 10).catch(() => []),
         fetchTeamLastFixtures(awayId!, 10).catch(() => []),
         fetchTeamStatistics(homeId!, leagueId!, season).catch(() => null),
         fetchTeamStatistics(awayId!, leagueId!, season).catch(() => null),
         fetchHeadToHead(homeId!, awayId!, 5).catch(() => []),
-        fetchSportmonksPredictions(
-          fixture!.fixture.date,
-          fixture!.teams.home.name,
-          fixture!.teams.away.name,
-          fixture!.league.id
-        ).catch(() => null),
+        fetchMatchInsights(fixture!.fixture.id, homeId!, awayId!).catch(() => null),
       ]);
+
       const result = predictFixture({
         fixture: fixture!,
         homeHistory,
@@ -57,13 +54,13 @@ export const useFullPrediction = (fixture: Fixture | null | undefined) => {
         homeStats,
         awayStats,
         h2h,
-        sportmonksPred,
+        insights,
       });
 
-      // Self-learning feedback loop: record outcome of completed matches to refine biases
+      // Self-learning feedback loop: record outcomes of completed matches.
       const statusShort = fixture!.fixture.status.short;
-      const isMatchFinished = ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(statusShort);
-      if (isMatchFinished && fixture!.goals.home !== null && fixture!.goals.away !== null) {
+      const finished = ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(statusShort);
+      if (finished && fixture!.goals.home !== null && fixture!.goals.away !== null) {
         useLearningStore.getState().recordOutcome(fixture!, result).catch(() => {});
       }
 

@@ -10,6 +10,7 @@ import { AIInsightCard } from '@/components/match/AIInsightCard';
 import { StatComparison } from '@/components/match/StatComparison';
 import { QuickBetSlip } from '@/components/match/QuickBetSlip';
 import { MatchTimeline } from '@/components/match/MatchTimeline';
+import { MarketIntelCard } from '@/components/match/MarketIntelCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { useColors} from '@/theme/colors';
@@ -311,6 +312,14 @@ export default function MatchDetailScreen() {
             </View>
           )}
         </View>
+
+        {prediction && (
+          <MarketIntelCard
+            prediction={prediction}
+            homeName={fixture.teams.home.name}
+            awayName={fixture.teams.away.name}
+          />
+        )}
 
         <View style={{ gap: 12 }}>
           <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18, letterSpacing: -0.3 }}>

@@ -54,6 +54,14 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'change-history': Lucide.AlertCircle,
   'favorite': Lucide.Heart,
   'favorite-border': Lucide.Heart,
+  'radio-button-unchecked': Lucide.Circle,
+  'radio-button-checked': Lucide.CircleDot,
+  'paid': Lucide.CircleDollarSign,
+  'trending-down': Lucide.TrendingDown,
+  'shield': Lucide.Shield,
+  'bar-chart': Lucide.BarChart3,
+  'whatshot': Lucide.Flame,
+  'medical-services': Lucide.Stethoscope,
 };
 
 interface BoroIconProps {

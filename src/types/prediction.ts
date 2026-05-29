@@ -1,5 +1,14 @@
 export type ConfidenceTier = 'ELITE' | 'HIGH' | 'MEDIUM' | 'LOW';
 
+export interface ValueBetInfo {
+  market: string;
+  selection: string;
+  modelProb: number;
+  fairOdds: number;
+  bestOdds: number;
+  edge: number; // ROI as a fraction
+}
+
 export interface PredictionResult {
   fixtureId: number;
   homeWinPct: number; // 0-100
@@ -36,6 +45,25 @@ export interface PredictionResult {
   cornersOverUnder?: Array<{ label: string; probability: number }>;
   overUnderGoals?: Array<{ label: string; probability: number }>;
   source?: 'BORO_AI' | 'SPORTMONKS_PRO' | 'HYBRID';
+
+  // ── Real-data extensions ──
+  /** Per-line over/under probabilities, keyed by line ("1.5","2.5","3.5"...). */
+  overUnderLines?: Record<string, { over: number; under: number }>;
+  /** Expected goals per team (real xG when available, else model λ). */
+  expectedGoals?: { home: number; away: number; total: number };
+  /** Devigged fair 1X2 probabilities implied by bookmaker odds. */
+  marketProbabilities?: { home: number; draw: number; away: number };
+  /** Best available decimal odds across bookmakers (line-shopped). */
+  bestOdds?: {
+    home?: number; draw?: number; away?: number;
+    over25?: number; under25?: number; bttsYes?: number; bttsNo?: number;
+  };
+  /** Positive expected-value bets detected vs the market. */
+  valueBets?: ValueBetInfo[];
+  /** Bookmaker market efficiency (overround, lower = sharper). */
+  marketOverround?: number | null;
+  /** How many independent signals backed this prediction (model/pred/odds). */
+  dataSignals?: number;
 }
 
 export interface TeamFormSnapshot {
