@@ -618,7 +618,6 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
  */
 export const quickPredict = (fixture: Fixture): PredictionResult => {
   const seed = (fixture.fixture.id || 1) * 7919 + (fixture.teams.home.id || 1) * 31 + (fixture.teams.away.id || 1);
-  const seed = (fixture.fixture.id || 1) * 7919 + (fixture.teams.home.id || 1) * 31 + (fixture.teams.away.id || 1);
   const rng = seededRandom(seed);
   const homeStrength = 0.75 + rng() * 0.9;
   const awayStrength = 0.7 + rng() * 0.85;
