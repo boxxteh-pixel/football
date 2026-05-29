@@ -508,10 +508,116 @@ const localizeSelection = (v: { market: string; selection: string }, fixture: Fi
 };
 
 /**
+ * Real-data prediction for list rows/cards WITHOUT needing team history.
+ *
+ * Uses the provider's own 1X2/goals probabilities and/or devigged bookmaker
+ * odds that are already attached to the fixture (fetched in one batched call).
+ * Falls back to the neutral quick estimate only when a fixture genuinely has
+ * no market or provider data (e.g. an obscure match not yet priced).
+ */
+export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | null): PredictionResult => {
+  const pred = insights?.predictions;
+  const book = insights?.bookmaker;
+
+  // No real data at all → honest neutral estimate.
+  if (!pred?.fulltimeResult && !book?.fulltimeResult) {
+    return quickPredict(fixture);
+  }
+
+  // Combine provider + market 1X2 (market gets more trust when sharp).
+  const signals: Array<{ h: number; d: number; a: number; w: number }> = [];
+  if (pred?.fulltimeResult) {
+    const [h, d, a] = norm3(pred.fulltimeResult.home, pred.fulltimeResult.draw, pred.fulltimeResult.away);
+    signals.push({ h, d, a, w: 0.45 });
+  }
+  if (book?.fulltimeResult) {
+    const [h, d, a] = norm3(book.fulltimeResult.home, book.fulltimeResult.draw, book.fulltimeResult.away);
+    signals.push({ h, d, a, w: book.overround && book.overround < 1.08 ? 0.6 : 0.5 });
+  }
+  const wSum = signals.reduce((s, x) => s + x.w, 0) || 1;
+  let [hP, dP, aP] = norm3(
+    signals.reduce((s, x) => s + x.h * x.w, 0) / wSum,
+    signals.reduce((s, x) => s + x.d * x.w, 0) / wSum,
+    signals.reduce((s, x) => s + x.a * x.w, 0) / wSum,
+  );
+
+  const homeWinPct = clampPercent(hP * 100);
+  const drawPct = clampPercent(dP * 100);
+  const awayWinPct = clampPercent(aP * 100);
+
+  // Goals markets: provider first, then devigged odds.
+  let over25Pct = pred?.overUnder?.['2.5']?.over ?? (book?.overUnder25 ? book.overUnder25.over * 100 : 50);
+  over25Pct = clampPercent(over25Pct);
+  const under25Pct = clampPercent(100 - over25Pct);
+  let bttsPct = pred?.btts?.yes ?? (book?.btts ? book.btts.yes * 100 : 50);
+  bttsPct = clampPercent(bttsPct);
+
+  const candidates: Array<{ market: PredictionResult['topPick']['market']; selection: string; probability: number }> = [
+    { market: 'WIN', selection: `${fixture.teams.home.name} to Win`, probability: homeWinPct },
+    { market: 'WIN', selection: `${fixture.teams.away.name} to Win`, probability: awayWinPct },
+    { market: 'DRAW', selection: 'Draw', probability: drawPct },
+    { market: 'BTTS', selection: 'Both Teams to Score', probability: bttsPct },
+    { market: 'OVER_2_5', selection: 'Over 2.5 Goals', probability: over25Pct },
+    { market: 'UNDER_2_5', selection: 'Under 2.5 Goals', probability: under25Pct },
+  ];
+  const top = [...candidates].sort((a, b) => b.probability - a.probability)[0];
+  const topPick = { ...top, odds: Number(formatOdds(top.probability)) };
+
+  const sortedProbs = [homeWinPct, drawPct, awayWinPct].sort((a, b) => b - a);
+  const dataSignals = signals.length;
+  let marketAgreement = 0.8;
+  if (pred?.fulltimeResult && book?.fulltimeResult) {
+    const [bh, bd, ba] = norm3(book.fulltimeResult.home, book.fulltimeResult.draw, book.fulltimeResult.away);
+    marketAgreement = Math.max(0, 1 - (Math.abs(bh - hP) + Math.abs(bd - dP) + Math.abs(ba - aP)));
+  }
+  const confidence = confidenceTier(sortedProbs[0], sortedProbs[1], dataSignals, marketAgreement);
+
+  // Correct scores from provider when present.
+  const correctScores = pred?.correctScores?.slice(0, 10);
+  const predictedScore = correctScores && correctScores.length
+    ? getConsistentPredictedScore(topPick.market, topPick.selection, fixture.teams.home.name, correctScores)
+    : { home: homeWinPct >= awayWinPct ? 2 : 1, away: homeWinPct >= awayWinPct ? 1 : 2 };
+
+  return {
+    fixtureId: fixture.fixture.id,
+    homeWinPct,
+    drawPct,
+    awayWinPct,
+    predictedScore,
+    bttsPct,
+    over25Pct,
+    under25Pct,
+    confidence,
+    topPick,
+    reasoning: [book?.fulltimeResult ? 'Based on live bookmaker odds + provider model.' : 'Based on the SportMonks prediction model.'],
+    metrics: {
+      homeElo: BASE_ELO_VALUE,
+      awayElo: BASE_ELO_VALUE,
+      homeForm: 0.5,
+      awayForm: 0.5,
+      homeXg: 0,
+      awayXg: 0,
+      homeAdvantage: HOME_ADVANTAGE_GOALS,
+    },
+    computedAt: Date.now(),
+    correctScores,
+    doubleChance: pred?.doubleChance,
+    marketProbabilities: book?.fulltimeResult
+      ? { home: clampPercent(book.fulltimeResult.home * 100), draw: clampPercent(book.fulltimeResult.draw * 100), away: clampPercent(book.fulltimeResult.away * 100) }
+      : undefined,
+    bestOdds: book?.bestOdds,
+    marketOverround: book?.overround ?? null,
+    source: book || pred ? 'HYBRID' : 'BORO_AI',
+    dataSignals,
+  };
+};
+
+/**
  * Lightweight synchronous prediction for list rows/cards.
  * No network — neutral Poisson with a deterministic per-fixture seed.
  */
 export const quickPredict = (fixture: Fixture): PredictionResult => {
+  const seed = (fixture.fixture.id || 1) * 7919 + (fixture.teams.home.id || 1) * 31 + (fixture.teams.away.id || 1);
   const seed = (fixture.fixture.id || 1) * 7919 + (fixture.teams.home.id || 1) * 31 + (fixture.teams.away.id || 1);
   const rng = seededRandom(seed);
   const homeStrength = 0.75 + rng() * 0.9;

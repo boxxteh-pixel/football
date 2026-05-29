@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { config } from '@/constants/config';
 import { LEAGUE_TO_SPORTMONKS, SPORTMONKS_TO_LEAGUE } from '@/constants/leagues';
+import { smGet, TTL } from './smClient';
 
 // Maps internal (API-Football style) league IDs to Sportmonks league IDs.
 // Single source of truth lives in '@/constants/leagues'.
@@ -670,6 +671,42 @@ export const fetchSportmonksFixturesByDateMulti = async (
   }
 };
 
+/**
+ * Fetch fixtures across a DATE RANGE for many leagues in one paginated call.
+ * Used to look ahead to the next match day when "today" is empty.
+ */
+export const fetchSportmonksFixturesBetween = async (
+  fromDate: string,
+  toDate: string,
+  apiFootballLeagueIds: number[],
+): Promise<Fixture[]> => {
+  try {
+    const from = fromDate.split('T')[0];
+    const to = toDate.split('T')[0];
+    const smLeagueIds = apiFootballLeagueIds
+      .map((id) => LEAGUE_MAP[id])
+      .filter((id): id is number => typeof id === 'number');
+    if (smLeagueIds.length === 0) return [];
+
+    const collected: any[] = [];
+    let page = 1;
+    let hasMore = true;
+    const MAX_PAGES = 10;
+    while (hasMore && page <= MAX_PAGES) {
+      const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${smLeagueIds.join(',')}&per_page=50&page=${page}`;
+      const response = await sportmonksClient.get(url);
+      const data = response.data?.data;
+      if (Array.isArray(data) && data.length > 0) collected.push(...data);
+      hasMore = Boolean(response.data?.pagination?.has_more);
+      page++;
+    }
+    return collected.map(mapSportmonksFixture);
+  } catch (err: any) {
+    console.error('[Sportmonks Adapter] Error in fetchSportmonksFixturesBetween:', err.message);
+    return [];
+  }
+};
+
 export const fetchSportmonksLiveFixtures = async (
   apiFootballLeagueIds?: number[]
 ): Promise<Fixture[]> => {
@@ -764,12 +801,20 @@ export const fetchSportmonksTeamLastFixtures = async (
 ): Promise<Fixture[]> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching last ${last} fixtures for team: ${teamId}...`);
-    const response = await sportmonksClient.get(`/fixtures?filters=teamFixtures:${teamId}&include=participants;league;venue;state;scores`);
-    const data = response.data?.data;
-    if (!Array.isArray(data)) return [];
+    // The `teamFixtures` filter on /fixtures returns 400 on this API version.
+    // The reliable way to get a team's recent matches is the team entity's
+    // `latest` include, which returns finished fixtures with full scores.
+    const data = await smGet<any>(`/teams/${teamId}`, {
+      params: { include: 'latest.participants;latest.scores;latest.state' },
+      ttl: TTL.teamForm,
+    });
+    const latest = data?.latest;
+    if (!Array.isArray(latest)) return [];
 
-    return data
+    return latest
       .map(mapSportmonksFixture)
+      // keep only finished matches (real, scored results) for form/ELO
+      .filter((f) => f.fixture.status.short === 'FT' || f.fixture.status.short === 'AET' || f.fixture.status.short === 'PEN')
       .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
       .slice(0, last);
   } catch (err: any) {
@@ -785,17 +830,24 @@ export const fetchSportmonksHeadToHead = async (
 ): Promise<H2HRecord[]> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching head-to-head between ${team1} and ${team2}...`);
-    const fixtures = await fetchSportmonksTeamLastFixtures(team1, 20);
-    const h2h = fixtures
-      .filter(f => f.teams.home.id === team2 || f.teams.away.id === team2)
+    // Dedicated H2H endpoint — returns past meetings with scores.
+    const data = await smGet<any>(`/fixtures/head-to-head/${team1}/${team2}`, {
+      params: { include: 'participants;scores;state' },
+      ttl: TTL.teamForm,
+    });
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .map(mapSportmonksFixture)
+      .filter((f) => f.fixture.status.short === 'FT' || f.fixture.status.short === 'AET' || f.fixture.status.short === 'PEN')
+      .sort((a, b) => b.fixture.timestamp - a.fixture.timestamp)
       .slice(0, last)
-      .map(f => ({
+      .map((f) => ({
         fixture: f.fixture,
         league: f.league,
         teams: f.teams,
         goals: f.goals,
       }));
-    return h2h;
   } catch (err: any) {
     console.error('[Sportmonks Adapter] Error in fetchSportmonksHeadToHead:', err.message);
     return [];

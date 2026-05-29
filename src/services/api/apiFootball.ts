@@ -18,6 +18,7 @@ import {
 import {
   fetchSportmonksFixturesByDate,
   fetchSportmonksFixturesByDateMulti,
+  fetchSportmonksFixturesBetween,
   fetchSportmonksLiveFixtures,
   fetchSportmonksFixtureById,
   fetchSportmonksFixtureEvents,
@@ -67,6 +68,60 @@ export const fetchFixturesByDate = async (
   } catch (err) {
     console.error('[apiFootball] fetchFixturesByDate failed, falling back to mock:', err);
     return getMockFixtures(date, leagueId);
+  }
+};
+
+/**
+ * Smart upcoming fixtures: returns the given date's matches, or — when that day
+ * is empty (e.g. off-season gaps, mid-week with no games) — the NEXT match day
+ * within the lookahead window. Keeps the app useful instead of showing an empty
+ * slate. Returns the resolved date alongside the fixtures.
+ */
+export const fetchUpcomingFixtures = async (
+  fromDate: string,
+  leagueIds: number[] = DEFAULT_LEAGUE_IDS,
+  lookaheadDays = 7,
+): Promise<{ date: string; fixtures: Fixture[] }> => {
+  if (!hasApiKey()) {
+    return { date: fromDate, fixtures: getMockFixtures(fromDate) };
+  }
+  try {
+    // Try the exact date first (cheap, single request).
+    const today = await fetchSportmonksFixturesByDateMulti(fromDate, leagueIds);
+    const scheduledToday = today.filter((f) => f.fixture.status.short !== 'FT' && f.fixture.status.short !== 'AET' && f.fixture.status.short !== 'PEN');
+    if (today.length > 0 && scheduledToday.length > 0) {
+      return { date: fromDate, fixtures: today.sort((a, b) => a.fixture.timestamp - b.fixture.timestamp) };
+    }
+
+    // Look ahead for the next day that actually has fixtures.
+    const start = new Date(fromDate + 'T00:00:00Z');
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + lookaheadDays);
+    const toIso = end.toISOString().split('T')[0];
+    const ahead = await fetchSportmonksFixturesBetween(fromDate, toIso, leagueIds);
+    if (ahead.length === 0) {
+      return { date: fromDate, fixtures: today };
+    }
+    // Group by calendar day and pick the earliest day with games.
+    const byDay = new Map<string, Fixture[]>();
+    ahead
+      .filter((f) => f.fixture.timestamp * 1000 >= start.getTime())
+      .forEach((f) => {
+        const day = new Date(f.fixture.timestamp * 1000).toISOString().split('T')[0];
+        const arr = byDay.get(day) ?? [];
+        arr.push(f);
+        byDay.set(day, arr);
+      });
+    const sortedDays = [...byDay.keys()].sort();
+    const firstDay = sortedDays[0];
+    if (!firstDay) return { date: fromDate, fixtures: today };
+    return {
+      date: firstDay,
+      fixtures: (byDay.get(firstDay) ?? []).sort((a, b) => a.fixture.timestamp - b.fixture.timestamp),
+    };
+  } catch (err) {
+    console.error('[apiFootball] fetchUpcomingFixtures failed:', err);
+    return { date: fromDate, fixtures: [] };
   }
 };
 

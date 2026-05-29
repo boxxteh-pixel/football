@@ -10,19 +10,23 @@ import { fonts } from '@/theme/typography';
 import { useQuickPrediction } from '@/hooks/usePrediction';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
+import type { PredictionResult } from '@/types/prediction';
 import { isLive } from '@/types/match';
 import { useT } from '@/theme/i18n';
 import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface MatchListItemProps {
   fixture: Fixture;
+  /** Real prediction from the batched today-insights map; falls back to quick estimate. */
+  prediction?: PredictionResult;
 }
 
-export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture }) => {
+export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, prediction: provided }) => {
   const colors = useColors();
   const haptics = useHaptics();
   const t = useT();
-  const prediction = useQuickPrediction(fixture);
+  const quick = useQuickPrediction(fixture);
+  const prediction = provided ?? quick;
   const live = isLive(fixture.fixture.status.short);
   const time = format(parseISO(fixture.fixture.date), 'HH:mm');
   const isHigh = prediction.topPick.probability >= 80;

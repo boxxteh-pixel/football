@@ -4,6 +4,7 @@ import {
   fetchFixtureEvents,
   fetchFixtureStatistics,
   fetchFixturesByDate,
+  fetchUpcomingFixtures,
   fetchLiveFixtures,
   fetchTeamLastFixtures,
   fetchTeamStatistics,
@@ -16,10 +17,19 @@ import { todayIsoDate } from '@/utils/date';
 
 const oneDay = 24 * 60 * 60 * 1000;
 
+/**
+ * Today's fixtures with a smart fallback to the next match day when today is
+ * empty (off-season / no games). When a specific league is selected we query
+ * just that league for the given date.
+ */
 export const useTodayFixtures = (leagueId?: number) =>
   useQuery({
     queryKey: ['fixtures', 'today', todayIsoDate(), leagueId ?? 'all'],
-    queryFn: () => fetchFixturesByDate(todayIsoDate(), leagueId),
+    queryFn: async () => {
+      if (leagueId) return fetchFixturesByDate(todayIsoDate(), leagueId);
+      const { fixtures } = await fetchUpcomingFixtures(todayIsoDate());
+      return fixtures;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes — ensures fresh data on each visit
     refetchOnWindowFocus: true,
     refetchOnMount: 'always',

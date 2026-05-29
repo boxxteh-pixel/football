@@ -14,6 +14,7 @@ import { NeonButton } from '@/components/ui/NeonButton';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
+import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { quickPredict } from '@/services/ai/predictor';
@@ -29,6 +30,7 @@ export default function PredictorTab() {
   const t = useT();
 
   const { data, isLoading, refetch, isRefetching, error } = useTodayFixtures(activeLeague ?? undefined);
+  const { predictionMap } = useTodayPredictions();
 
   const fixtures = useMemo<Fixture[]>(() => {
     if (!data) return [];
@@ -47,11 +49,11 @@ export default function PredictorTab() {
   const bestPicks = useMemo(
     () =>
       [...fixtures]
-        .map((f) => ({ fixture: f, prob: quickPredict(f).topPick.probability }))
+        .map((f) => ({ fixture: f, prob: (predictionMap.get(f.fixture.id) ?? quickPredict(f)).topPick.probability }))
         .sort((a, b) => b.prob - a.prob)
         .slice(0, 5)
         .map((x) => x.fixture),
-    [fixtures],
+    [fixtures, predictionMap],
   );
 
   if (!hasApiKey()) {
@@ -119,7 +121,7 @@ export default function PredictorTab() {
                 contentContainerStyle={{ paddingRight: 16 }}
               >
                 {bestPicks.map((f) => (
-                  <BestPickCard key={f.fixture.id} fixture={f} />
+                  <BestPickCard key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
                 ))}
               </ScrollView>
             )}
@@ -140,7 +142,7 @@ export default function PredictorTab() {
                 subtitle={t('common.noFiltersSub')}
               />
             ) : (
-              fixtures.map((f) => <MatchListItem key={f.fixture.id} fixture={f} />)
+              fixtures.map((f) => <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />)
             )}
           </View>
 

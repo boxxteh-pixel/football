@@ -16,6 +16,7 @@ import { MatchListItem } from '@/components/match/MatchListItem';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
+import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { quickPredict } from '@/services/ai/predictor';
 import { useHaptics } from '@/hooks/useHaptics';
@@ -40,11 +41,18 @@ export default function ChatScreen() {
   const selectedLeagueIds = settings.selectedLeagueIds;
 
   const { data: todayFixtures = [], isLoading } = useTodayFixtures();
+  const { predictionMap } = useTodayPredictions();
 
   // Filter fixtures to user-selected leagues for customized recommendations
   const fixtures = useMemo(() => {
     return todayFixtures.filter((f) => selectedLeagueIds.includes(f.league.id));
   }, [todayFixtures, selectedLeagueIds]);
+
+  // Resolve a real prediction (provider + odds) for a fixture, else quick estimate.
+  const predictFor = useMemo(
+    () => (f: Fixture) => predictionMap.get(f.fixture.id) ?? quickPredict(f),
+    [predictionMap],
+  );
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -136,7 +144,7 @@ export default function ChatScreen() {
         } else {
           // Sort by highest pick probability
           const sorted = [...pool]
-            .map((f) => ({ fixture: f, prediction: quickPredict(f) }))
+            .map((f) => ({ fixture: f, prediction: predictFor(f) }))
             .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability);
 
           const top = sorted[0];
@@ -163,7 +171,7 @@ export default function ChatScreen() {
             : 'There are too few matches today to construct a reliable accumulator. Try adding more leagues in your settings!';
         } else {
           const sorted = [...pool]
-            .map((f) => ({ fixture: f, prediction: quickPredict(f) }))
+            .map((f) => ({ fixture: f, prediction: predictFor(f) }))
             .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability)
             .slice(0, 3);
 
@@ -193,7 +201,7 @@ export default function ChatScreen() {
       ) {
         const pool = fixtures.length > 0 ? fixtures : todayFixtures;
         const valuePicks = [...pool]
-          .map((f) => ({ fixture: f, prediction: quickPredict(f) }))
+          .map((f) => ({ fixture: f, prediction: predictFor(f) }))
           .filter(
             (p) =>
               p.prediction.topPick.probability >= 38 &&
@@ -482,3 +490,4 @@ export default function ChatScreen() {
     </View>
   );
 }
+

@@ -352,20 +352,26 @@ export const fetchValuePicksForDate = async (
   minEdge = 0.05,
   limit = 6,
 ): Promise<DiscoveryValuePick[]> => {
-  const cleanDate = date.split('T')[0];
   const smLeagueIds = internalLeagueIds
     .map((id) => LEAGUE_TO_SPORTMONKS[id])
     .filter((id): id is number => typeof id === 'number');
   if (smLeagueIds.length === 0) return [];
 
   const { smGetAll, TTL: TTLref } = await import('./smClient');
-  const rows = await smGetAll<any>('/fixtures/date/' + cleanDate, {
+  // Scan a forward window so value bets appear even when today is empty.
+  const cleanDate = date.split('T')[0];
+  const start = new Date(cleanDate + 'T00:00:00Z');
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 3);
+  const toIso = end.toISOString().split('T')[0];
+
+  const rows = await smGetAll<any>(`/fixtures/between/${cleanDate}/${toIso}`, {
     params: {
       include: 'participants;league;predictions.type;odds',
       filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
     },
     ttl: TTLref.odds,
-    maxPages: 6,
+    maxPages: 8,
   });
 
   const picks: DiscoveryValuePick[] = [];
@@ -420,4 +426,87 @@ export const fetchValuePicksForDate = async (
   }
 
   return picks.sort((a, b) => b.edge - a.edge).slice(0, limit);
+};
+
+
+import type { Fixture } from '@/types/match';
+import { mapSportmonksFixture } from './sportmonks';
+
+export interface RawFixtureInsights {
+  fixture: Fixture;
+  insights: MatchInsights;
+}
+
+/**
+ * Batched real insights for an entire date across the given leagues.
+ *
+ * ONE paginated request pulls every fixture for the date WITH provider
+ * predictions + bookmaker odds inline, so the list/cards can show genuine
+ * (not random) probabilities without N separate calls.
+ *
+ * When `date` has no fixtures, it looks ahead up to `lookaheadDays` and uses
+ * the next day that actually has matches (keeps the app populated off-season).
+ */
+export const fetchTodayInsights = async (
+  date: string,
+  internalLeagueIds: number[],
+  lookaheadDays = 7,
+): Promise<RawFixtureInsights[]> => {
+  const smLeagueIds = internalLeagueIds
+    .map((id) => LEAGUE_TO_SPORTMONKS[id])
+    .filter((id): id is number => typeof id === 'number');
+  if (smLeagueIds.length === 0) return [];
+
+  const { smGetAll, TTL: TTLref } = await import('./smClient');
+
+  const fetchForRange = async (from: string, to: string) =>
+    smGetAll<any>(`/fixtures/between/${from}/${to}`, {
+      params: {
+        include: 'participants;league;state;scores;predictions.type;odds',
+        filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
+      },
+      ttl: TTLref.fixturesToday,
+      maxPages: 8,
+    });
+
+  const cleanDate = date.split('T')[0];
+  const start = new Date(cleanDate + 'T00:00:00Z');
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + lookaheadDays);
+  const toIso = end.toISOString().split('T')[0];
+
+  // Pull the whole window once, then pick the earliest day that has fixtures.
+  const rows = await fetchForRange(cleanDate, toIso);
+  const upcoming = rows.filter((f) => (f.starting_at_timestamp ?? 0) * 1000 >= start.getTime());
+  const pool = upcoming.length > 0 ? upcoming : rows;
+
+  // Group by calendar day; prefer the day matching `date`, else the earliest with games.
+  const byDay = new Map<string, any[]>();
+  pool.forEach((f) => {
+    const ts = (f.starting_at_timestamp ?? 0) * 1000;
+    const day = ts > 0 ? new Date(ts).toISOString().split('T')[0] : cleanDate;
+    const arr = byDay.get(day) ?? [];
+    arr.push(f);
+    byDay.set(day, arr);
+  });
+  const targetDay = byDay.has(cleanDate) ? cleanDate : [...byDay.keys()].sort()[0];
+  const dayRows = targetDay ? byDay.get(targetDay) ?? [] : [];
+
+  const out: RawFixtureInsights[] = [];
+  for (const f of dayRows) {
+    const fixture = mapSportmonksFixture(f);
+    const predictions = parsePredictions(f.predictions || []);
+    const bookmaker = parseOdds(f.odds || []);
+    out.push({
+      fixture,
+      insights: {
+        fixtureId: f.id,
+        predictions,
+        bookmaker,
+        xg: null,
+        hasRealData: Boolean(predictions || bookmaker),
+      },
+    });
+  }
+  return out;
 };

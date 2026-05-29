@@ -10,18 +10,22 @@ import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useQuickPrediction } from '@/hooks/usePrediction';
 import type { Fixture } from '@/types/match';
+import type { PredictionResult } from '@/types/prediction';
 import { useT } from '@/theme/i18n';
 import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface BestPickCardProps {
   fixture: Fixture;
+  /** Real prediction from the batched today-insights map; falls back to quick estimate. */
+  prediction?: PredictionResult;
 }
 
-export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture }) => {
+export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction: provided }) => {
   const colors = useColors();
   const haptics = useHaptics();
   const t = useT();
-  const prediction = useQuickPrediction(fixture);
+  const quick = useQuickPrediction(fixture);
+  const prediction = provided ?? quick;
   const isHigh = prediction.topPick.probability >= 80;
   const accentColor = isHigh ? colors.primaryFixed : colors.secondaryFixed;
   const kickoff = format(parseISO(fixture.fixture.date), 'HH:mm');
