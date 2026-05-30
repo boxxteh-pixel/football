@@ -50,7 +50,8 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
       <GlassCard
         padding={12}
         style={live ? {
-          borderColor: 'rgba(171, 214, 0, 0.25)',
+          borderColor: 'rgba(255, 149, 0, 0.55)',
+          borderWidth: 1.5,
         } : undefined}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -70,9 +71,9 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
               <View style={{ alignItems: 'center', gap: 2 }}>
                 <View
                   style={{
-                    backgroundColor: 'transparent',
+                    backgroundColor: 'rgba(255, 149, 0, 0.12)',
                     borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: 'rgba(255, 149, 0, 0.5)',
                     paddingHorizontal: 5,
                     paddingVertical: 1,
                     borderRadius: 4,
@@ -80,7 +81,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
                 >
                   <Text
                     style={{
-                      color: colors.onSurfaceVariant,
+                      color: '#FF9500',
                       fontFamily: fonts.label,
                       fontSize: 9,
                       fontWeight: 'bold',
@@ -91,7 +92,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
                 </View>
                 <Text
                   style={{
-                    color: colors.onSurface,
+                    color: '#FF9500',
                     fontFamily: fonts.stats,
                     fontSize: 12,
                   }}

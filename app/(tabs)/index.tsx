@@ -13,38 +13,70 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
-import { useTodayFixtures } from '@/hooks/useFixtures';
+import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { quickPredict } from '@/services/ai/predictor';
 import { hasApiKey } from '@/constants/config';
 import type { Fixture } from '@/types/match';
+import { isLive, isScheduled } from '@/types/match';
 import { useT } from '@/theme/i18n';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function PredictorTab() {
   const colors = useColors();
   const [search, setSearch] = useState('');
   const [activeLeague, setActiveLeague] = useState<number | null>(null);
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
+  const isFocused = useIsFocused();
   const t = useT();
 
   const { data, isLoading, refetch, isRefetching, error } = useTodayFixtures(activeLeague ?? undefined);
   const { predictionMap } = useTodayPredictions();
+  const { data: liveData = [] } = useLiveFixtures(selectedLeagueIds, isFocused);
 
+  // Home shows ONLY live + not-yet-started matches. Merge the dedicated live
+  // feed (freshest scores/minute) with scheduled fixtures from the day's slate.
   const fixtures = useMemo<Fixture[]>(() => {
-    if (!data) return [];
-    return data.filter((f) => {
-      if (!selectedLeagueIds.includes(f.league.id) && !activeLeague) return false;
-      if (!search) return true;
+    const byId = new Map<number, Fixture>();
+
+    // Live matches first (from the live feed), filtered to selected/active league.
+    liveData
+      .filter((f) => isLive(f.fixture.status.short))
+      .filter((f) => (activeLeague ? f.league.id === activeLeague : selectedLeagueIds.includes(f.league.id)))
+      .forEach((f) => byId.set(f.fixture.id, f));
+
+    // Upcoming (not started) from the slate.
+    (data ?? [])
+      .filter((f) => isLive(f.fixture.status.short) || isScheduled(f.fixture.status.short))
+      .filter((f) => (activeLeague ? f.league.id === activeLeague : selectedLeagueIds.includes(f.league.id)))
+      .forEach((f) => {
+        if (!byId.has(f.fixture.id)) byId.set(f.fixture.id, f);
+      });
+
+    let list = [...byId.values()];
+
+    if (search) {
       const q = search.toLowerCase();
-      return (
-        f.teams.home.name.toLowerCase().includes(q) ||
-        f.teams.away.name.toLowerCase().includes(q) ||
-        f.league.name.toLowerCase().includes(q)
+      list = list.filter(
+        (f) =>
+          f.teams.home.name.toLowerCase().includes(q) ||
+          f.teams.away.name.toLowerCase().includes(q) ||
+          f.league.name.toLowerCase().includes(q),
       );
+    }
+
+    // Live first, then by kickoff time.
+    return list.sort((a, b) => {
+      const al = isLive(a.fixture.status.short) ? 0 : 1;
+      const bl = isLive(b.fixture.status.short) ? 0 : 1;
+      if (al !== bl) return al - bl;
+      return a.fixture.timestamp - b.fixture.timestamp;
     });
-  }, [data, selectedLeagueIds, search, activeLeague]);
+  }, [data, liveData, selectedLeagueIds, search, activeLeague]);
+
+  const liveCount = useMemo(() => fixtures.filter((f) => isLive(f.fixture.status.short)).length, [fixtures]);
 
   const bestPicks = useMemo(
     () =>
@@ -128,18 +160,21 @@ export default function PredictorTab() {
           </View>
 
           <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
-              {t('predictor.slate')}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
+                {t('predictor.liveUpcoming')}
+              </Text>
+              {liveCount > 0 && <LivePulse label={`${liveCount} LIVE`} />}
+            </View>
             {isLoading ? (
               <ListSkeleton />
             ) : error ? (
               <ErrorState error={error} onRetry={refetch} />
             ) : fixtures.length === 0 ? (
               <EmptyState
-                icon="search-off"
-                title={t('common.noFiltersTitle')}
-                subtitle={t('common.noFiltersSub')}
+                icon="event-busy"
+                title={t('predictor.noLiveUpcoming')}
+                subtitle={t('predictor.noLiveUpcomingSub')}
               />
             ) : (
               fixtures.map((f) => <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />)

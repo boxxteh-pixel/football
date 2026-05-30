@@ -1,45 +1,54 @@
 'use no memo';
-import React from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
-import { MatchListItem } from '@/components/match/MatchListItem';
 import { ResultListItem } from '@/components/match/ResultListItem';
+import { DateStrip } from '@/components/match/DateStrip';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { LivePulse } from '@/components/ui/LivePulse';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
-import { useLiveFixtures } from '@/hooks/useFixtures';
-import { useResults } from '@/hooks/useResults';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useResults, type ResultRow } from '@/hooks/useResults';
 import { useT } from '@/theme/i18n';
-import { useIsFocused } from '@react-navigation/native';
+
+type MarketFilter = 'all' | '1X2' | 'goals' | 'btts';
 
 export default function ResultsTab() {
   const colors = useColors();
-  const isFocused = useIsFocused();
-  const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const t = useT();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
 
-  const { data: liveData, isRefetching: liveRefetching } = useLiveFixtures(selectedLeagueIds, isFocused);
-  const { rows, summary, isLoading, refetch, isRefetching, error } = useResults(4);
+  const { rows, summary, isLoading, refetch, isRefetching, error } = useResults(selectedDate, 4);
 
-  const liveFixtures = (liveData ?? []).filter((f) => selectedLeagueIds.includes(f.league.id));
+  const filteredRows = useMemo(() => {
+    if (marketFilter === 'all') return rows;
+    return rows.filter((r) => {
+      const m = r.prediction.topPick.market;
+      if (marketFilter === '1X2') return m === 'WIN' || m === 'DRAW';
+      if (marketFilter === 'goals') return m === 'OVER_2_5' || m === 'UNDER_2_5';
+      if (marketFilter === 'btts') return m === 'BTTS';
+      return true;
+    });
+  }, [rows, marketFilter]);
+
+  const filters: Array<{ id: MarketFilter; label: string }> = [
+    { id: 'all', label: t('results.filterAll') },
+    { id: '1X2', label: t('results.filter1x2') },
+    { id: 'goals', label: t('results.filterGoals') },
+    { id: 'btts', label: t('results.filterBtts') },
+  ];
 
   return (
     <ScreenContainer
       title="BORO"
       refreshControl={
-        <RefreshControl
-          refreshing={isRefetching || liveRefetching}
-          onRefresh={refetch}
-          tintColor={colors.primaryFixed}
-        />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primaryFixed} />
       }
     >
-      <View style={{ gap: 20 }}>
+      <View style={{ gap: 18 }}>
         {/* Header */}
         <View style={{ gap: 6 }}>
           <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
@@ -50,9 +59,12 @@ export default function ResultsTab() {
           </Text>
         </View>
 
+        {/* Calendar date strip */}
+        <DateStrip selected={selectedDate} onSelect={setSelectedDate} count={14} />
+
         {/* Accuracy summary */}
         {summary.total > 0 && (
-          <GlassCard padding={18} style={{ gap: 16 }}>
+          <GlassCard padding={18} style={{ gap: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <SummaryStat
                 label={t('results.accuracy')}
@@ -62,7 +74,6 @@ export default function ResultsTab() {
               <SummaryStat label={t('results.record')} value={`${summary.correct}/${summary.total}`} color={colors.onSurface} />
               <SummaryStat label={t('results.brier')} value={summary.brier.toFixed(3)} color={colors.onSurfaceVariant} />
             </View>
-            {/* Hit-rate bar */}
             <View style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexDirection: 'row' }}>
               <View style={{ width: `${summary.hitRate}%`, backgroundColor: '#22c55e' }} />
               <View style={{ flex: 1, backgroundColor: '#ef4444' }} />
@@ -73,26 +84,33 @@ export default function ResultsTab() {
           </GlassCard>
         )}
 
-        {/* Live now */}
-        {liveFixtures.length > 0 && (
-          <View style={{ gap: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 }}>
-                {t('results.liveNow')}
-              </Text>
-              <LivePulse label="LIVE" />
-            </View>
-            {liveFixtures.map((f) => (
-              <MatchListItem key={f.fixture.id} fixture={f} />
-            ))}
-          </View>
-        )}
+        {/* Market filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
+          {filters.map((f) => {
+            const active = marketFilter === f.id;
+            return (
+              <Pressable
+                key={f.id}
+                onPress={() => setMarketFilter(f.id)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 18,
+                  backgroundColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.05)',
+                  borderWidth: 1,
+                  borderColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.1)',
+                }}
+              >
+                <Text style={{ color: active ? colors.onPrimaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 12 }}>
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-        {/* Recent results */}
+        {/* Results list */}
         <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.onSurface, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 }}>
-            {t('results.recent')}
-          </Text>
           {isLoading ? (
             <View style={{ gap: 12 }}>
               {[0, 1, 2, 3].map((i) => (
@@ -101,28 +119,24 @@ export default function ResultsTab() {
             </View>
           ) : error ? (
             <ErrorState error={error} onRetry={refetch} />
-          ) : rows.length === 0 ? (
+          ) : filteredRows.length === 0 ? (
             <GlassCard padding={24} style={{ alignItems: 'center', gap: 16 }}>
               <BoroIcon name="history" size={40} color={colors.onSurfaceVariant} />
               <View style={{ alignItems: 'center', gap: 6 }}>
                 <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16, textAlign: 'center' }}>
-                  {t('results.empty.title')}
+                  {selectedDate ? t('results.noDay') : t('results.empty.title')}
                 </Text>
-                <Text
-                  style={{
-                    color: colors.onSurfaceVariant,
-                    fontFamily: fonts.body,
-                    fontSize: 13,
-                    textAlign: 'center',
-                    paddingHorizontal: 12,
-                  }}
-                >
-                  {t('results.empty.sub')}
-                </Text>
+                {!selectedDate && (
+                  <Text
+                    style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', paddingHorizontal: 12 }}
+                  >
+                    {t('results.empty.sub')}
+                  </Text>
+                )}
               </View>
             </GlassCard>
           ) : (
-            rows.map((row) => <ResultListItem key={row.fixture.fixture.id} row={row} />)
+            filteredRows.map((row: ResultRow) => <ResultListItem key={row.fixture.fixture.id} row={row} />)
           )}
         </View>
       </View>

@@ -560,3 +560,43 @@ export const fetchRecentResults = async (
   // Newest first.
   return out.sort((a, b) => b.fixture.fixture.timestamp - a.fixture.fixture.timestamp);
 };
+
+
+/**
+ * Finished fixtures on ONE specific date (for the Results calendar picker),
+ * each with the predictions/odds it had, so they can be graded.
+ */
+export const fetchResultsOnDate = async (
+  date: string,
+  internalLeagueIds: number[],
+): Promise<RawFixtureInsights[]> => {
+  const smLeagueIds = internalLeagueIds
+    .map((id) => LEAGUE_TO_SPORTMONKS[id])
+    .filter((id): id is number => typeof id === 'number');
+  if (smLeagueIds.length === 0) return [];
+
+  const clean = date.split('T')[0];
+  const rows = await smGetAll(`/fixtures/date/${clean}`, {
+    params: {
+      include: 'participants;league;state;scores;predictions.type;odds',
+      filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
+    },
+    ttl: TTL.standings,
+    maxPages: 8,
+  });
+
+  const out: RawFixtureInsights[] = [];
+  for (const f of rows) {
+    const fixture = mapSportmonksFixture(f);
+    const s = fixture.fixture.status.short;
+    if (!['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(s)) continue;
+    if (fixture.goals.home === null || fixture.goals.away === null) continue;
+    const predictions = parsePredictions(f.predictions || []);
+    const bookmaker = parseOdds(f.odds || []);
+    out.push({
+      fixture,
+      insights: { fixtureId: f.id, predictions, bookmaker, xg: null, hasRealData: Boolean(predictions || bookmaker) },
+    });
+  }
+  return out.sort((a, b) => b.fixture.fixture.timestamp - a.fixture.fixture.timestamp);
+};
