@@ -6,6 +6,7 @@ import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useHaptics } from '@/hooks/useHaptics';
 import { LiveScoreHero } from '@/components/match/LiveScoreHero';
+import { LivePitch } from '@/components/match/LivePitch';
 import { AIInsightCard } from '@/components/match/AIInsightCard';
 import { StatComparison } from '@/components/match/StatComparison';
 import { QuickBetSlip } from '@/components/match/QuickBetSlip';
@@ -120,6 +121,15 @@ export default function MatchDetailScreen() {
     >
       <View style={{ gap: 20 }}>
         <LiveScoreHero fixture={fixture} momentumValues={momentumValues} pressureSwing={pressureSwing} />
+
+        {live && (
+          <LivePitch
+            fixture={fixture}
+            events={events}
+            homePossession={homePoss || 0}
+            awayPossession={awayPoss || 0}
+          />
+        )}
 
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
