@@ -504,3 +504,59 @@ export const fetchTodayInsights = async (
   }
   return out;
 };
+
+
+/**
+ * Recent FINISHED fixtures (last `days`) across the given leagues, each with the
+ * provider predictions + bookmaker odds that existed for it — so the Results
+ * screen can grade the exact prediction the app would have shown.
+ */
+export const fetchRecentResults = async (
+  toDate: string,
+  internalLeagueIds: number[],
+  days = 4,
+): Promise<RawFixtureInsights[]> => {
+  const smLeagueIds = internalLeagueIds
+    .map((id) => LEAGUE_TO_SPORTMONKS[id])
+    .filter((id): id is number => typeof id === 'number');
+  if (smLeagueIds.length === 0) return [];
+
+  const clean = toDate.split('T')[0];
+  const end = new Date(clean + 'T00:00:00Z');
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - days);
+  const fromIso = start.toISOString().split('T')[0];
+
+  const rows = await smGetAll(`/fixtures/between/${fromIso}/${clean}`, {
+    params: {
+      include: 'participants;league;state;scores;predictions.type;odds',
+      filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
+    },
+    ttl: TTL.fixturesToday,
+    maxPages: 10,
+  });
+
+  const out: RawFixtureInsights[] = [];
+  for (const f of rows) {
+    const fixture = mapSportmonksFixture(f);
+    // Only finished matches with a real score.
+    const s = fixture.fixture.status.short;
+    if (!['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(s)) continue;
+    if (fixture.goals.home === null || fixture.goals.away === null) continue;
+
+    const predictions = parsePredictions(f.predictions || []);
+    const bookmaker = parseOdds(f.odds || []);
+    out.push({
+      fixture,
+      insights: {
+        fixtureId: f.id,
+        predictions,
+        bookmaker,
+        xg: null,
+        hasRealData: Boolean(predictions || bookmaker),
+      },
+    });
+  }
+  // Newest first.
+  return out.sort((a, b) => b.fixture.fixture.timestamp - a.fixture.fixture.timestamp);
+};
