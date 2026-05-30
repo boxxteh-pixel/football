@@ -23,6 +23,7 @@ import {
   useFixtureStats,
 } from '@/hooks/useFixtures';
 import { useFullPrediction } from '@/hooks/usePrediction';
+import { useLiveTracker } from '@/hooks/useLiveTracker';
 import { useT } from '@/theme/i18n';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { computeMomentumWindows, computePressureSwing, extractStatNumber } from '@/services/ai/momentum';
@@ -44,6 +45,7 @@ export default function MatchDetailScreen() {
   const { data: events = [] } = useFixtureEvents(id, live);
   const { data: stats = [] } = useFixtureStats(id, live);
   const { data: prediction } = useFullPrediction(fixture ?? undefined);
+  const { data: tracker } = useLiveTracker(fixture ?? undefined);
 
   const momentumValues = useMemo(() => {
     if (!fixture) return Array(15).fill(0.4);
@@ -128,6 +130,7 @@ export default function MatchDetailScreen() {
             events={events}
             homePossession={homePoss || 0}
             awayPossession={awayPoss || 0}
+            tracker={tracker}
           />
         )}
 

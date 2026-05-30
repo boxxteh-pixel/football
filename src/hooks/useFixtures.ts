@@ -52,11 +52,12 @@ export const useLiveFixtures = (leagueIds?: number[], enabled = true) =>
     queryFn: () => fetchLiveFixtures(leagueIds),
     refetchInterval: enabled ? config.app.liveRefreshMs : false,
     refetchIntervalInBackground: false,
-    staleTime: config.app.liveRefreshMs / 2,
+    staleTime: 20000,
     enabled: enabled,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    placeholderData: (prev) => prev, // keep last live list while refetching (no flicker)
   });
 
 export const useFixture = (id: number | undefined) =>
