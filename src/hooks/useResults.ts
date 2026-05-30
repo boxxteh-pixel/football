@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRecentResults, fetchResultsOnDate } from '@/services/api/smInsights';
 import { predictFromInsights } from '@/services/ai/predictor';
 import { gradePrediction, summarizeAccuracy, type GradedPrediction } from '@/services/ai/evaluate';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useCalibrationStore } from '@/store/calibrationStore';
 import { hasApiKey } from '@/constants/config';
 import { todayIsoDate } from '@/utils/date';
 import type { Fixture } from '@/types/match';
@@ -25,6 +26,7 @@ export interface ResultRow {
  */
 export const useResults = (date: string | null, days = 4) => {
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
+  const recordCalibration = useCalibrationStore((s) => s.record);
 
   const query = useQuery({
     queryKey: ['results', date ?? `recent-${todayIsoDate()}`, selectedLeagueIds.join(','), days],
@@ -48,6 +50,16 @@ export const useResults = (date: string | null, days = 4) => {
     const summary = summarizeAccuracy(list.map((r) => r.graded));
     return { rows: list, summary };
   }, [query.data]);
+
+  // Feed settled outcomes into the self-improving calibration model (deduped).
+  useEffect(() => {
+    for (const r of rows) {
+      if (r.graded.grade === 'pending') continue;
+      const key = `${r.fixture.fixture.id}:${r.prediction.topPick.market}`;
+      recordCalibration(key, r.prediction.topPick.probability, r.graded.grade === 'correct').catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
 
   return { ...query, rows, summary };
 };

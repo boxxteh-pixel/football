@@ -30,6 +30,7 @@ import { computeMatchProbabilities } from './poisson';
 import { clampPercent, formatOdds } from '@/utils/format';
 import { getLeagueById } from '@/constants/leagues';
 import { useLearningStore } from '@/store/learningStore';
+import { useCalibrationStore } from '@/store/calibrationStore';
 import type { MatchInsights } from '../api/smInsights';
 import { computeValueBets } from '../api/smInsights';
 
@@ -392,7 +393,9 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     { market: 'UNDER_2_5', selection: 'Under 2.5 Goals', probability: under25Pct },
   ];
   const topSorted = [...candidates].sort((a, b) => b.probability - a.probability);
-  const topPick = { ...topSorted[0], odds: Number(formatOdds(topSorted[0].probability)) };
+  // Apply self-improving calibration to the led market's probability.
+  const calibratedTopProb = useCalibrationStore.getState().calibrate(topSorted[0].probability);
+  const topPick = { ...topSorted[0], probability: calibratedTopProb, odds: Number(formatOdds(calibratedTopProb)) };
 
   // ─────────────── Market agreement + confidence ───────────────
   // How close is our 1X2 to the bookmaker's fair line? (1 = identical)
@@ -561,7 +564,8 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
     { market: 'UNDER_2_5', selection: 'Under 2.5 Goals', probability: under25Pct },
   ];
   const top = [...candidates].sort((a, b) => b.probability - a.probability)[0];
-  const topPick = { ...top, odds: Number(formatOdds(top.probability)) };
+  const calibratedTop = useCalibrationStore.getState().calibrate(top.probability);
+  const topPick = { ...top, probability: calibratedTop, odds: Number(formatOdds(calibratedTop)) };
 
   const sortedProbs = [homeWinPct, drawPct, awayWinPct].sort((a, b) => b - a);
   const dataSignals = signals.length;
