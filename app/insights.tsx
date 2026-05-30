@@ -9,11 +9,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
+import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useValuePicks } from '@/hooks/useValuePicks';
 import { quickPredict } from '@/services/ai/predictor';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
+import { isLive, isScheduled } from '@/types/match';
 import { useT } from '@/theme/i18n';
 import { formatPredictionSelection } from '@/utils/predictionText';
 
@@ -24,18 +26,24 @@ export default function InsightsScreen() {
   const haptics = useHaptics();
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const { data, isLoading } = useTodayFixtures();
+  const { predictionMap } = useTodayPredictions();
   const { data: valuePicks = [], isLoading: valueLoading } = useValuePicks(0.05, 5);
   const t = useT();
 
+  // Build the accumulator from real predictions on upcoming matches only.
   const enriched = useMemo(() => {
-    const list = (data ?? []).filter((f) => selectedLeagueIds.includes(f.league.id));
+    const list = (data ?? [])
+      .filter((f) => selectedLeagueIds.includes(f.league.id))
+      .filter((f) => isScheduled(f.fixture.status.short) || isLive(f.fixture.status.short));
     return list
-      .map((f) => ({ fixture: f, prediction: quickPredict(f) }))
+      .map((f) => ({ fixture: f, prediction: predictionMap.get(f.fixture.id) ?? quickPredict(f) }))
       .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability);
-  }, [data, selectedLeagueIds]);
+  }, [data, selectedLeagueIds, predictionMap]);
 
   const topPicks = enriched.slice(0, 3);
   const totalOdds = topPicks.reduce((acc, p) => acc * p.prediction.topPick.odds, 1);
+  // Combined probability = product of individual probabilities (independence assumption).
+  const combinedProb = topPicks.reduce((acc, p) => acc * (p.prediction.topPick.probability / 100), 1) * 100;
   const avgConfidence =
     topPicks.length > 0
       ? topPicks.reduce((acc, p) => acc + p.prediction.topPick.probability, 0) / topPicks.length
@@ -148,8 +156,21 @@ export default function InsightsScreen() {
               <Text style={{ color: colors.primaryFixed, fontFamily: fonts.display, fontSize: 28, marginTop: 4 }}>
                 {totalOdds.toFixed(2)}
               </Text>
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11, marginTop: 2 }}>
+                {t('insights.combinedProb')}: {Math.round(combinedProb)}%
+              </Text>
             </View>
-            <NeonButton label={t('insights.openPicks')} size="sm" fullWidth={false} onPress={() => router.push('/(tabs)')} />
+            <View style={{ alignItems: 'flex-end', gap: 6 }}>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5 }}>
+                  {t('insights.potReturn')}
+                </Text>
+                <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 16 }}>
+                  {totalOdds.toFixed(2)}{t('picks.units')}
+                </Text>
+              </View>
+              <NeonButton label={t('insights.openPicks')} size="sm" fullWidth={false} onPress={() => router.push('/(tabs)')} />
+            </View>
           </View>
         </GlassCard>
 
