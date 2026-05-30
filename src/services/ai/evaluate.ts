@@ -125,3 +125,42 @@ export const summarizeAccuracy = (
     brier,
   };
 };
+
+
+/**
+ * Settle a saved pick against a finished fixture.
+ * Returns the settlement status and a human-readable result, or null if the
+ * fixture isn't finished yet (still pending).
+ */
+export const settlePickAgainstFixture = (
+  fixture: Fixture,
+  market: 'WIN' | 'DRAW' | 'BTTS' | 'OVER_2_5' | 'UNDER_2_5',
+  selection: string,
+): { status: 'won' | 'lost' | 'void'; result: string } | null => {
+  if (!isFinished(fixture)) return null;
+  const h = fixture.goals.home as number;
+  const a = fixture.goals.away as number;
+  const total = h + a;
+  const homeName = fixture.teams.home.name;
+  const score = `${h}-${a}`;
+  let won = false;
+
+  switch (market) {
+    case 'WIN':
+      won = selection.startsWith(homeName) ? h > a : a > h;
+      break;
+    case 'DRAW':
+      won = h === a;
+      break;
+    case 'OVER_2_5':
+      won = total > 2;
+      break;
+    case 'UNDER_2_5':
+      won = total <= 2;
+      break;
+    case 'BTTS':
+      won = h >= 1 && a >= 1;
+      break;
+  }
+  return { status: won ? 'won' : 'lost', result: score };
+};

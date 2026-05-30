@@ -62,6 +62,12 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'bar-chart': Lucide.BarChart3,
   'whatshot': Lucide.Flame,
   'medical-services': Lucide.Stethoscope,
+  'bookmark': Lucide.Bookmark,
+  'bookmark-added': Lucide.BookmarkCheck,
+  'add-task': Lucide.ListChecks,
+  'receipt': Lucide.ReceiptText,
+  'notifications': Lucide.Bell,
+  'calendar-today': Lucide.Calendar,
 };
 
 interface BoroIconProps {

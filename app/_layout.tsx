@@ -24,6 +24,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useLearningStore } from '@/store/learningStore';
+import { useBetSlipStore } from '@/store/betSlipStore';
 import { withTimeout } from '@/utils/async';
 
 // On Web, react-native-vector-icons needs its CSS stylesheet injected dynamically.
@@ -84,6 +85,7 @@ export default function RootLayout() {
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
   const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
   const hydrateLearning = useLearningStore((s) => s.hydrate);
+  const hydrateBetSlip = useBetSlipStore((s) => s.hydrate);
 
   const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
   const opacity = useSharedValue(1);
@@ -108,12 +110,13 @@ export default function RootLayout() {
           withTimeout(hydrateSettings(), 2500, undefined),
           withTimeout(hydrateFavorites(), 2500, undefined),
           withTimeout(hydrateLearning(), 2500, undefined),
+          withTimeout(hydrateBetSlip(), 2500, undefined),
         ]);
       } finally {
         setStoresReady(true);
       }
     })();
-  }, [hydrateAuth, hydrateSettings, hydrateFavorites, hydrateLearning]);
+  }, [hydrateAuth, hydrateSettings, hydrateFavorites, hydrateLearning, hydrateBetSlip]);
 
   useEffect(() => {
     console.log('[FONT DIAGNOSTIC] fontsLoaded:', fontsLoaded, 'fontError:', fontError);
@@ -178,6 +181,7 @@ export default function RootLayout() {
           options={{ animation: 'slide_from_right', presentation: 'card' }}
         />
         <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="picks" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
       </Stack>
