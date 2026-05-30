@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { config } from '@/constants/config';
 import { LEAGUE_TO_SPORTMONKS, SPORTMONKS_TO_LEAGUE } from '@/constants/leagues';
 import { smGet, TTL } from './smClient';
+import { STATE_TO_STATUS } from './smTypes';
 
 // Maps internal (API-Football style) league IDs to Sportmonks league IDs.
 // Single source of truth lives in '@/constants/leagues'.
@@ -328,18 +329,25 @@ export function mapSportmonksFixture(sm: any): Fixture {
     if (ftScore) awayScore = ftScore.score?.goals;
   }
 
-  const smStatus = sm.state?.short_name || sm.state?.state || 'NS';
-  let apiFootballStatus: FixtureStatus = 'NS';
-  if (smStatus === 'LIVE' || smStatus === 'INPLAY' || smStatus === '1H' || smStatus === '2H') {
+  // SportMonks exposes the canonical state in `state.state` (e.g.
+  // INPLAY_1ST_HALF, INPLAY_2ND_HALF, HT, BREAK, INPLAY_ET, INPLAY_PENALTIES,
+  // FT, ENDED, NS...). Map it through STATE_TO_STATUS so live matches are
+  // correctly detected. Fall back to short_name, then NS.
+  const rawState: string = sm.state?.state || sm.state?.short_name || sm.state?.developer_name || 'NS';
+  const mapped = STATE_TO_STATUS[String(rawState).toUpperCase()];
+  let apiFootballStatus: FixtureStatus = (mapped as FixtureStatus) || 'NS';
+  // Safety net: if SportMonks reports a live minute but the state wasn't mapped,
+  // treat it as LIVE so in-progress matches never disappear from the feed.
+  // Live elapsed minute lives in the ticking period (periods[].minutes), with
+  // top-level `minute` as a fallback.
+  const tickingPeriod = Array.isArray(sm.periods)
+    ? sm.periods.find((p: any) => p.ticking) || sm.periods[sm.periods.length - 1]
+    : null;
+  const liveMinute: number | null =
+    (typeof tickingPeriod?.minutes === 'number' ? tickingPeriod.minutes : null) ??
+    (typeof sm.minute === 'number' ? sm.minute : null);
+  if (apiFootballStatus === 'NS' && typeof liveMinute === 'number' && liveMinute > 0) {
     apiFootballStatus = 'LIVE';
-  } else if (smStatus === 'HT') {
-    apiFootballStatus = 'HT';
-  } else if (smStatus === 'FT' || smStatus === 'ENDED') {
-    apiFootballStatus = 'FT';
-  } else if (smStatus === 'NS') {
-    apiFootballStatus = 'NS';
-  } else {
-    apiFootballStatus = smStatus as FixtureStatus;
   }
 
   const homeWinner = home.meta?.winner ?? (homeScore !== null && awayScore !== null ? homeScore > awayScore : null);
@@ -366,7 +374,7 @@ export function mapSportmonksFixture(sm: any): Fixture {
       status: {
         long: sm.state?.name || 'Not Started',
         short: apiFootballStatus,
-        elapsed: sm.minute || null,
+        elapsed: liveMinute,
       },
     },
     league: {
@@ -712,13 +720,18 @@ export const fetchSportmonksLiveFixtures = async (
 ): Promise<Fixture[]> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching live fixtures...`);
-    const response = await sportmonksClient.get('/fixtures/live?include=participants;league;venue;state;scores');
+    // Correct in-play endpoint is /livescores/inplay (/fixtures/live → 422).
+    const response = await sportmonksClient.get('/livescores/inplay?include=participants;league;venue;state;scores;periods');
     const data = response.data?.data;
     if (!Array.isArray(data)) return [];
 
-    let mapped = data.map(mapSportmonksFixture);
+    let mapped = data
+      .map(mapSportmonksFixture)
+      // Keep only genuinely in-progress matches (the endpoint can also include
+      // matches about to start / just finished).
+      .filter((f) => ['LIVE', 'HT', 'ET', 'P', 'BT'].includes(f.fixture.status.short));
     if (apiFootballLeagueIds && apiFootballLeagueIds.length > 0) {
-      mapped = mapped.filter(f => apiFootballLeagueIds.includes(f.league.id));
+      mapped = mapped.filter((f) => apiFootballLeagueIds.includes(f.league.id));
     }
     return mapped;
   } catch (err: any) {
@@ -730,7 +743,7 @@ export const fetchSportmonksLiveFixtures = async (
 export const fetchSportmonksFixtureById = async (id: number): Promise<Fixture | null> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching fixture by ID: ${id}...`);
-    const response = await sportmonksClient.get(`/fixtures/${id}?include=participants;league;venue;state;scores`);
+    const response = await sportmonksClient.get(`/fixtures/${id}?include=participants;league;venue;state;scores;periods`);
     const data = response.data?.data;
     if (!data) return null;
     return mapSportmonksFixture(data);
