@@ -33,8 +33,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const paddingTop = topBar ? 16 : insets.top + 16;
-  // Clear the floating pill tab bar (≈64h + 10 margin) plus breathing room.
-  const paddingBottom = bottomSafe ? insets.bottom + 96 : 16;
+  const paddingBottom = bottomSafe ? insets.bottom + 24 : 16;
   const shouldHideAvatar = hideAvatar ?? showBack;
 
   if (scroll) {

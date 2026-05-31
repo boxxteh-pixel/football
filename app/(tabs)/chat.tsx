@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MatchListItem } from '@/components/match/MatchListItem';
 import { useColors} from '@/theme/colors';
@@ -34,7 +33,6 @@ interface Message {
 
 export default function ChatScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const haptics = useHaptics();
   const settings = useSettingsStore((s) => s.settings);
   const isIt = settings.language === 'it';
@@ -317,7 +315,7 @@ export default function ChatScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <View style={{ flex: 1, paddingBottom: insets.bottom + 84 }}>
+          <View style={{ flex: 1 }}>
             {/* Messages List */}
             <FlatList
               ref={flatListRef}
