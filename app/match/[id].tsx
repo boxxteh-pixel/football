@@ -24,7 +24,7 @@ import {
 } from '@/hooks/useFixtures';
 import { useFullPrediction } from '@/hooks/usePrediction';
 import { useLiveTracker } from '@/hooks/useLiveTracker';
-import { useCanonicalPick } from '@/hooks/useCanonicalPick';
+import { useFixturePrediction } from '@/hooks/useFixturePrediction';
 import { BoroPickFrame } from '@/components/match/BoroPickFrame';
 import { useT } from '@/theme/i18n';
 import { useFavoritesStore } from '@/store/favoritesStore';
@@ -46,9 +46,13 @@ export default function MatchDetailScreen() {
   const live = fixture ? isLive(fixture.fixture.status.short) : false;
   const { data: events = [] } = useFixtureEvents(id, live);
   const { data: stats = [] } = useFixtureStats(id, live);
-  const { data: prediction } = useFullPrediction(fixture ?? undefined);
+  const { data: fullPrediction } = useFullPrediction(fixture ?? undefined);
   const { data: tracker } = useLiveTracker(fixture ?? undefined);
-  const canonical = useCanonicalPick(fixture ?? undefined);
+  const canonical = useFixturePrediction(fixture ?? undefined);
+  // SINGLE source of truth for everything shown on this page: the canonical
+  // pick (same data the cards/Results use). Fall back to the richer ensemble
+  // only when canonical insights aren't available yet.
+  const prediction = canonical.prediction ?? fullPrediction;
 
   const momentumValues = useMemo(() => {
     if (!fixture) return Array(15).fill(0.4);
@@ -198,10 +202,16 @@ export default function MatchDetailScreen() {
 
               <AIInsightCard
                 label={t('match.matchResult')}
-                title={formatPredictionSelection(prediction.topPick.selection, t)}
-                subLabel={`${t(confidenceKey).toLowerCase()} ${t('match.confidence')}`}
+                title={
+                  prediction.homeWinPct >= prediction.awayWinPct && prediction.homeWinPct >= prediction.drawPct
+                    ? formatPredictionSelection(`${fixture.teams.home.name} to Win`, t)
+                    : prediction.awayWinPct >= prediction.drawPct
+                    ? formatPredictionSelection(`${fixture.teams.away.name} to Win`, t)
+                    : t('prediction.draw')
+                }
+                subLabel={`${Math.round(Math.max(prediction.homeWinPct, prediction.drawPct, prediction.awayWinPct))}% ${t('match.confidence')}`}
                 subIcon={null}
-                probability={prediction.topPick.probability}
+                probability={Math.max(prediction.homeWinPct, prediction.drawPct, prediction.awayWinPct)}
                 accentLeft
                 ringColor={colors.primaryFixed}
               />

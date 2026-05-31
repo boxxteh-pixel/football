@@ -7,7 +7,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { TeamCrest } from '@/components/ui/TeamCrest';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
-import { useQuickPrediction } from '@/hooks/usePrediction';
+import { useFixturePrediction } from '@/hooks/useFixturePrediction';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import type { PredictionResult } from '@/types/prediction';
@@ -17,7 +17,8 @@ import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface MatchListItemProps {
   fixture: Fixture;
-  /** Real prediction from the batched today-insights map; falls back to quick estimate. */
+  /** Optional pre-resolved prediction (from the batch map). If absent, the row
+   *  resolves the SAME real prediction itself via the shared cache. */
   prediction?: PredictionResult;
 }
 
@@ -25,16 +26,16 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
   const colors = useColors();
   const haptics = useHaptics();
   const t = useT();
-  const quick = useQuickPrediction(fixture);
-  const prediction = provided ?? quick;
+  const resolved = useFixturePrediction(provided ? null : fixture);
+  const prediction = provided ?? resolved.prediction;
   const live = isLive(fixture.fixture.status.short);
   const time = format(parseISO(fixture.fixture.date), 'HH:mm');
-  const isHigh = prediction.topPick.probability >= 80;
-  const isMid = prediction.topPick.probability >= 60 && prediction.topPick.probability < 80;
+  const isHigh = (prediction?.topPick.probability ?? 0) >= 80;
+  const isMid = (prediction?.topPick.probability ?? 0) >= 60 && (prediction?.topPick.probability ?? 0) < 80;
   const probColor = isHigh ? colors.primaryFixed : isMid ? colors.onSurface : colors.onSurfaceVariant;
 
   const tagLabel = isHigh
-    ? prediction.confidence === 'ELITE'
+    ? prediction?.confidence === 'ELITE'
       ? 'ELITE'
       : 'SAFE'
     : null;
@@ -184,60 +185,68 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
 
           {/* 3. Prediction & Probabilities (Right) */}
           <View style={{ alignItems: 'flex-end', gap: 4, paddingLeft: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              {tagLabel && (
+            {prediction ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  {tagLabel && (
+                    <View
+                      style={{
+                        backgroundColor: live ? 'rgba(255, 255, 255, 0.06)' : colors.accent10,
+                        paddingHorizontal: 4,
+                        paddingVertical: 1,
+                        borderRadius: 3,
+                        marginRight: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: live ? colors.onSurfaceVariant : colors.primaryFixed,
+                          fontFamily: fonts.label,
+                          fontSize: 8,
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        {tagLabel}
+                      </Text>
+                    </View>
+                  )}
+                  <Text
+                    style={{
+                      color: live ? colors.onSurface : probColor,
+                      fontFamily: fonts.stats,
+                      fontSize: 14,
+                    }}
+                  >
+                    {Math.round(prediction.topPick.probability)}%
+                  </Text>
+                </View>
                 <View
                   style={{
-                    backgroundColor: live ? 'rgba(255, 255, 255, 0.06)' : colors.accent10,
-                    paddingHorizontal: 4,
-                    paddingVertical: 1,
-                    borderRadius: 3,
-                    marginRight: 2,
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.06)',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 6,
                   }}
                 >
                   <Text
                     style={{
-                      color: live ? colors.onSurfaceVariant : colors.primaryFixed,
+                      color: colors.onSurfaceVariant,
                       fontFamily: fonts.label,
-                      fontSize: 8,
-                      letterSpacing: 0.5,
+                      fontSize: 9,
                     }}
+                    numberOfLines={1}
                   >
-                    {tagLabel}
+                    {formatPredictionSelection(prediction.topPick.selection, t)} • {prediction.topPick.odds.toFixed(2)}
                   </Text>
                 </View>
-              )}
-              <Text
-                style={{
-                  color: live ? colors.onSurface : probColor,
-                  fontFamily: fonts.stats,
-                  fontSize: 14,
-                }}
-              >
-                {Math.round(prediction.topPick.probability)}%
+              </>
+            ) : (
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 10 }}>
+                {t('pick.analyzing')}
               </Text>
-            </View>
-            <View
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.06)',
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-                borderRadius: 6,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.onSurfaceVariant,
-                  fontFamily: fonts.label,
-                  fontSize: 9,
-                }}
-                numberOfLines={1}
-              >
-                {formatPredictionSelection(prediction.topPick.selection, t)} • {prediction.topPick.odds.toFixed(2)}
-              </Text>
-            </View>
+            )}
           </View>
 
         </View>

@@ -17,7 +17,6 @@ import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
-import { quickPredict } from '@/services/ai/predictor';
 import { hasApiKey } from '@/constants/config';
 import type { Fixture } from '@/types/match';
 import { isLive, isScheduled } from '@/types/match';
@@ -81,7 +80,7 @@ export default function PredictorTab() {
   const bestPicks = useMemo(
     () =>
       [...fixtures]
-        .map((f) => ({ fixture: f, prob: (predictionMap.get(f.fixture.id) ?? quickPredict(f)).topPick.probability }))
+        .map((f) => ({ fixture: f, prob: predictionMap.get(f.fixture.id)?.topPick.probability ?? -1 }))
         .sort((a, b) => b.prob - a.prob)
         .slice(0, 5)
         .map((x) => x.fixture),

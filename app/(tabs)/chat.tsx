@@ -18,7 +18,6 @@ import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
-import { quickPredict } from '@/services/ai/predictor';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
 import { useT } from '@/theme/i18n';
@@ -48,9 +47,10 @@ export default function ChatScreen() {
     return todayFixtures.filter((f) => selectedLeagueIds.includes(f.league.id));
   }, [todayFixtures, selectedLeagueIds]);
 
-  // Resolve a real prediction (provider + odds) for a fixture, else quick estimate.
+  // Resolve the REAL prediction for a fixture (provider + odds). Returns null
+  // when no real data exists — we never show a random/placeholder pick in chat.
   const predictFor = useMemo(
-    () => (f: Fixture) => predictionMap.get(f.fixture.id) ?? quickPredict(f),
+    () => (f: Fixture) => predictionMap.get(f.fixture.id) ?? null,
     [predictionMap],
   );
 
@@ -145,8 +145,14 @@ export default function ChatScreen() {
           // Sort by highest pick probability
           const sorted = [...pool]
             .map((f) => ({ fixture: f, prediction: predictFor(f) }))
+            .filter((x): x is { fixture: Fixture; prediction: NonNullable<typeof x.prediction> } => x.prediction != null)
             .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability);
 
+          if (sorted.length === 0) {
+            replyText = isIt
+              ? 'Sto ancora analizzando le quote di oggi. Riprova tra poco.'
+              : "I'm still analyzing today's odds. Try again shortly.";
+          } else {
           const top = sorted[0];
           const topSelection = formatPredictionSelection(top.prediction.topPick.selection, t);
           matchedFixtures = [top.fixture];
@@ -154,6 +160,7 @@ export default function ChatScreen() {
           replyText = isIt
             ? `🛡️ **Il pronostico più sicuro di oggi:**\n\nHo scansionato il palinsesto odierno. La partita con la probabilità matematica più alta è **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Pronostico:** ${topSelection}\n• **Probabilità:** ${Math.round(top.prediction.topPick.probability)}%\n• **Quota:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidenza:** ELEVATA\n\nTocca la scheda qui sotto per l'analisi ELO e xG completa!`
             : `🛡️ **The safest match today:**\n\nI scanned today's schedule. The match with the highest mathematical probability is **${top.fixture.teams.home.name} vs ${top.fixture.teams.away.name}** (${top.fixture.league.name}).\n\n• **Model Prediction:** ${topSelection}\n• **Probability:** ${Math.round(top.prediction.topPick.probability)}%\n• **Odds:** ${top.prediction.topPick.odds.toFixed(2)}\n• **Confidence:** HIGH\n\nTap the match card below to see the complete ELO & xG analysis!`;
+          }
         }
       }
       // 2. ACCUMULATOR
@@ -172,9 +179,15 @@ export default function ChatScreen() {
         } else {
           const sorted = [...pool]
             .map((f) => ({ fixture: f, prediction: predictFor(f) }))
+            .filter((x): x is { fixture: Fixture; prediction: NonNullable<typeof x.prediction> } => x.prediction != null)
             .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability)
             .slice(0, 3);
 
+          if (sorted.length < 2) {
+            replyText = isIt
+              ? 'Sto ancora analizzando le quote di oggi. Riprova tra poco.'
+              : "I'm still analyzing today's odds. Try again shortly.";
+          } else {
           matchedFixtures = sorted.map((s) => s.fixture);
           const totalOdds = sorted.reduce((acc, s) => acc * s.prediction.topPick.odds, 1);
           const avgProb = sorted.reduce((acc, s) => acc + s.prediction.topPick.probability, 0) / sorted.length;
@@ -189,6 +202,7 @@ export default function ChatScreen() {
           replyText = isIt
             ? `🔥 **Multipla consigliata da BORO (3 Eventi):**\n\nEcco una combinazione ad alta affidabilità per oggi:\n\n${matchLines}\n\n• **Quota Totale:** **${totalOdds.toFixed(2)}**\n• **Probabilità Media:** **${Math.round(avgProb)}%**\n\nTocca le schede delle singole partite qui sotto per studiare i dettagli.`
             : `🔥 **BORO Recommended Accumulator (3-Fold):**\n\nHere is a high-reliability combo for today's slate:\n\n${matchLines}\n\n• **Total Combined Odds:** **${totalOdds.toFixed(2)}**\n• **Average Probability:** **${Math.round(avgProb)}%**\n\nTap the match cards below to inspect ELO rating values.`;
+          }
         }
       }
       // 3. VALUE PLAYS
@@ -202,6 +216,7 @@ export default function ChatScreen() {
         const pool = fixtures.length > 0 ? fixtures : todayFixtures;
         const valuePicks = [...pool]
           .map((f) => ({ fixture: f, prediction: predictFor(f) }))
+          .filter((x): x is { fixture: Fixture; prediction: NonNullable<typeof x.prediction> } => x.prediction != null)
           .filter(
             (p) =>
               p.prediction.topPick.probability >= 38 &&

@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTodayInsights } from '@/services/api/smInsights';
 import { predictFromInsights } from '@/services/ai/predictor';
+import { usePrefillInsights } from '@/hooks/useFixturePrediction';
 import { useSettingsStore } from '@/store/settingsStore';
 import { hasApiKey } from '@/constants/config';
 import { todayIsoDate } from '@/utils/date';
@@ -11,12 +12,14 @@ import type { PredictionResult } from '@/types/prediction';
  * Batched REAL predictions for today's fixtures across the user's leagues.
  *
  * Fetches every fixture once (with provider predictions + bookmaker odds inline)
- * and builds a fixtureId → PredictionResult map driven by real market data,
- * so list rows and the "best picks" carousel show genuine probabilities instead
- * of the old random placeholder estimates.
+ * and:
+ *  1. builds a fixtureId → PredictionResult map for list rows/cards, and
+ *  2. PREFILLS the shared ['matchInsights', id] cache so the match-page frame
+ *     reads the EXACT same insights (no more card vs frame mismatch).
  */
 export const useTodayPredictions = () => {
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
+  const prefill = usePrefillInsights();
 
   const query = useQuery({
     queryKey: ['todayInsights', todayIsoDate(), selectedLeagueIds.join(',')],
@@ -27,6 +30,14 @@ export const useTodayPredictions = () => {
     refetchOnMount: false,
     refetchOnReconnect: false,
   });
+
+  // Share the batch's insights into the per-fixture cache so every surface
+  // computes the pick from identical data.
+  useEffect(() => {
+    if (!query.data) return;
+    prefill(query.data.map(({ fixture, insights }) => ({ fixtureId: fixture.fixture.id, insights })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.data]);
 
   const predictionMap = useMemo(() => {
     const map = new Map<number, PredictionResult>();

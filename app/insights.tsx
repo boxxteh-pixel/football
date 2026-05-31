@@ -11,7 +11,6 @@ import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useValuePicks } from '@/hooks/useValuePicks';
-import { quickPredict } from '@/services/ai/predictor';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import type { Fixture } from '@/types/match';
@@ -36,7 +35,8 @@ export default function InsightsScreen() {
       .filter((f) => selectedLeagueIds.includes(f.league.id))
       .filter((f) => isScheduled(f.fixture.status.short) || isLive(f.fixture.status.short));
     return list
-      .map((f) => ({ fixture: f, prediction: predictionMap.get(f.fixture.id) ?? quickPredict(f) }))
+      .map((f) => ({ fixture: f, prediction: predictionMap.get(f.fixture.id) }))
+      .filter((x): x is { fixture: typeof x.fixture; prediction: NonNullable<typeof x.prediction> } => x.prediction != null)
       .sort((a, b) => b.prediction.topPick.probability - a.prediction.topPick.probability);
   }, [data, selectedLeagueIds, predictionMap]);
 

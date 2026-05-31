@@ -8,7 +8,7 @@ import { TeamCrest } from '@/components/ui/TeamCrest';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
-import { useQuickPrediction } from '@/hooks/usePrediction';
+import { useFixturePrediction } from '@/hooks/useFixturePrediction';
 import type { Fixture } from '@/types/match';
 import type { PredictionResult } from '@/types/prediction';
 import { useT } from '@/theme/i18n';
@@ -16,7 +16,7 @@ import { formatPredictionSelection } from '@/utils/predictionText';
 
 interface BestPickCardProps {
   fixture: Fixture;
-  /** Real prediction from the batched today-insights map; falls back to quick estimate. */
+  /** Optional pre-resolved prediction; otherwise resolved from the shared cache. */
   prediction?: PredictionResult;
 }
 
@@ -24,11 +24,19 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
   const colors = useColors();
   const haptics = useHaptics();
   const t = useT();
-  const quick = useQuickPrediction(fixture);
-  const prediction = provided ?? quick;
-  const isHigh = prediction.topPick.probability >= 80;
+  const resolved = useFixturePrediction(provided ? null : fixture);
+  const prediction = provided ?? resolved.prediction;
+  const isHigh = (prediction?.topPick.probability ?? 0) >= 80;
   const accentColor = isHigh ? colors.primaryFixed : colors.secondaryFixed;
   const kickoff = format(parseISO(fixture.fixture.date), 'HH:mm');
+
+  if (!prediction) {
+    return (
+      <GlassCard rounded="2xl" padding={16} style={{ width: 280, marginRight: 14, height: 200, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11 }}>{t('pick.analyzing')}</Text>
+      </GlassCard>
+    );
+  }
 
   return (
     <Pressable
