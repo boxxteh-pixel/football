@@ -72,10 +72,10 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           backgroundColor: bg,
           ...(glow
             ? {
-                shadowColor: colors.primaryFixed,
-                shadowOpacity: Platform.OS === 'web' ? 0 : 0.25,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: 6 },
+                shadowColor: '#000',
+                shadowOpacity: Platform.OS === 'web' ? 0 : 0.35,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 8 },
                 elevation: 8,
               }
             : {}),
@@ -98,14 +98,10 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           }}
         />
       )}
-      {/* Subtle glassy sheen along the top edge for depth. */}
+      {/* Subtle glassy sheen along the top edge for depth (neutral, no color glow). */}
       <LinearGradient
         pointerEvents="none"
-        colors={
-          activeBorder
-            ? [colors.accent10, 'transparent']
-            : ['rgba(255,255,255,0.06)', 'transparent']
-        }
+        colors={['rgba(255,255,255,0.05)', 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={{
@@ -113,7 +109,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           top: 0,
           left: 0,
           right: 0,
-          height: '55%',
+          height: '50%',
         }}
       />
       <View style={[{ position: 'relative', zIndex: 1 }, innerStyle]}>

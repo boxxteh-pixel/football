@@ -11,6 +11,7 @@ import { BestPickCard } from '@/components/match/BestPickCard';
 import { MatchListItem } from '@/components/match/MatchListItem';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
@@ -107,10 +108,10 @@ export default function PredictorTab() {
           />
         }
       >
-        <View style={{ gap: 24 }}>
-          <View style={{ gap: 16 }}>
+        <View style={{ gap: 28 }}>
+          <View style={{ gap: 14 }}>
             <SearchBar value={search} onChangeText={setSearch} placeholder={t('predictor.search')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }}>
               <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
               {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
                 <Chip
@@ -123,18 +124,8 @@ export default function PredictorTab() {
             </ScrollView>
           </View>
 
-          <View style={{ gap: 12 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-              }}
-            >
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
-                {t('predictor.bestPicks')}
-              </Text>
-            </View>
+          <View style={{ gap: 14 }}>
+            <SectionHeader eyebrow={t('predictor.topConfidence')} title={t('predictor.bestPicks')} />
             {isLoading ? (
               <BestPicksSkeleton />
             ) : error ? (
@@ -158,13 +149,11 @@ export default function PredictorTab() {
             )}
           </View>
 
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
-                {t('predictor.liveUpcoming')}
-              </Text>
-              {liveCount > 0 && <LivePulse label={`${liveCount} LIVE`} />}
-            </View>
+          <View style={{ gap: 14 }}>
+            <SectionHeader
+              title={t('predictor.liveUpcoming')}
+              right={liveCount > 0 ? <LivePulse label={`${liveCount} LIVE`} /> : undefined}
+            />
             {isLoading ? (
               <ListSkeleton />
             ) : error ? (
@@ -180,21 +169,32 @@ export default function PredictorTab() {
             )}
           </View>
 
-          <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 22 }}>
-              {t('predictor.discovery')}
-            </Text>
+          <View style={{ gap: 14 }}>
+            <SectionHeader title={t('predictor.discovery')} />
             <GlassCard padding={20} activeBorder style={{ gap: 16 }}>
-              <View style={{ gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <BoroIcon name="auto-awesome" size={20} color={colors.primaryFixed} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: colors.accent12,
+                    borderWidth: 1,
+                    borderColor: colors.accent30,
+                  }}
+                >
+                  <BoroIcon name="auto-awesome" size={22} color={colors.primaryFixed} />
+                </View>
+                <View style={{ flex: 1, gap: 3 }}>
                   <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16 }}>
                     {t('predictor.accumulator')}
                   </Text>
+                  <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 }}>
+                    {t('insights.accumulatorSubtitle')}
+                  </Text>
                 </View>
-                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
-                  {t('insights.accumulatorSubtitle')}
-                </Text>
               </View>
               <NeonButton
                 label={t('predictor.openInsights')}
@@ -213,8 +213,8 @@ export default function PredictorTab() {
 const BestPicksSkeleton: React.FC = () => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
     {[0, 1, 2].map((i) => (
-      <View key={i} style={{ marginRight: 16, width: 300 }}>
-        <Skeleton height={220} radius={16} />
+      <View key={i} style={{ marginRight: 14, width: 300 }}>
+        <Skeleton height={210} radius={24} />
       </View>
     ))}
   </ScrollView>
@@ -223,7 +223,7 @@ const BestPicksSkeleton: React.FC = () => (
 const ListSkeleton: React.FC = () => (
   <View style={{ gap: 12 }}>
     {[0, 1, 2, 3].map((i) => (
-      <Skeleton key={i} height={84} radius={12} />
+      <Skeleton key={i} height={84} radius={18} />
     ))}
   </View>
 );

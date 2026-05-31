@@ -49,7 +49,7 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], marginBottom: 10 })}
     >
       <GlassCard
-        padding={12}
+        padding={14}
         style={live ? {
           borderColor: 'rgba(255, 149, 0, 0.55)',
           borderWidth: 1.5,

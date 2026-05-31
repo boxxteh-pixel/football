@@ -2,8 +2,8 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { format, parseISO } from 'date-fns';
+import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { TeamCrest } from '@/components/ui/TeamCrest';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
@@ -32,7 +32,7 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
 
   if (!prediction) {
     return (
-      <GlassCard rounded="2xl" padding={16} style={{ width: 280, marginRight: 14, height: 200, alignItems: 'center', justifyContent: 'center' }}>
+      <GlassCard rounded="2xl" padding={16} style={{ width: 300, marginRight: 14, height: 210, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11 }}>{t('pick.analyzing')}</Text>
       </GlassCard>
     );
@@ -50,9 +50,9 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
     >
       <GlassCard
         rounded="2xl"
-        padding={16}
+        padding={18}
         activeBorder={isHigh}
-        style={{ width: 280, marginRight: 14 }}
+        style={{ width: 300, marginRight: 14 }}
       >
         {/* Card Header: League & Kickoff */}
         <View
@@ -60,7 +60,7 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 12,
+            marginBottom: 16,
           }}
         >
           <Text
@@ -68,7 +68,7 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
               color: colors.onSurfaceVariant,
               fontFamily: fonts.label,
               fontSize: 10,
-              letterSpacing: 0.5,
+              letterSpacing: 0.8,
               textTransform: 'uppercase',
               flex: 1,
               marginRight: 8,
@@ -79,17 +79,21 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           </Text>
           <View
             style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-              borderRadius: 4,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 8,
             }}
           >
+            <BoroIcon name="schedule" size={11} color={colors.onSurfaceVariant} />
             <Text
               style={{
                 color: colors.onSurface,
                 fontFamily: fonts.label,
-                fontSize: 10,
+                fontSize: 11,
               }}
             >
               {kickoff}
@@ -102,18 +106,18 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingVertical: 8,
+            alignItems: 'flex-start',
+            paddingVertical: 4,
           }}
         >
           {/* Home Team */}
-          <View style={{ alignItems: 'center', gap: 6, width: 80 }}>
-            <TeamCrest uri={fixture.teams.home.logo} size={40} />
+          <View style={{ alignItems: 'center', gap: 8, width: 86 }}>
+            <TeamCrest uri={fixture.teams.home.logo} size={48} glow={isHigh} />
             <Text
               style={{
                 color: colors.onSurface,
                 fontFamily: fonts.bodyBold,
-                fontSize: 11,
+                fontSize: 12,
                 textAlign: 'center',
               }}
               numberOfLines={2}
@@ -123,33 +127,24 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           </View>
 
           {/* Prediction Middle Area */}
-          <View style={{ alignItems: 'center', gap: 4, flex: 1 }}>
-            <View
+          <View style={{ alignItems: 'center', gap: 5, flex: 1, paddingTop: 6 }}>
+            <Text
               style={{
-                backgroundColor: isHigh ? colors.accent12 : 'rgba(255, 255, 255, 0.05)',
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: isHigh ? colors.accent30 : 'rgba(255, 255, 255, 0.1)',
+                color: accentColor,
+                fontFamily: fonts.display,
+                fontSize: 26,
+                letterSpacing: -1,
               }}
             >
-              <Text
-                style={{
-                  color: accentColor,
-                  fontFamily: fonts.stats,
-                  fontSize: 14,
-                }}
-              >
-                {Math.round(prediction.topPick.probability)}%
-              </Text>
-            </View>
+              {Math.round(prediction.topPick.probability)}%
+            </Text>
             <Text
               style={{
                 color: colors.onSurfaceVariant,
                 fontFamily: fonts.label,
-                fontSize: 9,
-                letterSpacing: 0.5,
+                fontSize: 8,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
               }}
             >
               {t('match.probability')}
@@ -157,13 +152,13 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           </View>
 
           {/* Away Team */}
-          <View style={{ alignItems: 'center', gap: 6, width: 80 }}>
-            <TeamCrest uri={fixture.teams.away.logo} size={40} />
+          <View style={{ alignItems: 'center', gap: 8, width: 86 }}>
+            <TeamCrest uri={fixture.teams.away.logo} size={48} glow={isHigh} />
             <Text
               style={{
                 color: colors.onSurface,
                 fontFamily: fonts.bodyBold,
-                fontSize: 11,
+                fontSize: 12,
                 textAlign: 'center',
               }}
               numberOfLines={2}
@@ -178,9 +173,9 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           style={{
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.06)',
-            paddingTop: 10,
-            marginTop: 10,
-            gap: 8,
+            paddingTop: 12,
+            marginTop: 14,
+            gap: 10,
           }}
         >
           <View
@@ -190,19 +185,19 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
               alignItems: 'center',
             }}
           >
-            <View style={{ gap: 2 }}>
-              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
+            <View style={{ gap: 3, flex: 1, marginRight: 12 }}>
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 {t('match.selection')}
               </Text>
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13 }} numberOfLines={1}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }} numberOfLines={1}>
                 {formatPredictionSelection(prediction.topPick.selection, t)}
               </Text>
             </View>
-            <View style={{ alignItems: 'flex-end', gap: 2 }}>
-              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
+            <View style={{ alignItems: 'flex-end', gap: 3 }}>
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 {t('match.odds')}
               </Text>
-              <Text style={{ color: accentColor, fontFamily: fonts.bodyBold, fontSize: 13 }}>
+              <Text style={{ color: accentColor, fontFamily: fonts.stats, fontSize: 16 }}>
                 {prediction.topPick.odds.toFixed(2)}
               </Text>
             </View>
@@ -212,9 +207,9 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           <View
             style={{
               width: '100%',
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: colors.surfaceContainerHighest,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: 'rgba(255,255,255,0.06)',
               overflow: 'hidden',
             }}
           >
@@ -222,6 +217,7 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
               style={{
                 width: `${prediction.topPick.probability}%`,
                 height: '100%',
+                borderRadius: 3,
                 backgroundColor: accentColor,
               }}
             />

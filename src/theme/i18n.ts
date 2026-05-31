@@ -45,6 +45,7 @@ const EN: Dict = {
   'reason.modelBased': 'Model output based on team form and season-long goal averages.',
 
   'predictor.bestPicks': 'Best Picks Today',
+  'predictor.topConfidence': 'Top Confidence',
   'predictor.slate': "Today's Slate",
   'predictor.discovery': 'Smart Discovery',
   'predictor.accumulator': 'Daily Accumulator',
@@ -334,6 +335,7 @@ const IT: Dict = {
   'reason.modelBased': 'Output del modello basato su forma squadra e medie gol stagionali.',
 
   'predictor.bestPicks': 'Migliori Pronostici Oggi',
+  'predictor.topConfidence': 'Massima Affidabilità',
   'predictor.slate': 'Partite di Oggi',
   'predictor.discovery': 'Scoperta Intelligente',
   'predictor.accumulator': 'Multipla Giornaliera',

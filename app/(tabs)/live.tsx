@@ -6,6 +6,7 @@ import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { ResultListItem } from '@/components/match/ResultListItem';
 import { DateStrip } from '@/components/match/DateStrip';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { useColors } from '@/theme/colors';
@@ -50,14 +51,7 @@ export default function ResultsTab() {
     >
       <View style={{ gap: 18 }}>
         {/* Header */}
-        <View style={{ gap: 6 }}>
-          <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
-            {t('results.title')}
-          </Text>
-          <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
-            {t('results.subtitle')}
-          </Text>
-        </View>
+        <SectionHeader eyebrow={t('results.subtitle')} title={t('results.title')} />
 
         {/* Calendar date strip */}
         <DateStrip selected={selectedDate} onSelect={setSelectedDate} count={14} />
