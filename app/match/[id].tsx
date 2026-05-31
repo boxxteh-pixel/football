@@ -24,6 +24,8 @@ import {
 } from '@/hooks/useFixtures';
 import { useFullPrediction } from '@/hooks/usePrediction';
 import { useLiveTracker } from '@/hooks/useLiveTracker';
+import { useCanonicalPick } from '@/hooks/useCanonicalPick';
+import { BoroPickFrame } from '@/components/match/BoroPickFrame';
 import { useT } from '@/theme/i18n';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { computeMomentumWindows, computePressureSwing, extractStatNumber } from '@/services/ai/momentum';
@@ -46,6 +48,7 @@ export default function MatchDetailScreen() {
   const { data: stats = [] } = useFixtureStats(id, live);
   const { data: prediction } = useFullPrediction(fixture ?? undefined);
   const { data: tracker } = useLiveTracker(fixture ?? undefined);
+  const canonical = useCanonicalPick(fixture ?? undefined);
 
   const momentumValues = useMemo(() => {
     if (!fixture) return Array(15).fill(0.4);
@@ -148,6 +151,10 @@ export default function MatchDetailScreen() {
               {t('match.aiInsights')}
             </Text>
           </View>
+
+          {canonical.prediction && (
+            <BoroPickFrame prediction={canonical.prediction} graded={canonical.graded} />
+          )}
 
           {!prediction ? (
             <View style={{ gap: 12 }}>

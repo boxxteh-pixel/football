@@ -85,7 +85,7 @@ export default function ResultsTab() {
         )}
 
         {/* Market filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
           {filters.map((f) => {
             const active = marketFilter === f.id;
             return (

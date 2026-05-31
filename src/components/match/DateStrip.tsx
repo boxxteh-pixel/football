@@ -28,7 +28,7 @@ export const DateStrip: React.FC<DateStripProps> = ({ selected, onSelect, count 
   return (
     <ScrollView
       horizontal
-      showsHorizontalScrollIndicator={Platform.OS === 'web'}
+      showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: 8, paddingRight: 16 }}
     >
       {/* Recent rolling view */}
