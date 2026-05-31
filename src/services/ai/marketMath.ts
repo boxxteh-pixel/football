@@ -112,3 +112,76 @@ export const blendDistributions = (
   const wA = 1 - wB;
   return a.map((v, i) => v * wA + (b[i] ?? 0) * wB);
 };
+
+
+/**
+ * Dixon-Coles goals model: from expected goals (λ_home, λ_away) compute the
+ * goal-market probabilities (Over/Under lines + BTTS) by summing the bivariate
+ * scoreline grid with the low-score correction. Returns probabilities in 0-1.
+ *
+ * This is the statistical backbone for Over/Under and BTTS — when blended with
+ * the bookmaker line and the provider model it materially improves goals
+ * accuracy (the user's weakest market).
+ */
+const factorial = (n: number): number => {
+  let r = 1;
+  for (let i = 2; i <= n; i++) r *= i;
+  return r;
+};
+const poissonPmf = (k: number, lambda: number): number => {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+};
+
+export interface GoalsModel {
+  over: Record<string, number>; // keyed "0.5","1.5",... → P(over) 0-1
+  bttsYes: number;
+  expectedTotal: number;
+  lambdaHome: number;
+  lambdaAway: number;
+}
+
+export const goalsModel = (lambdaHome: number, lambdaAway: number, rho = -0.06): GoalsModel => {
+  const MAX = 8;
+  const ph = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaHome));
+  const pa = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaAway));
+
+  const dc = (i: number, j: number): number => {
+    if (i === 0 && j === 0) return 1 - lambdaHome * lambdaAway * rho;
+    if (i === 0 && j === 1) return 1 + lambdaHome * rho;
+    if (i === 1 && j === 0) return 1 + lambdaAway * rho;
+    if (i === 1 && j === 1) return 1 - rho;
+    return 1;
+  };
+
+  let total = 0;
+  const grid: number[][] = [];
+  for (let i = 0; i <= MAX; i++) {
+    grid[i] = [];
+    for (let j = 0; j <= MAX; j++) {
+      const p = ph[i] * pa[j] * dc(i, j);
+      grid[i][j] = p;
+      total += p;
+    }
+  }
+  // Normalize.
+  const norm = total > 0 ? 1 / total : 1;
+
+  const lines = [0.5, 1.5, 2.5, 3.5, 4.5];
+  const over: Record<string, number> = {};
+  for (const line of lines) over[String(line)] = 0;
+  let bttsYes = 0;
+  let expectedTotal = 0;
+
+  for (let i = 0; i <= MAX; i++) {
+    for (let j = 0; j <= MAX; j++) {
+      const p = grid[i][j] * norm;
+      const tot = i + j;
+      expectedTotal += tot * p;
+      for (const line of lines) if (tot > line) over[String(line)] += p;
+      if (i >= 1 && j >= 1) bttsYes += p;
+    }
+  }
+
+  return { over, bttsYes, expectedTotal, lambdaHome, lambdaAway };
+};

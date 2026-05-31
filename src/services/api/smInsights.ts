@@ -4,19 +4,67 @@
  * Pulls EVERYTHING the model needs for one fixture in as few calls as possible:
  *   - SportMonks model predictions (29 markets: 1X2, O/U lines, BTTS, DC,
  *     correct score, HT/FT, team-to-score-first, corners, valuebet)
- *   - Pre-match bookmaker odds → devigged fair probabilities (1X2, O/U2.5, BTTS, DC)
+ *   - Pre-match bookmaker odds â†’ devigged fair probabilities (1X2, O/U2.5, BTTS, DC)
  *   - Expected goals (xG) when available
  *
  * Because our internal fixture IDs ARE SportMonks fixture IDs (fixtures are
- * mapped 1:1 from SportMonks), we fetch by ID directly — far more accurate than
+ * mapped 1:1 from SportMonks), we fetch by ID directly â€” far more accurate than
  * the legacy fuzzy date/name matching.
  */
 import { smGet, smGetAll, TTL } from './smClient';
 import { PRED, MARKET } from './smTypes';
-import { devigShin, devigProportional, valueEdge } from '@/services/ai/marketMath';
+import { devigShin, devigProportional, valueEdge, goalsModel } from '@/services/ai/marketMath';
 import { LEAGUE_TO_SPORTMONKS } from '@/constants/leagues';
+import { fetchFixtureGoalRates, fetchTeamRatesMap, type TeamGoalRates } from './smGoals';
 import type { Fixture } from '@/types/match';
 import { mapSportmonksFixture } from './sportmonks';
+
+// League-average goals per game (home/away) used for shrinkage of small samples.
+const LG_HOME = 1.5;
+const LG_AWAY = 1.15;
+const SHRINK_K = 5; // pseudo-matches pulling rates toward the league mean
+
+/** Empirical-Bayes shrink of a per-game rate toward a prior. */
+const shrinkRate = (obs: number | null, n: number | null, prior: number): number => {
+  if (obs == null || !Number.isFinite(obs)) return prior;
+  const games = n ?? 0;
+  return (games * obs + SHRINK_K * prior) / (games + SHRINK_K);
+};
+
+/**
+ * Build the Dixon-Coles goals model (Over/Under ladder + BTTS + expected total)
+ * from two teams' REAL season scoring rates. Shared by every fetcher so the
+ * match page, home cards and Results screen all derive the IDENTICAL goals
+ * prediction — one pick everywhere. Returns null if either team's rates are
+ * missing (the predictor then leans on provider/market goals signals).
+ */
+const buildGoalsModel = (
+  hr: TeamGoalRates | null,
+  ar: TeamGoalRates | null,
+): MatchInsights['goals'] => {
+  if (!hr || !ar) return null;
+  // Prefer venue-specific rates, but fall back to overall when a split is empty
+  // (e.g. a team that hasn't played at home yet this season).
+  const pick = (split: number | null, all: number | null): number | null =>
+    split != null && split > 0 ? split : all;
+  const homeScored = shrinkRate(pick(hr.scoredHome, hr.scoredAll), hr.matchesPlayed, LG_HOME);
+  const awayConceded = shrinkRate(pick(ar.concededAway, ar.concededAll), ar.matchesPlayed, LG_HOME);
+  const awayScored = shrinkRate(pick(ar.scoredAway, ar.scoredAll), ar.matchesPlayed, LG_AWAY);
+  const homeConceded = shrinkRate(pick(hr.concededHome, hr.concededAll), hr.matchesPlayed, LG_AWAY);
+
+  // Expected goals = blend of (team's scoring) and (opponent's conceding),
+  // scaled so league-average teams reproduce league-average goals.
+  const lambdaHome = Math.max(0.2, Math.min(4, (homeScored + awayConceded) / 2));
+  const lambdaAway = Math.max(0.2, Math.min(4, (awayScored + homeConceded) / 2));
+  const gm = goalsModel(lambdaHome, lambdaAway);
+  return {
+    over: gm.over,
+    bttsYes: gm.bttsYes,
+    expectedTotal: gm.expectedTotal,
+    lambdaHome: gm.lambdaHome,
+    lambdaAway: gm.lambdaAway,
+  };
+};
 
 export interface OneXTwo {
   home: number;
@@ -65,11 +113,21 @@ export interface ValueBet {
   edge: number; // 0-1 ROI
 }
 
+export interface ModelGoals {
+  over: Record<string, number>; // 0-1 P(over) by line "1.5","2.5","3.5"
+  bttsYes: number; // 0-1
+  expectedTotal: number;
+  lambdaHome: number;
+  lambdaAway: number;
+}
+
 export interface MatchInsights {
   fixtureId: number;
   predictions: MarketProbabilities | null;
   bookmaker: BookmakerProbabilities | null;
   xg: { home: number; away: number } | null;
+  /** Dixon-Coles goals model from real season scoring rates (Over/Under, BTTS). */
+  goals: ModelGoals | null;
   hasRealData: boolean;
 }
 
@@ -179,7 +237,7 @@ const parseOdds = (odds: any[]): BookmakerProbabilities | null => {
     const label = normLabel(o.label);
     const value = parseFloat(o.value);
     if (!Number.isFinite(value) || value <= 1) continue;
-    // Skip suspended/closed lines — they go stale and produce phantom "value".
+    // Skip suspended/closed lines â€” they go stale and produce phantom "value".
     if (o.stopped === true || o.suspended === true) continue;
     bookmakerIds.add(bookId);
 
@@ -263,7 +321,7 @@ const parseOdds = (odds: any[]): BookmakerProbabilities | null => {
  *
  * Note on xG: the active plan does not expose clean per-team Expected Goals
  * (type 5304) on fixtures, so we deliberately do NOT fabricate an xG figure
- * here. The predictor falls back to its model-derived λ as the goal estimate,
+ * here. The predictor falls back to its model-derived Î» as the goal estimate,
  * clearly labeled as such in the UI.
  */
 export const fetchMatchInsights = async (
@@ -273,24 +331,28 @@ export const fetchMatchInsights = async (
 ): Promise<MatchInsights> => {
   try {
     const include = 'predictions.type;odds';
-    const data = await smGet(`/fixtures/${fixtureId}`, {
-      params: { include },
-      ttl: TTL.predictions,
-    });
+    const [data, goalRates] = await Promise.all([
+      smGet(`/fixtures/${fixtureId}`, { params: { include }, ttl: TTL.predictions }),
+      fetchFixtureGoalRates(homeId, awayId).catch(() => null),
+    ]);
 
     const predictions = parsePredictions(data?.predictions || []);
     const bookmaker = parseOdds(data?.odds || []);
+
+    // Build a Dixon-Coles goals model from REAL season scoring rates.
+    const goals = buildGoalsModel(goalRates?.home ?? null, goalRates?.away ?? null);
 
     return {
       fixtureId,
       predictions,
       bookmaker,
-      xg: null,
-      hasRealData: Boolean(predictions || bookmaker),
+      xg: goals ? { home: goals.lambdaHome, away: goals.lambdaAway } : null,
+      goals,
+      hasRealData: Boolean(predictions || bookmaker || goals),
     };
   } catch (err: any) {
     console.warn(`[smInsights] fixture ${fixtureId} insights failed:`, err?.message);
-    return { fixtureId, predictions: null, bookmaker: null, xg: null, hasRealData: false };
+    return { fixtureId, predictions: null, bookmaker: null, xg: null, goals: null, hasRealData: false };
   }
 };
 
@@ -434,6 +496,31 @@ export interface RawFixtureInsights {
 }
 
 /**
+ * Attach the Dixon-Coles season-goals model to a batch of fixtures so the
+ * cards/Results screen produce the IDENTICAL Over/Under + BTTS pick the match
+ * page does. Team goal rates are fetched once per team (cached 30 min, deduped)
+ * and reused across every fixture that team appears in. Mutates each row's
+ * `insights.goals` (and `xg`) in place.
+ */
+const attachGoalsModels = async (rows: RawFixtureInsights[]): Promise<void> => {
+  if (rows.length === 0) return;
+  const teamIds: number[] = [];
+  rows.forEach((r) => {
+    teamIds.push(r.fixture.teams.home.id, r.fixture.teams.away.id);
+  });
+  const rates = await fetchTeamRatesMap(teamIds).catch(() => new Map<number, TeamGoalRates | null>());
+  for (const r of rows) {
+    const goals = buildGoalsModel(
+      rates.get(r.fixture.teams.home.id) ?? null,
+      rates.get(r.fixture.teams.away.id) ?? null,
+    );
+    r.insights.goals = goals;
+    if (goals) r.insights.xg = { home: goals.lambdaHome, away: goals.lambdaAway };
+    r.insights.hasRealData = Boolean(r.insights.predictions || r.insights.bookmaker || goals);
+  }
+};
+
+/**
  * Batched real insights for an entire date across the given leagues.
  *
  * ONE paginated request pulls every fixture for the date WITH provider
@@ -498,17 +585,19 @@ export const fetchTodayInsights = async (
         predictions,
         bookmaker,
         xg: null,
+        goals: null,
         hasRealData: Boolean(predictions || bookmaker),
       },
     });
   }
+  await attachGoalsModels(out);
   return out;
 };
 
 
 /**
  * Recent FINISHED fixtures (last `days`) across the given leagues, each with the
- * provider predictions + bookmaker odds that existed for it — so the Results
+ * provider predictions + bookmaker odds that existed for it â€” so the Results
  * screen can grade the exact prediction the app would have shown.
  */
 export const fetchRecentResults = async (
@@ -553,11 +642,13 @@ export const fetchRecentResults = async (
         predictions,
         bookmaker,
         xg: null,
+        goals: null,
         hasRealData: Boolean(predictions || bookmaker),
       },
     });
   }
   // Newest first.
+  await attachGoalsModels(out);
   return out.sort((a, b) => b.fixture.fixture.timestamp - a.fixture.fixture.timestamp);
 };
 
@@ -595,8 +686,9 @@ export const fetchResultsOnDate = async (
     const bookmaker = parseOdds(f.odds || []);
     out.push({
       fixture,
-      insights: { fixtureId: f.id, predictions, bookmaker, xg: null, hasRealData: Boolean(predictions || bookmaker) },
+      insights: { fixtureId: f.id, predictions, bookmaker, xg: null, goals: null, hasRealData: Boolean(predictions || bookmaker) },
     });
   }
+  await attachGoalsModels(out);
   return out.sort((a, b) => b.fixture.fixture.timestamp - a.fixture.fixture.timestamp);
 };

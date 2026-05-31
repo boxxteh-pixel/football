@@ -393,8 +393,8 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     { market: 'UNDER_2_5', selection: 'Under 2.5 Goals', probability: under25Pct },
   ];
   const topSorted = [...candidates].sort((a, b) => b.probability - a.probability);
-  // Apply self-improving calibration to the led market's probability.
-  const calibratedTopProb = useCalibrationStore.getState().calibrate(topSorted[0].probability);
+  // Apply self-improving (per-market) calibration to the led market's probability.
+  const calibratedTopProb = useCalibrationStore.getState().calibrate(topSorted[0].probability, topSorted[0].market);
   const topPick = { ...topSorted[0], probability: calibratedTopProb, odds: Number(formatOdds(calibratedTopProb)) };
 
   // ─────────────── Market agreement + confidence ───────────────
@@ -527,15 +527,19 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
     return quickPredict(fixture);
   }
 
-  // Combine provider + market 1X2 (market gets more trust when sharp).
+  // Combine provider + market 1X2. The de-vigged bookmaker line is the single
+  // hardest-to-beat signal (efficient-market evidence), so it gets the most
+  // weight — even more when it's a sharp, low-margin line.
   const signals: Array<{ h: number; d: number; a: number; w: number }> = [];
   if (pred?.fulltimeResult) {
     const [h, d, a] = norm3(pred.fulltimeResult.home, pred.fulltimeResult.draw, pred.fulltimeResult.away);
-    signals.push({ h, d, a, w: 0.45 });
+    signals.push({ h, d, a, w: 0.35 });
   }
   if (book?.fulltimeResult) {
     const [h, d, a] = norm3(book.fulltimeResult.home, book.fulltimeResult.draw, book.fulltimeResult.away);
-    signals.push({ h, d, a, w: book.overround && book.overround < 1.08 ? 0.6 : 0.5 });
+    const sharp = book.overround != null && book.overround < 1.07;
+    const mid = book.overround != null && book.overround < 1.12;
+    signals.push({ h, d, a, w: sharp ? 0.8 : mid ? 0.68 : 0.55 });
   }
   const wSum = signals.reduce((s, x) => s + x.w, 0) || 1;
   let [hP, dP, aP] = norm3(
@@ -548,12 +552,36 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
   const drawPct = clampPercent(dP * 100);
   const awayWinPct = clampPercent(aP * 100);
 
-  // Goals markets: provider first, then devigged odds.
-  let over25Pct = pred?.overUnder?.['2.5']?.over ?? (book?.overUnder25 ? book.overUnder25.over * 100 : 50);
-  over25Pct = clampPercent(over25Pct);
+  // ─────────────── Goals markets (Over/Under 2.5 + BTTS) ───────────────
+  // Ensemble of up to THREE real signals (most accurate when blended):
+  //   1. Bookmaker O/U line (devigged) — sharpest single signal
+  //   2. SportMonks provider model
+  //   3. Dixon-Coles goals model from real season scoring rates
+  const goals = insights?.goals;
+  const ouSignals: Array<{ p: number; w: number }> = [];
+  if (book?.overUnder25) ouSignals.push({ p: book.overUnder25.over * 100, w: 0.55 });
+  if (pred?.overUnder?.['2.5']) ouSignals.push({ p: pred.overUnder['2.5'].over, w: 0.28 });
+  if (goals?.over?.['2.5'] != null) ouSignals.push({ p: goals.over['2.5'] * 100, w: 0.24 });
+  let over25Pct: number;
+  if (ouSignals.length > 0) {
+    const w = ouSignals.reduce((s, x) => s + x.w, 0);
+    over25Pct = clampPercent(ouSignals.reduce((s, x) => s + x.p * x.w, 0) / w);
+  } else {
+    over25Pct = 50;
+  }
   const under25Pct = clampPercent(100 - over25Pct);
-  let bttsPct = pred?.btts?.yes ?? (book?.btts ? book.btts.yes * 100 : 50);
-  bttsPct = clampPercent(bttsPct);
+
+  const bttsSignals: Array<{ p: number; w: number }> = [];
+  if (book?.btts) bttsSignals.push({ p: book.btts.yes * 100, w: 0.55 });
+  if (pred?.btts) bttsSignals.push({ p: pred.btts.yes, w: 0.28 });
+  if (goals?.bttsYes != null) bttsSignals.push({ p: goals.bttsYes * 100, w: 0.24 });
+  let bttsPct: number;
+  if (bttsSignals.length > 0) {
+    const w = bttsSignals.reduce((s, x) => s + x.w, 0);
+    bttsPct = clampPercent(bttsSignals.reduce((s, x) => s + x.p * x.w, 0) / w);
+  } else {
+    bttsPct = 50;
+  }
 
   const candidates: Array<{ market: PredictionResult['topPick']['market']; selection: string; probability: number }> = [
     { market: 'WIN', selection: `${fixture.teams.home.name} to Win`, probability: homeWinPct },
@@ -564,7 +592,7 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
     { market: 'UNDER_2_5', selection: 'Under 2.5 Goals', probability: under25Pct },
   ];
   const top = [...candidates].sort((a, b) => b.probability - a.probability)[0];
-  const calibratedTop = useCalibrationStore.getState().calibrate(top.probability);
+  const calibratedTop = useCalibrationStore.getState().calibrate(top.probability, top.market);
   const topPick = { ...top, probability: calibratedTop, odds: Number(formatOdds(calibratedTop)) };
 
   const sortedProbs = [homeWinPct, drawPct, awayWinPct].sort((a, b) => b - a);
@@ -599,13 +627,24 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
       awayElo: BASE_ELO_VALUE,
       homeForm: 0.5,
       awayForm: 0.5,
-      homeXg: 0,
-      awayXg: 0,
+      homeXg: insights?.goals ? Number(insights.goals.lambdaHome.toFixed(2)) : 0,
+      awayXg: insights?.goals ? Number(insights.goals.lambdaAway.toFixed(2)) : 0,
       homeAdvantage: HOME_ADVANTAGE_GOALS,
     },
     computedAt: Date.now(),
     correctScores,
     doubleChance: pred?.doubleChance,
+    overUnderLines: insights?.goals
+      ? Object.fromEntries(
+          Object.entries(insights.goals.over).map(([line, over]) => [
+            line,
+            { over: clampPercent(over * 100), under: clampPercent(100 - over * 100) },
+          ]),
+        )
+      : undefined,
+    expectedGoals: insights?.goals
+      ? { home: insights.goals.lambdaHome, away: insights.goals.lambdaAway, total: insights.goals.expectedTotal }
+      : undefined,
     marketProbabilities: book?.fulltimeResult
       ? { home: clampPercent(book.fulltimeResult.home * 100), draw: clampPercent(book.fulltimeResult.draw * 100), away: clampPercent(book.fulltimeResult.away * 100) }
       : undefined,

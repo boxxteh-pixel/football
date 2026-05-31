@@ -56,7 +56,7 @@ export const useResults = (date: string | null, days = 4) => {
     for (const r of rows) {
       if (r.graded.grade === 'pending') continue;
       const key = `${r.fixture.fixture.id}:${r.prediction.topPick.market}`;
-      recordCalibration(key, r.prediction.topPick.probability, r.graded.grade === 'correct').catch(() => {});
+      recordCalibration(key, r.prediction.topPick.probability, r.graded.grade === 'correct', r.prediction.topPick.market).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);

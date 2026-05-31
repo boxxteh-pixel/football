@@ -48,7 +48,7 @@ export default function MatchDetailScreen() {
   const { data: stats = [] } = useFixtureStats(id, live);
   const { data: fullPrediction } = useFullPrediction(fixture ?? undefined);
   const { data: tracker } = useLiveTracker(fixture ?? undefined);
-  const canonical = useFixturePrediction(fixture ?? undefined);
+  const canonical = useFixturePrediction(fixture ?? undefined, { full: true });
   // SINGLE source of truth for everything shown on this page: the canonical
   // pick (same data the cards/Results use). Fall back to the richer ensemble
   // only when canonical insights aren't available yet.
