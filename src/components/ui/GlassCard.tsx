@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, View, StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColors} from '@/theme/colors';
 
 interface GlassCardProps extends ViewProps {
@@ -40,7 +41,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   ...rest
 }) => {
   const colors = useColors();
-  const radiusMap = { lg: 8, xl: 12, '2xl': 16 } as const;
+  const radiusMap = { lg: 14, xl: 18, '2xl': 24 } as const;
   const borderColor = activeBorder ? colors.glassBorderActive : colors.glassBorder;
   const bg = Platform.OS === 'web' ? colors.glass : 'rgba(26,26,26,0.4)';
 
@@ -58,19 +59,24 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     }
   });
 
+  const radiusValue = radiusMap[rounded];
+
   return (
     <View
       style={[
         {
-          borderRadius: radiusMap[rounded],
+          borderRadius: radiusValue,
           overflow: 'hidden',
           borderWidth: 1,
           borderColor,
           backgroundColor: bg,
           ...(glow
             ? {
-                shadowColor: 'transparent',
-                elevation: 0,
+                shadowColor: colors.primaryFixed,
+                shadowOpacity: Platform.OS === 'web' ? 0 : 0.25,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 8,
               }
             : {}),
           ...(padding !== undefined ? { padding } : {}),
@@ -92,6 +98,24 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           }}
         />
       )}
+      {/* Subtle glassy sheen along the top edge for depth. */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={
+          activeBorder
+            ? [colors.accent10, 'transparent']
+            : ['rgba(255,255,255,0.06)', 'transparent']
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '55%',
+        }}
+      />
       <View style={[{ position: 'relative', zIndex: 1 }, innerStyle]}>
         {children}
       </View>

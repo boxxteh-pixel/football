@@ -52,9 +52,9 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({ tier, compact 
         backgroundColor: style.bg,
         borderColor: style.border,
         borderWidth: 1,
-        paddingHorizontal: compact ? 6 : 8,
-        paddingVertical: compact ? 2 : 4,
-        borderRadius: 4,
+        paddingHorizontal: compact ? 8 : 10,
+        paddingVertical: compact ? 3 : 5,
+        borderRadius: 8,
         alignSelf: 'flex-start',
       }}
     >

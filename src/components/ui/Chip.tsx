@@ -21,11 +21,11 @@ export const Chip: React.FC<ChipProps> = ({ label, active, onPress }) => {
       }}
       style={({ pressed }) => ({
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 12,
-        backgroundColor: active ? colors.accent15 : 'rgba(255,255,255,0.04)',
+        paddingVertical: 9,
+        borderRadius: 20,
+        backgroundColor: active ? colors.accent15 : 'rgba(255,255,255,0.05)',
         borderWidth: 1,
-        borderColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.12)',
+        borderColor: active ? colors.accent40 : 'rgba(255,255,255,0.1)',
         transform: [{ scale: pressed ? 0.96 : 1 }],
       })}
     >

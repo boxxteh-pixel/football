@@ -3,6 +3,7 @@ import { ScrollView, View, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
 import { TopBar } from './TopBar';
+import { ScreenBackground } from './ScreenBackground';
 
 interface ScreenContainerProps extends ScrollViewProps {
   title?: string;
@@ -32,12 +33,14 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const paddingTop = topBar ? 16 : insets.top + 16;
-  const paddingBottom = bottomSafe ? insets.bottom + 24 : 16;
+  // Clear the floating pill tab bar (≈64h + 10 margin) plus breathing room.
+  const paddingBottom = bottomSafe ? insets.bottom + 96 : 16;
   const shouldHideAvatar = hideAvatar ?? showBack;
 
   if (scroll) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScreenBackground />
         {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -59,6 +62,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScreenBackground />
       {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
       <View style={{ flex: 1, paddingTop, paddingBottom, paddingHorizontal: 16 }}>{children}</View>
     </View>
