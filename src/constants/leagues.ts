@@ -79,8 +79,13 @@ export const DEFAULT_LEAGUES: TrackedLeague[] = [
   { id: 2, sportmonksId: 2, name: 'UEFA Champions League', shortName: 'UCL', country: 'Europe', emoji: '🏆', isInternational: true },
   { id: 3, sportmonksId: 5, name: 'UEFA Europa League', shortName: 'UEL', country: 'Europe', emoji: '🏆', isInternational: true },
   { id: 13, sportmonksId: 2286, name: 'UEFA Conference League', shortName: 'UECL', country: 'Europe', emoji: '🏆', isInternational: true },
+  { id: 531, sportmonksId: 1328, name: 'UEFA Super Cup', shortName: 'Super Cup', country: 'Europe', emoji: '🏆', isInternational: true, isCup: true },
+  { id: 532, sportmonksId: 1371, name: 'Europa League Play-offs', shortName: 'UEL P/O', country: 'Europe', emoji: '🏆', isInternational: true, isCup: true },
   { id: 17, sportmonksId: 1122, name: 'Copa Libertadores', shortName: 'Libertadores', country: 'South America', emoji: '🏆', isInternational: true },
   { id: 11, sportmonksId: 1116, name: 'Copa Sudamericana', shortName: 'Sudamericana', country: 'South America', emoji: '🏆', isInternational: true },
+
+  // ───────────────────────── Friendlies ─────────────────────────
+  { id: 667, sportmonksId: 1101, name: 'Club Friendlies', shortName: 'Friendlies', country: 'World', emoji: '🤝', isInternational: true, isCup: true },
 ];
 
 export const DEFAULT_LEAGUE_IDS = DEFAULT_LEAGUES.map((l) => l.id);
