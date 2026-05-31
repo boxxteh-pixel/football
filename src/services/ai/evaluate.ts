@@ -98,14 +98,24 @@ export interface AccuracySummary {
   hitRate: number; // 0-100
   /** Brier score (lower is better): mean squared error of the pick probability. */
   brier: number;
+  /** Net profit in units, flat 1u stakes at the pick's odds (won → odds-1, lost → -1). */
+  profitUnits: number;
+  /** Return on investment as a percentage of total staked. */
+  roi: number;
+  /** Current run of consecutive same-grade results (most recent first). */
+  streak: number;
+  /** 'correct' | 'incorrect' | null — the type of the current streak. */
+  streakType: 'correct' | 'incorrect' | null;
 }
 
 /**
  * Aggregate accuracy across a set of graded predictions.
  * Brier uses the binary outcome of the led market vs its stated probability.
+ * Profit/ROI assume flat 1-unit stakes at the pick odds (pass odds in to enable).
+ * `graded` should be ordered newest-first for the streak to be meaningful.
  */
 export const summarizeAccuracy = (
-  graded: Array<{ grade: Grade; probability: number }>,
+  graded: Array<{ grade: Grade; probability: number; odds?: number }>,
 ): AccuracySummary => {
   const decided = graded.filter((g) => g.grade !== 'pending');
   const total = decided.length;
@@ -118,11 +128,41 @@ export const summarizeAccuracy = (
           return s + (p - outcome) ** 2;
         }, 0) / total
       : 0;
+
+  // Flat-stake P/L: each settled pick stakes 1 unit at its odds.
+  let staked = 0;
+  let profitUnits = 0;
+  for (const g of decided) {
+    const o = g.odds && g.odds > 1 ? g.odds : 0;
+    if (o <= 0) continue;
+    staked += 1;
+    profitUnits += g.grade === 'correct' ? o - 1 : -1;
+  }
+  const roi = staked > 0 ? (profitUnits / staked) * 100 : 0;
+
+  // Current streak from the newest decided results.
+  let streak = 0;
+  let streakType: 'correct' | 'incorrect' | null = null;
+  for (const g of decided) {
+    if (streakType === null) {
+      streakType = g.grade as 'correct' | 'incorrect';
+      streak = 1;
+    } else if (g.grade === streakType) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
   return {
     total,
     correct,
     hitRate: total > 0 ? (correct / total) * 100 : 0,
     brier,
+    profitUnits,
+    roi,
+    streak,
+    streakType,
   };
 };
 

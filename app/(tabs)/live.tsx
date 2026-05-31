@@ -72,6 +72,37 @@ export default function ResultsTab() {
               <View style={{ width: `${summary.hitRate}%`, backgroundColor: '#22c55e' }} />
               <View style={{ flex: 1, backgroundColor: '#ef4444' }} />
             </View>
+
+            {/* Betting performance row: ROI, profit (flat 1u stakes), streak. */}
+            <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <SummaryStat
+                label={t('results.roi')}
+                value={`${summary.roi >= 0 ? '+' : ''}${summary.roi.toFixed(1)}%`}
+                color={summary.roi >= 0 ? '#22c55e' : '#ef4444'}
+              />
+              <SummaryStat
+                label={t('results.profit')}
+                value={`${summary.profitUnits >= 0 ? '+' : ''}${summary.profitUnits.toFixed(2)}u`}
+                color={summary.profitUnits >= 0 ? '#22c55e' : '#ef4444'}
+              />
+              <SummaryStat
+                label={t('results.streak')}
+                value={
+                  summary.streak > 0 && summary.streakType
+                    ? `${summary.streak}${summary.streakType === 'correct' ? 'W' : 'L'}`
+                    : '—'
+                }
+                color={
+                  summary.streakType === 'correct'
+                    ? '#22c55e'
+                    : summary.streakType === 'incorrect'
+                      ? '#ef4444'
+                      : colors.onSurfaceVariant
+                }
+              />
+            </View>
+
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
               {t('results.legend')}
             </Text>

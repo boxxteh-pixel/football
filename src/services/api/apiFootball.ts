@@ -3,6 +3,7 @@ import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord } from '@/types
 import type { League, StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
 import { DEFAULT_LEAGUES, DEFAULT_LEAGUE_IDS } from '@/constants/leagues';
+import { inMatchWindow, MATCH_WINDOW_FUTURE_MS } from '@/utils/date';
 import {
   getMockFixtures,
   getMockLiveFixtures,
@@ -86,35 +87,39 @@ export const fetchUpcomingFixtures = async (
     return { date: fromDate, fixtures: getMockFixtures(fromDate) };
   }
   try {
-    // Try the exact date first (cheap, single request).
-    const today = await fetchSportmonksFixturesByDateMulti(fromDate, leagueIds);
-    const scheduledToday = today.filter((f) => f.fixture.status.short !== 'FT' && f.fixture.status.short !== 'AET' && f.fixture.status.short !== 'PEN');
-    if (today.length > 0 && scheduledToday.length > 0) {
-      return { date: fromDate, fixtures: today.sort((a, b) => a.fixture.timestamp - b.fixture.timestamp) };
-    }
-
-    // Look ahead for the next day that actually has fixtures.
-    const start = new Date(fromDate + 'T00:00:00Z');
-    const end = new Date(start);
+    // Fetch a window starting ONE day before (UTC) through the lookahead, so
+    // late-night local kickoffs that live in the previous UTC date bucket are
+    // captured (timezone-proof — fixes matches vanishing after local midnight).
+    const startBound = new Date(fromDate + 'T00:00:00Z');
+    startBound.setUTCDate(startBound.getUTCDate() - 1);
+    const fromIso = startBound.toISOString().split('T')[0];
+    const end = new Date(fromDate + 'T00:00:00Z');
     end.setUTCDate(end.getUTCDate() + lookaheadDays);
     const toIso = end.toISOString().split('T')[0];
-    const ahead = await fetchSportmonksFixturesBetween(fromDate, toIso, leagueIds);
-    if (ahead.length === 0) {
-      return { date: fromDate, fixtures: today };
+
+    const all = await fetchSportmonksFixturesBetween(fromIso, toIso, leagueIds);
+
+    // Primary: live + upcoming matches in the rolling window relative to now.
+    const now = Date.now();
+    const windowed = all
+      .filter((f) => inMatchWindow(f.fixture.timestamp, now))
+      .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
+    if (windowed.length > 0) {
+      return { date: fromDate, fixtures: windowed };
     }
-    // Group by calendar day and pick the earliest day with games.
+
+    // Fallback (off-season / empty window): earliest upcoming day with games.
     const byDay = new Map<string, Fixture[]>();
-    ahead
-      .filter((f) => f.fixture.timestamp * 1000 >= start.getTime())
+    all
+      .filter((f) => f.fixture.timestamp * 1000 >= now - MATCH_WINDOW_FUTURE_MS)
       .forEach((f) => {
         const day = new Date(f.fixture.timestamp * 1000).toISOString().split('T')[0];
         const arr = byDay.get(day) ?? [];
         arr.push(f);
         byDay.set(day, arr);
       });
-    const sortedDays = [...byDay.keys()].sort();
-    const firstDay = sortedDays[0];
-    if (!firstDay) return { date: fromDate, fixtures: today };
+    const firstDay = [...byDay.keys()].sort()[0];
+    if (!firstDay) return { date: fromDate, fixtures: [] };
     return {
       date: firstDay,
       fixtures: (byDay.get(firstDay) ?? []).sort((a, b) => a.fixture.timestamp - b.fixture.timestamp),

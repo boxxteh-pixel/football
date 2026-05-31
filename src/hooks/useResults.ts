@@ -47,7 +47,13 @@ export const useResults = (date: string | null, days = 4) => {
       const graded = gradePrediction(fixture, prediction);
       return { fixture, prediction, graded };
     });
-    const summary = summarizeAccuracy(list.map((r) => r.graded));
+    const summary = summarizeAccuracy(
+      list.map((r) => ({
+        grade: r.graded.grade,
+        probability: r.graded.probability,
+        odds: r.prediction.topPick.odds,
+      })),
+    );
     return { rows: list, summary };
   }, [query.data]);
 

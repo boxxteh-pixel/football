@@ -16,6 +16,7 @@ import { PRED, MARKET } from './smTypes';
 import { devigShin, devigProportional, valueEdge, goalsModel } from '@/services/ai/marketMath';
 import { LEAGUE_TO_SPORTMONKS } from '@/constants/leagues';
 import { fetchFixtureGoalRates, fetchTeamRatesMap, type TeamGoalRates } from './smGoals';
+import { inMatchWindow, MATCH_WINDOW_FUTURE_MS } from '@/utils/date';
 import type { Fixture } from '@/types/match';
 import { mapSportmonksFixture } from './sportmonks';
 
@@ -549,27 +550,42 @@ export const fetchTodayInsights = async (
     });
 
   const cleanDate = date.split('T')[0];
-  const start = new Date(cleanDate + 'T00:00:00Z');
-  const end = new Date(start);
+  // Start the query ONE day before the requested date (in UTC) so late-night
+  // local kickoffs that fall in the previous UTC date bucket are still fetched.
+  const startBound = new Date(cleanDate + 'T00:00:00Z');
+  startBound.setUTCDate(startBound.getUTCDate() - 1);
+  const fromIso = startBound.toISOString().split('T')[0];
+  const end = new Date(cleanDate + 'T00:00:00Z');
   end.setUTCDate(end.getUTCDate() + lookaheadDays);
   const toIso = end.toISOString().split('T')[0];
 
-  // Pull the whole window once, then pick the earliest day that has fixtures.
-  const rows = await fetchForRange(cleanDate, toIso);
-  const upcoming = rows.filter((f) => (f.starting_at_timestamp ?? 0) * 1000 >= start.getTime());
-  const pool = upcoming.length > 0 ? upcoming : rows;
+  // Pull the whole window once.
+  const rows = await fetchForRange(fromIso, toIso);
 
-  // Group by calendar day; prefer the day matching `date`, else the earliest with games.
-  const byDay = new Map<string, any[]>();
-  pool.forEach((f) => {
-    const ts = (f.starting_at_timestamp ?? 0) * 1000;
-    const day = ts > 0 ? new Date(ts).toISOString().split('T')[0] : cleanDate;
-    const arr = byDay.get(day) ?? [];
-    arr.push(f);
-    byDay.set(day, arr);
-  });
-  const targetDay = byDay.has(cleanDate) ? cleanDate : [...byDay.keys()].sort()[0];
-  const dayRows = targetDay ? byDay.get(targetDay) ?? [] : [];
+  // Primary path: everything in the rolling live+upcoming window (timezone-proof).
+  const now = Date.now();
+  const windowed = rows.filter((f) => inMatchWindow(f.starting_at_timestamp ?? 0, now));
+
+  let dayRows: any[];
+  if (windowed.length > 0) {
+    dayRows = windowed;
+  } else {
+    // Off-season / empty window → fall back to the earliest UPCOMING day that
+    // actually has fixtures, so the app is never blank.
+    const future = rows
+      .filter((f) => (f.starting_at_timestamp ?? 0) * 1000 >= now - MATCH_WINDOW_FUTURE_MS)
+      .sort((a, b) => (a.starting_at_timestamp ?? 0) - (b.starting_at_timestamp ?? 0));
+    const byDay = new Map<string, any[]>();
+    future.forEach((f) => {
+      const ts = (f.starting_at_timestamp ?? 0) * 1000;
+      const day = ts > 0 ? new Date(ts).toISOString().split('T')[0] : cleanDate;
+      const arr = byDay.get(day) ?? [];
+      arr.push(f);
+      byDay.set(day, arr);
+    });
+    const firstDay = [...byDay.keys()].sort()[0];
+    dayRows = firstDay ? byDay.get(firstDay) ?? [] : [];
+  }
 
   const out: RawFixtureInsights[] = [];
   for (const f of dayRows) {
