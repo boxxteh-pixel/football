@@ -26,6 +26,8 @@ export interface BallPlayback {
   action: PitchAction | null;
   zone: AttackZone; // derived from latest ball x/y (home-attack normalized)
   zoneSide: 'home' | 'away' | null; // which team is attacking
+  /** Latest ball position in 0-1 field space (for nearest-player calc). */
+  latest: { x: number; y: number } | null;
   waiting: boolean;
   usingReal: boolean;
 }
@@ -53,6 +55,7 @@ export const useBallPlayback = (
   const [usingReal, setUsingReal] = useState(false);
   const [zone, setZone] = useState<AttackZone>('none');
   const [zoneSide, setZoneSide] = useState<'home' | 'away' | null>(null);
+  const [latest, setLatest] = useState<{ x: number; y: number } | null>(null);
   const lastCount = useRef(0);
   const anim = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -86,15 +89,16 @@ export const useBallPlayback = (
     anim.current.start();
 
     // Zone classification from the latest point.
-    const latest = seq[seq.length - 1];
-    if (latest) {
+    const latestPt = seq[seq.length - 1];
+    if (latestPt) {
       // The ball x is absolute pitch length (0=home goal,1=away goal). For zone
       // we consider whichever side is being attacked: nearer to 1 = home attack.
-      const homeAttack = latest.x >= 0.5;
-      const nx = (homeAttack ? latest.x : 1 - latest.x) * 100;
-      const ny = latest.y * 100;
+      const homeAttack = latestPt.x >= 0.5;
+      const nx = (homeAttack ? latestPt.x : 1 - latestPt.x) * 100;
+      const ny = latestPt.y * 100;
       setZone(classifyZone(nx, ny));
       setZoneSide(homeAttack ? 'home' : 'away');
+      setLatest({ x: latestPt.x, y: latestPt.y });
     }
   }, [ballPoints, realBall]);
 
@@ -106,6 +110,7 @@ export const useBallPlayback = (
       action: sim.action,
       zone,
       zoneSide,
+      latest,
       waiting: false,
       usingReal: true,
     };
@@ -119,6 +124,7 @@ export const useBallPlayback = (
     action: sim.action,
     zone: sim.action?.type === 'goal' ? 'goal' : sim.action?.type === 'shot' ? 'shot' : 'none',
     zoneSide: sim.possession,
+    latest: null,
     waiting: sim.waiting,
     usingReal: false,
   };

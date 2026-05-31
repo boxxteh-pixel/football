@@ -30,6 +30,7 @@ export interface TrackerPlayer {
   /** Field fraction across width 0-1. */
   fy: number;
   isGK: boolean;
+  image: string | null;
 }
 
 export interface TrackerStat {
@@ -55,6 +56,8 @@ export interface LiveTrackerData {
   awayFormation: string | null;
   pressure: TrackerPressure[];
   stats: TrackerStat[];
+  /** Live possession % (home), from statistics type 45. Null if unknown. */
+  possessionHome: number | null;
   hasBall: boolean;
   hasPlayers: boolean;
 }
@@ -137,6 +140,7 @@ const parsePlayers = (lineups: any[], formations: any[], homeId: number): Tracke
       fx,
       fy: Math.max(0.06, Math.min(0.94, fy)),
       isGK: row === 1,
+      image: l.player?.image_path || null,
     });
   }
   return players;
@@ -171,7 +175,7 @@ export const fetchLiveTracker = async (
   awayId: number,
 ): Promise<LiveTrackerData> => {
   try {
-    const include = 'ballCoordinates;formations;lineups;pressure;statistics';
+    const include = 'ballCoordinates;formations;lineups.player;pressure;statistics';
     const data = await smGet(`/fixtures/${fixtureId}`, {
       params: { include },
       ttl: TTL.live,
@@ -191,6 +195,24 @@ export const fetchLiveTracker = async (
     const awayFormation = formations.find((f) => f.participant_id === awayId)?.formation ?? null;
 
     const stats = parseStats(data?.statistics || [], homeId);
+
+    // Live possession (stat type 45) for the home team.
+    const rawStats: any[] = Array.isArray(data?.statistics) ? data.statistics : [];
+    let possHome: number | null = null;
+    let possAway: number | null = null;
+    for (const s of rawStats) {
+      if (s.type_id !== 45) continue;
+      const tid = s.participant_id ?? s.team_id;
+      const val = num(s.data?.value ?? s.value);
+      if (tid === homeId) possHome = val;
+      else if (tid === awayId) possAway = val;
+    }
+    const possessionHome =
+      possHome != null && possAway != null && possHome + possAway > 0
+        ? (possHome / (possHome + possAway)) * 100
+        : possHome != null
+        ? possHome
+        : null;
 
     // Pressure → home/away per minute.
     const rawPressure: any[] = Array.isArray(data?.pressure) ? data.pressure : [];
@@ -216,6 +238,7 @@ export const fetchLiveTracker = async (
       awayFormation,
       pressure,
       stats,
+      possessionHome,
       hasBall: ball.length > 0,
       hasPlayers: players.length > 0,
     };
@@ -223,7 +246,7 @@ export const fetchLiveTracker = async (
     console.warn('[smTracker] fetchLiveTracker failed:', err?.message);
     return {
       fixtureId, homeId, awayId, ball: [], players: [], homeFormation: null,
-      awayFormation: null, pressure: [], stats: [], hasBall: false, hasPlayers: false,
+      awayFormation: null, pressure: [], stats: [], possessionHome: null, hasBall: false, hasPlayers: false,
     };
   }
 };

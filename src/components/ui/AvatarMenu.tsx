@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { useT } from '@/theme/i18n';
 
 export const AvatarMenu: React.FC = () => {
@@ -21,10 +22,13 @@ export const AvatarMenu: React.FC = () => {
   const logOut = useAuthStore((s) => s.logOut);
   const haptics = useHaptics();
   const t = useT();
+  const rl = useRateLimit();
 
   const initial = session?.user.name?.[0]?.toUpperCase() ?? 'B';
-  const apiRequestsRemaining = '\u221e';
-  const apiProgress = 1;
+  // Real remaining API calls (e.g. "52.9k"); falls back to ∞ only if unknown.
+  const apiRequestsRemaining = rl.remaining != null ? rl.compact : '\u221e';
+  const apiProgress = rl.remainingPct != null ? rl.remainingPct / 100 : 1;
+  const apiLow = rl.remainingPct != null && rl.remainingPct < 15;
 
   useEffect(() => {
     Animated.timing(chevronProgress, {
@@ -112,16 +116,17 @@ export const AvatarMenu: React.FC = () => {
               </Text>
               <View
                 style={{
-                  width: 17,
+                  minWidth: 17,
                   height: 17,
                   borderRadius: 5,
-                  backgroundColor: colors.accent20,
+                  paddingHorizontal: 4,
+                  backgroundColor: apiLow ? 'rgba(239,68,68,0.2)' : colors.accent20,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 <Text
-                  style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 11, lineHeight: 14 }}
+                  style={{ color: apiLow ? '#ef4444' : colors.primaryFixed, fontFamily: fonts.stats, fontSize: 10, lineHeight: 14 }}
                   numberOfLines={1}
                 >
                   {apiRequestsRemaining}
@@ -144,7 +149,7 @@ export const AvatarMenu: React.FC = () => {
                   width: `${apiProgress * 100}%`,
                   height: '100%',
                   borderRadius: 3,
-                  backgroundColor: colors.primaryFixed,
+                  backgroundColor: apiLow ? '#ef4444' : colors.primaryFixed,
                 }}
               />
             </View>

@@ -15,7 +15,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, LayoutChangeEvent, Text, View } from 'react-native';
-import Svg, { Rect, Circle, Ellipse, Line, Path, Polygon, Defs, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Rect, Circle, Ellipse, Line, Path, Polygon, Defs, ClipPath, Image as SvgImage, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
@@ -23,7 +23,7 @@ import { useT } from '@/theme/i18n';
 import type { Fixture, FixtureEvent } from '@/types/match';
 import { isLive } from '@/types/match';
 import { useBallPlayback, type AttackZone } from '@/hooks/useBallPlayback';
-import type { LiveTrackerData } from '@/services/api/smTracker';
+import type { LiveTrackerData, TrackerPlayer } from '@/services/api/smTracker';
 import { type ActionType } from '@/hooks/useMatchSimulation';
 
 interface LivePitchProps {
@@ -74,13 +74,39 @@ export const LivePitch: React.FC<LivePitchProps> = ({ fixture, events, homePosse
   const ballPoints = tracker?.ball ?? [];
   const players = tracker?.players ?? [];
 
-  const { ball, pulse, possession, action, zone, zoneSide, waiting, usingReal } = useBallPlayback(
+  const { ball, pulse, possession, action, zone, zoneSide, latest, waiting, usingReal } = useBallPlayback(
     fixture,
     events,
     ballPoints,
     homePossession,
     awayPossession,
   );
+
+  // Real possession: prefer the tracker's live stat (type 45), else the values
+  // passed from the match screen, else 50.
+  const trackerPoss = tracker?.possessionHome;
+  const passedTotal = homePossession + awayPossession;
+  const homePossPct =
+    trackerPoss != null ? trackerPoss : passedTotal > 0 ? (homePossession / passedTotal) * 100 : 50;
+
+  // Nearest player to the ball = the "player on the ball" (no player_id on the
+  // ball feed, so proximity is the honest best estimate).
+  const ballCarrier = useMemo<TrackerPlayer | null>(() => {
+    if (!latest || players.length === 0) return null;
+    let best: TrackerPlayer | null = null;
+    let bestD = Infinity;
+    for (const p of players) {
+      const dx = p.fx - latest.x;
+      const dy = p.fy - latest.y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    // Only call it a "carrier" if reasonably close (< ~18% of pitch).
+    return bestD < 0.03 ? best : null;
+  }, [latest, players]);
 
   // Gentle ball bob.
   const bob = useRef(new Animated.Value(0)).current;
@@ -114,8 +140,6 @@ export const LivePitch: React.FC<LivePitchProps> = ({ fixture, events, homePosse
   const rippleOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] });
   const actionColor = action ? ACTION_COLORS[action.type] : colors.primaryFixed;
 
-  const totalPoss = homePossession + awayPossession;
-  const homePossPct = totalPoss > 0 ? (homePossession / totalPoss) * 100 : 50;
   const possName = possession === 'home' ? fixture.teams.home.name : possession === 'away' ? fixture.teams.away.name : null;
 
   const line = 'rgba(255,255,255,0.45)';
@@ -241,15 +265,40 @@ export const LivePitch: React.FC<LivePitchProps> = ({ fixture, events, homePosse
                 <Polygon points={polyStr(leftSix)} stroke={line} strokeWidth="0.35" fill="none" />
                 <Polygon points={polyStr(rightSix)} stroke={line} strokeWidth="0.35" fill="none" />
 
-                {/* Real player markers */}
+                {/* Real player markers with face images + team-coloured ring */}
                 {players.map((p) => {
                   const pos = project(p.fx, p.fy);
                   const col = p.side === 'home' ? HOME_COLOR : AWAY_COLOR;
-                  const r = 1.5 - p.fy * 0.3; // slightly smaller far away
+                  const r = 1.7 - p.fy * 0.3; // slightly smaller far away
+                  const isCarrier = ballCarrier?.id === p.id;
+                  const ringW = isCarrier ? 0.6 : 0.35;
+                  const clipId = `clip-${p.side}-${p.id}`;
                   return (
                     <React.Fragment key={`${p.side}-${p.id}`}>
-                      <Ellipse cx={pos.x} cy={pos.y + 0.6} rx={r} ry={r * 0.6} fill="rgba(0,0,0,0.3)" />
-                      <Circle cx={pos.x} cy={pos.y} r={r} fill={col} stroke="#0d1f14" strokeWidth="0.25" />
+                      <Ellipse cx={pos.x} cy={pos.y + r * 0.8} rx={r} ry={r * 0.5} fill="rgba(0,0,0,0.35)" />
+                      {isCarrier && <Circle cx={pos.x} cy={pos.y} r={r + 0.9} fill="none" stroke="#ffffff" strokeWidth="0.4" opacity={0.9} />}
+                      {p.image ? (
+                        <>
+                          <Defs>
+                            <ClipPath id={clipId}>
+                              <Circle cx={pos.x} cy={pos.y} r={r} />
+                            </ClipPath>
+                          </Defs>
+                          <Circle cx={pos.x} cy={pos.y} r={r} fill="#1a1a1a" />
+                          <SvgImage
+                            x={pos.x - r}
+                            y={pos.y - r}
+                            width={r * 2}
+                            height={r * 2}
+                            href={{ uri: p.image } as any}
+                            preserveAspectRatio="xMidYMid slice"
+                            clipPath={`url(#${clipId})`}
+                          />
+                          <Circle cx={pos.x} cy={pos.y} r={r} fill="none" stroke={col} strokeWidth={ringW} />
+                        </>
+                      ) : (
+                        <Circle cx={pos.x} cy={pos.y} r={r} fill={col} stroke="#0d1f14" strokeWidth="0.25" />
+                      )}
                     </React.Fragment>
                   );
                 })}
@@ -286,9 +335,22 @@ export const LivePitch: React.FC<LivePitchProps> = ({ fixture, events, homePosse
         )}
       </View>
 
-      {/* Possession banner */}
+      {/* Possession / ball-carrier banner */}
       <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8, backgroundColor: 'rgba(0,0,0,0.25)' }}>
-        {possName ? (
+        {ballCarrier ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 3, height: 30, borderRadius: 2, backgroundColor: ballCarrier.side === 'home' ? HOME_COLOR : AWAY_COLOR }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }} numberOfLines={1}>
+                {ballCarrier.jersey ? `#${ballCarrier.jersey} ` : ''}{ballCarrier.name}
+              </Text>
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>
+                {ballCarrier.side === 'home' ? fixture.teams.home.name : fixture.teams.away.name}
+                {action?.minute != null ? ` · ${action.minute}'` : ''} · {t('tracker.onBall')}
+              </Text>
+            </View>
+          </View>
+        ) : possName ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 3, height: 30, borderRadius: 2, backgroundColor: possession === 'home' ? HOME_COLOR : AWAY_COLOR }} />
             <View>
