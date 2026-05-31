@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchLiveTracker } from '@/services/api/smTracker';
 import { hasApiKey } from '@/constants/config';
+import { config } from '@/constants/config';
 import type { Fixture } from '@/types/match';
 import { isLive } from '@/types/match';
 
@@ -19,10 +20,10 @@ export const useLiveTracker = (fixture: Fixture | null | undefined) => {
     queryKey: ['liveTracker', id],
     queryFn: () => fetchLiveTracker(id!, homeId, awayId),
     enabled: hasApiKey() && Boolean(id) && live,
-    refetchInterval: live ? 15000 : false,
+    refetchInterval: live ? config.app.trackerRefreshMs : false,
     refetchIntervalInBackground: false,
-    staleTime: 10000,
-    refetchOnWindowFocus: false,
+    staleTime: config.app.trackerRefreshMs,
+    refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
   });

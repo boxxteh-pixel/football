@@ -68,12 +68,15 @@ export const useBallPlayback = (
     const fresh = lastCount.current === 0 ? ballPoints.slice(-1) : ballPoints.slice(start);
     lastCount.current = ballPoints.length;
 
-    // Build a sequence of tweens through the fresh points (cap to last 6).
-    const seq = fresh.slice(-6);
+    // Build a sequence of tweens through the fresh points (cap to last 8).
+    // Each step is spread so the motion flows continuously across the polling
+    // interval rather than snapping then sitting idle.
+    const seq = fresh.slice(-8);
+    const stepDur = seq.length > 1 ? Math.max(450, Math.min(1400, 5600 / seq.length)) : 1000;
     const steps = seq.map((p) =>
       Animated.timing(realBall, {
         toValue: { x: p.x * 100, y: p.y * 100 },
-        duration: 900,
+        duration: stepDur,
         easing: Easing.inOut(Easing.quad),
         useNativeDriver: false,
       }),

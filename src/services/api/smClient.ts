@@ -31,16 +31,21 @@ const useProxy = isWeb && !isLocalWeb;
 const BASE_URL = useProxy ? '/api/sportmonks' : config.sportmonks.baseUrl;
 
 interface RateLimitInfo {
+  limit: number | null;
   remaining: number | null;
   resetsInSeconds: number | null;
   updatedAt: number;
 }
 
 export const rateLimit: RateLimitInfo = {
+  limit: null,
   remaining: null,
   resetsInSeconds: null,
   updatedAt: 0,
 };
+
+/** Snapshot getter for UI (Settings rate-limit widget). */
+export const getRateLimit = (): RateLimitInfo => ({ ...rateLimit });
 
 const instance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -62,7 +67,7 @@ const inflight = new Map<string, Promise<any>>();
 
 /** Default TTLs (ms) by data volatility. */
 export const TTL = {
-  live: 15_000, // live scores change second-to-second; keep very short
+  live: 5_000, // live scores/tracker change second-to-second; keep very short
   fixturesToday: 5 * 60_000,
   fixtureDetail: 60_000,
   predictions: 30 * 60_000,
@@ -83,13 +88,23 @@ const buildKey = (path: string, params?: Record<string, any>): string => {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const recordRateLimit = (body: any) => {
+const recordRateLimit = (body: any, headers?: any) => {
+  // Prefer the JSON body's rate_limit (has resets_in_seconds), but also read the
+  // X-RateLimit-* response headers (limit + remaining) which the proxy forwards.
   const rl = body?.rate_limit;
   if (rl) {
-    rateLimit.remaining = typeof rl.remaining === 'number' ? rl.remaining : rateLimit.remaining;
-    rateLimit.resetsInSeconds =
-      typeof rl.resets_in_seconds === 'number' ? rl.resets_in_seconds : rateLimit.resetsInSeconds;
+    if (typeof rl.remaining === 'number') rateLimit.remaining = rl.remaining;
+    if (typeof rl.resets_in_seconds === 'number') rateLimit.resetsInSeconds = rl.resets_in_seconds;
     rateLimit.updatedAt = Date.now();
+  }
+  if (headers) {
+    const limitH = headers['x-ratelimit-limit'] ?? headers['X-RateLimit-Limit'];
+    const remainingH = headers['x-ratelimit-remaining'] ?? headers['X-RateLimit-Remaining'];
+    const resetH = headers['x-ratelimit-reset'] ?? headers['X-RateLimit-Reset'];
+    if (limitH != null && Number.isFinite(Number(limitH))) rateLimit.limit = Number(limitH);
+    if (remainingH != null && Number.isFinite(Number(remainingH))) rateLimit.remaining = Number(remainingH);
+    if (resetH != null && Number.isFinite(Number(resetH))) rateLimit.resetsInSeconds = Number(resetH);
+    if (limitH != null || remainingH != null) rateLimit.updatedAt = Date.now();
   }
 };
 
@@ -104,7 +119,7 @@ const rawGet = async (
   const cfg: AxiosRequestConfig = { params };
   try {
     const res = await instance.get(path, cfg);
-    recordRateLimit(res.data);
+    recordRateLimit(res.data, res.headers);
     return res.data;
   } catch (err: any) {
     const status = err?.response?.status;

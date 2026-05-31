@@ -18,9 +18,10 @@ export const config = {
   },
   app: {
     defaultSeason: Number(process.env.EXPO_PUBLIC_DEFAULT_SEASON || '2024'),
-    // Live data polls every 60s (Pro plan has ample rate-limit headroom);
-    // scheduled fixtures refresh every 30 min.
-    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '60000'),
+    // Live data polls fast (the Pro plan allows 53k calls/hour — huge headroom).
+    // Live scores every 10s, the in-match tracker every 6s for fluid movement.
+    liveRefreshMs: Number(process.env.EXPO_PUBLIC_LIVE_REFRESH_MS || '10000'),
+    trackerRefreshMs: Number(process.env.EXPO_PUBLIC_TRACKER_REFRESH_MS || '6000'),
     fixturesRefreshMs: Number(process.env.EXPO_PUBLIC_FIXTURES_REFRESH_MS || '1800000'),
   },
   supabase: {

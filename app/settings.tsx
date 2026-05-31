@@ -8,6 +8,7 @@ import { fonts } from '@/theme/typography';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { config, hasApiKey } from '@/constants/config';
 import { useEffect, useState } from 'react';
 import { LOCALES, useT } from '@/theme/i18n';
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const setLiveNotifications = useSettingsStore((s) => s.setLiveNotifications);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setColorTheme = useSettingsStore((s) => s.setColorTheme);
+  const rateLimit = useRateLimit();
   const t = useT();
 
   return (
@@ -320,21 +322,41 @@ export default function SettingsScreen() {
             <View style={{ gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>
-                  {t('settings.quotaLimit')}
+                  {t('settings.callsUsed')}
                 </Text>
                 <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 14 }}>
-                  {hasApiKey() ? t('settings.unlimitedPro') : '0 / 0'}
+                  {rateLimit.limit != null
+                    ? `${(rateLimit.used ?? 0).toLocaleString()} / ${rateLimit.limit.toLocaleString()}`
+                    : t('settings.unlimitedPro')}
                 </Text>
               </View>
               <View style={{ height: 6, borderRadius: 9999, backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                 <View
                   style={{
-                    width: hasApiKey() ? '100%' : '0%',
+                    width: `${rateLimit.usedPct != null ? Math.max(2, Math.min(100, rateLimit.usedPct)) : (hasApiKey() ? 4 : 0)}%`,
                     height: '100%',
-                    backgroundColor: colors.primaryFixed,
+                    backgroundColor: (rateLimit.usedPct ?? 0) > 85 ? colors.error : colors.primaryFixed,
                   }}
                 />
               </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
+                  {t('settings.callsRemaining')}
+                </Text>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 12 }}>
+                  {rateLimit.remaining != null ? rateLimit.remaining.toLocaleString() : '—'}
+                </Text>
+              </View>
+              {rateLimit.resetsInSeconds != null && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11 }}>
+                    {t('settings.resetsIn')}
+                  </Text>
+                  <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 12 }}>
+                    {Math.floor(rateLimit.resetsInSeconds / 60)}m {rateLimit.resetsInSeconds % 60}s
+                  </Text>
+                </View>
+              )}
             </View>
           </GlassCard>
         </Section>

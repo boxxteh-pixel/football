@@ -13,6 +13,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Expose rate-limit headers to the browser so the app can show real usage.
+  res.setHeader('Access-Control-Expose-Headers', 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -48,8 +50,21 @@ export default async function handler(req, res) {
     const contentType = apiRes.headers.get('content-type') || 'application/json';
     const body = await apiRes.text();
 
+    // Forward SportMonks rate-limit headers to the client.
+    ['x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset'].forEach((hKey) => {
+      const v = apiRes.headers.get(hKey);
+      if (v != null) res.setHeader(hKey, v);
+    });
+
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+    // Live & in-play data must NOT be edge-cached (was s-maxage=120 → stale live
+    // scores). Only cache slow-moving reference data briefly.
+    const isLivePath = /livescores|inplay|\/fixtures\//.test(subPath);
+    if (isLivePath) {
+      res.setHeader('Cache-Control', 'no-store, max-age=0');
+    } else {
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    }
     return res.status(apiRes.status).send(body);
   } catch (err) {
     console.error('[Sportmonks Proxy] Error:', err);
