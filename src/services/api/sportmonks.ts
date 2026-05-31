@@ -11,6 +11,18 @@ export const LEAGUE_MAP: Record<number, number> = LEAGUE_TO_SPORTMONKS;
 
 export const INVERSE_LEAGUE_MAP: Record<number, number> = SPORTMONKS_TO_LEAGUE;
 
+/**
+ * SportMonks caps the `fixtureLeagues` filter at 50 IDs per request. Split a
+ * league-ID list into ≤50 chunks so we never trigger a 400 "Error parsing
+ * filters" once the app tracks more than 50 leagues.
+ */
+const LEAGUE_FILTER_MAX = 50;
+const chunkLeagueIds = (ids: number[], size = LEAGUE_FILTER_MAX): number[][] => {
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+  return chunks;
+};
+
 export interface SportmonksPredictionParsed {
   homeWinPct: number;
   drawPct: number;
@@ -656,19 +668,22 @@ export const fetchSportmonksFixturesByDateMulti = async (
 
     if (smLeagueIds.length === 0) return [];
 
-    const filterIds = smLeagueIds.join(',');
     const collected: any[] = [];
-    let page = 1;
-    let hasMore = true;
     const MAX_PAGES = 8; // safety guard (8 * 50 = 400 fixtures/day is plenty)
 
-    while (hasMore && page <= MAX_PAGES) {
-      const url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${filterIds}&per_page=50&page=${page}`;
-      const response = await sportmonksClient.get(url);
-      const data = response.data?.data;
-      if (Array.isArray(data) && data.length > 0) collected.push(...data);
-      hasMore = Boolean(response.data?.pagination?.has_more);
-      page++;
+    // SportMonks caps fixtureLeagues at 50 IDs → fetch in chunks and merge.
+    for (const chunk of chunkLeagueIds(smLeagueIds)) {
+      const filterIds = chunk.join(',');
+      let page = 1;
+      let hasMore = true;
+      while (hasMore && page <= MAX_PAGES) {
+        const url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${filterIds}&per_page=50&page=${page}`;
+        const response = await sportmonksClient.get(url);
+        const data = response.data?.data;
+        if (Array.isArray(data) && data.length > 0) collected.push(...data);
+        hasMore = Boolean(response.data?.pagination?.has_more);
+        page++;
+      }
     }
 
     console.log(`[Sportmonks Adapter] Multi-league date ${cleanDate}: ${collected.length} fixtures across ${smLeagueIds.length} leagues.`);
@@ -697,16 +712,19 @@ export const fetchSportmonksFixturesBetween = async (
     if (smLeagueIds.length === 0) return [];
 
     const collected: any[] = [];
-    let page = 1;
-    let hasMore = true;
     const MAX_PAGES = 10;
-    while (hasMore && page <= MAX_PAGES) {
-      const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${smLeagueIds.join(',')}&per_page=50&page=${page}`;
-      const response = await sportmonksClient.get(url);
-      const data = response.data?.data;
-      if (Array.isArray(data) && data.length > 0) collected.push(...data);
-      hasMore = Boolean(response.data?.pagination?.has_more);
-      page++;
+    // SportMonks caps fixtureLeagues at 50 IDs → fetch in chunks and merge.
+    for (const chunk of chunkLeagueIds(smLeagueIds)) {
+      let page = 1;
+      let hasMore = true;
+      while (hasMore && page <= MAX_PAGES) {
+        const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${chunk.join(',')}&per_page=50&page=${page}`;
+        const response = await sportmonksClient.get(url);
+        const data = response.data?.data;
+        if (Array.isArray(data) && data.length > 0) collected.push(...data);
+        hasMore = Boolean(response.data?.pagination?.has_more);
+        page++;
+      }
     }
     return collected.map(mapSportmonksFixture);
   } catch (err: any) {

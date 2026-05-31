@@ -11,7 +11,7 @@
  * mapped 1:1 from SportMonks), we fetch by ID directly â€” far more accurate than
  * the legacy fuzzy date/name matching.
  */
-import { smGet, smGetAll, TTL } from './smClient';
+import { smGet, smGetAll, smGetAllByLeagues, TTL } from './smClient';
 import { PRED, MARKET } from './smTypes';
 import { devigShin, devigProportional, valueEdge, goalsModel } from '@/services/ai/marketMath';
 import { LEAGUE_TO_SPORTMONKS } from '@/constants/leagues';
@@ -427,10 +427,9 @@ export const fetchValuePicksForDate = async (
   end.setUTCDate(end.getUTCDate() + 3);
   const toIso = end.toISOString().split('T')[0];
 
-  const rows = await smGetAll(`/fixtures/between/${cleanDate}/${toIso}`, {
+  const rows = await smGetAllByLeagues(`/fixtures/between/${cleanDate}/${toIso}`, smLeagueIds, {
     params: {
       include: 'participants;league;predictions.type;odds',
-      filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
     },
     ttl: TTL.odds,
     maxPages: 8,
@@ -541,10 +540,9 @@ export const fetchTodayInsights = async (
   if (smLeagueIds.length === 0) return [];
 
   const fetchForRange = async (from: string, to: string) =>
-    smGetAll(`/fixtures/between/${from}/${to}`, {
+    smGetAllByLeagues(`/fixtures/between/${from}/${to}`, smLeagueIds, {
       params: {
         include: 'participants;league;state;scores;predictions.type;odds',
-        filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
       },
       ttl: TTL.fixturesToday,
       maxPages: 8,
@@ -616,10 +614,9 @@ export const fetchRecentResults = async (
   start.setUTCDate(start.getUTCDate() - days);
   const fromIso = start.toISOString().split('T')[0];
 
-  const rows = await smGetAll(`/fixtures/between/${fromIso}/${clean}`, {
+  const rows = await smGetAllByLeagues(`/fixtures/between/${fromIso}/${clean}`, smLeagueIds, {
     params: {
       include: 'participants;league;state;scores;predictions.type;odds',
-      filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
     },
     ttl: TTL.fixturesToday,
     maxPages: 10,
@@ -667,10 +664,9 @@ export const fetchResultsOnDate = async (
   if (smLeagueIds.length === 0) return [];
 
   const clean = date.split('T')[0];
-  const rows = await smGetAll(`/fixtures/date/${clean}`, {
+  const rows = await smGetAllByLeagues(`/fixtures/date/${clean}`, smLeagueIds, {
     params: {
       include: 'participants;league;state;scores;predictions.type;odds',
-      filters: `fixtureLeagues:${smLeagueIds.join(',')}`,
     },
     ttl: TTL.standings,
     maxPages: 8,

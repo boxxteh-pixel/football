@@ -198,6 +198,55 @@ export const smGetAll = async (
   return collected;
 };
 
+/**
+ * SportMonks caps the `fixtureLeagues` filter at 50 league IDs per request.
+ * This helper splits the league list into ≤`chunkSize` batches, runs the
+ * paginated `smGetAll` for each batch, and concatenates the results — so the
+ * app can track more than 50 leagues without hitting a 400 "Error parsing
+ * filters" response. Each chunk is cached independently.
+ */
+export const LEAGUE_FILTER_MAX = 50;
+
+export const smGetAllByLeagues = async (
+  path: string,
+  leagueIds: number[],
+  options: {
+    params?: Record<string, any>;
+    ttl?: number;
+    maxPages?: number;
+    chunkSize?: number;
+  } = {},
+): Promise<any[]> => {
+  const { params = {}, ttl, maxPages, chunkSize = LEAGUE_FILTER_MAX } = options;
+  if (leagueIds.length === 0) return [];
+
+  const chunks: number[][] = [];
+  for (let i = 0; i < leagueIds.length; i += chunkSize) {
+    chunks.push(leagueIds.slice(i, i + chunkSize));
+  }
+
+  const results = await Promise.all(
+    chunks.map((chunk) =>
+      smGetAll(path, {
+        params: { ...params, filters: `fixtureLeagues:${chunk.join(',')}` },
+        ttl,
+        maxPages,
+      }).catch(() => [] as any[]),
+    ),
+  );
+
+  // Merge + de-dupe by fixture id (a fixture only belongs to one league, but be safe).
+  const byId = new Map<number, any>();
+  for (const arr of results) {
+    for (const row of arr) {
+      const id = row?.id;
+      if (id != null) byId.set(id, row);
+      else byId.set(Symbol() as any, row);
+    }
+  }
+  return [...byId.values()];
+};
+
 /** Invalidate cache entries whose key contains `fragment` (or all). */
 export const invalidateCache = (fragment?: string): void => {
   if (!fragment) {
