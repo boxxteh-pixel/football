@@ -18,7 +18,6 @@ const TABS: Array<{
   { name: 'index', labelKey: 'tabs.predictor', icon: 'analytics' },
   { name: 'live', labelKey: 'tabs.results', icon: 'history' },
   { name: 'chat', labelKey: 'tabs.chat', icon: 'psychology' },
-  { name: 'stats', labelKey: 'tabs.stats', icon: 'leaderboard' },
   { name: 'profile', labelKey: 'tabs.profile', icon: 'person' },
 ];
 

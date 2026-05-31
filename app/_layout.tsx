@@ -122,11 +122,10 @@ export default function RootLayout() {
   }, [hydrateAuth, hydrateSettings, hydrateFavorites, hydrateLearning, hydrateBetSlip, hydrateCalibration]);
 
   useEffect(() => {
-    console.log('[FONT DIAGNOSTIC] fontsLoaded:', fontsLoaded, 'fontError:', fontError);
     if (fontError) {
-      console.error('[FONT DIAGNOSTIC] Failed to load fonts:', fontError);
+      console.warn('[BORO] Font load issue (using fallback):', fontError);
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontError]);
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && storesReady) {

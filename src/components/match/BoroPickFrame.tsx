@@ -15,6 +15,7 @@ import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useT } from '@/theme/i18n';
 import { formatPredictionSelection } from '@/utils/predictionText';
+import { USE_NATIVE_DRIVER } from '@/utils/anim';
 import type { PredictionResult } from '@/types/prediction';
 import type { GradedPrediction } from '@/services/ai/evaluate';
 
@@ -37,7 +38,7 @@ export const BoroPickFrame: React.FC<Props> = ({ prediction, graded }) => {
   const spin = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 4000, easing: Easing.linear, useNativeDriver: true }),
+      Animated.timing(spin, { toValue: 1, duration: 4000, easing: Easing.linear, useNativeDriver: USE_NATIVE_DRIVER }),
     );
     loop.start();
     return () => loop.stop();

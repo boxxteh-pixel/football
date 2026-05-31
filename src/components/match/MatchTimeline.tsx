@@ -4,6 +4,7 @@ import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
+import { useT } from '@/theme/i18n';
 import type { FixtureEvent } from '@/types/match';
 
 interface MatchTimelineProps {
@@ -31,6 +32,7 @@ const colorFor = (event: FixtureEvent, colors: BoroColors): string => {
 
 export const MatchTimeline: React.FC<MatchTimelineProps> = ({ events, homeTeamId }) => {
   const colors = useColors();
+  const t = useT();
   if (events.length === 0) return null;
 
   const sorted = [...events].sort((a, b) => b.time.elapsed - a.time.elapsed);
@@ -46,7 +48,7 @@ export const MatchTimeline: React.FC<MatchTimelineProps> = ({ events, homeTeamId
           letterSpacing: -0.3,
         }}
       >
-        Match Events
+        {t('match.events')}
       </Text>
       <View style={{ gap: 10 }}>
         {sorted.slice(0, 10).map((event, i) => {

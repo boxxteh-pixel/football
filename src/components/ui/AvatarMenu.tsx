@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRateLimit } from '@/hooks/useRateLimit';
+import { USE_NATIVE_DRIVER } from '@/utils/anim';
 import { useT } from '@/theme/i18n';
 
 export const AvatarMenu: React.FC = () => {
@@ -34,7 +35,7 @@ export const AvatarMenu: React.FC = () => {
     Animated.timing(chevronProgress, {
       toValue: open ? 1 : 0,
       duration: 180,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   }, [chevronProgress, open]);
 
