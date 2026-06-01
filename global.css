@@ -30,4 +30,81 @@
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
   }
+
+  /* --- Premium Desktop Sidebar Classes (Web) --- */
+  .desktop-sidebar {
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(14, 14, 14, 0.75) !important;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .sidebar-brand-container {
+    transition: opacity 0.2s ease;
+  }
+
+  .sidebar-brand-container:hover {
+    opacity: 0.95;
+  }
+
+  .sidebar-brand-container:hover img,
+  .sidebar-brand-container:hover Image {
+    transform: rotate(8deg) scale(1.05);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .sidebar-nav-row {
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .sidebar-nav-row:hover {
+    transform: translateX(4px);
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .sidebar-nav-row.active {
+    background-color: var(--accent-15) !important;
+    border-color: var(--accent-30) !important;
+    box-shadow: 0 0 16px var(--accent-08);
+  }
+
+  /* Neon glow active bar indicator */
+  .sidebar-nav-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 3px;
+    border-radius: 4px;
+    background-color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-nav-row.active::before {
+    background-color: var(--primary-color) !important;
+    box-shadow: 0 0 12px var(--primary-color), 0 0 4px var(--primary-color);
+  }
+
+  .sidebar-api-meter {
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  }
+
+  .sidebar-api-meter:hover {
+    border-color: var(--accent-30) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .sidebar-account-box {
+    transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.01);
+  }
+
+  .sidebar-account-box:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
 }
+

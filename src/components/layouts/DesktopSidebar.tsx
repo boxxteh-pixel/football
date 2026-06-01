@@ -67,6 +67,8 @@ export const DesktopSidebar: React.FC = () => {
 
   return (
     <View
+      // @ts-ignore
+      className="desktop-sidebar"
       style={{
         width: 248,
         height: '100%',
@@ -76,11 +78,18 @@ export const DesktopSidebar: React.FC = () => {
         paddingTop: 26,
         paddingBottom: 18,
         paddingHorizontal: 16,
+        // @ts-ignore
+        '--primary-color': colors.primaryFixed,
+        '--accent-15': colors.accent15,
+        '--accent-30': colors.accent30,
+        '--accent-08': colors.accent08,
       }}
     >
       {/* Brand */}
       <Pressable
         onPress={() => router.push('/')}
+        // @ts-ignore
+        className="sidebar-brand-container"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, marginBottom: 28 }}
       >
         <Image source={logoSource} style={{ width: 30, height: 30 }} resizeMode="contain" />
@@ -108,6 +117,8 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* API usage meter */}
       <View
+        // @ts-ignore
+        className="sidebar-api-meter"
         style={{
           marginTop: 12,
           marginBottom: 12,
@@ -148,11 +159,16 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* Account / logout */}
       <View
+        // @ts-ignore
+        className="sidebar-account-box"
         style={{
           marginTop: 10,
-          paddingTop: 12,
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.06)',
+          paddingTop: 10,
+          paddingBottom: 10,
+          paddingHorizontal: 10,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.05)',
           flexDirection: 'row',
           alignItems: 'center',
           gap: 10,
@@ -202,6 +218,8 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
   return (
     <Pressable
       onPress={onPress}
+      // @ts-ignore
+      className={`sidebar-nav-row ${active ? 'active' : ''}`}
       style={({ pressed, hovered }: any) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -216,7 +234,7 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
             : 'transparent',
         borderWidth: 1,
         borderColor: active ? colors.accent30 : 'transparent',
-        ...(Platform.OS === 'web' ? ({ transition: 'background-color 120ms ease' } as any) : {}),
+        ...(Platform.OS === 'web' ? ({ transition: 'all 0.2s ease' } as any) : {}),
       })}
     >
       <BoroIcon name={icon} size={21} color={active ? colors.primaryFixed : colors.onSurfaceVariant} />
@@ -233,3 +251,4 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
     </Pressable>
   );
 };
+
