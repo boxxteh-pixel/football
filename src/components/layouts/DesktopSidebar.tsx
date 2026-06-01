@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Platform, Pressable, Text, View } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { BoroIcon } from '@/components/ui/BoroIcon';
@@ -34,6 +34,125 @@ function isActive(pathname: string, item: NavItem): boolean {
 }
 
 /**
+ * Inject web-only CSS for hover states, transitions, and pseudo-elements.
+ * Uses nativeID (which becomes `id` in the DOM) to target sidebar elements,
+ * completely bypassing NativeWind's className processing.
+ */
+function useInjectSidebarCSS(primaryColor: string, accentRGB: string, accent30: string) {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const STYLE_ID = 'boro-sidebar-css';
+    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = STYLE_ID;
+      document.head.appendChild(style);
+    }
+
+    style.textContent = `
+      /* --- Sidebar container --- */
+      #boro-sidebar {
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        transition: background-color 0.3s ease;
+      }
+
+      /* --- Nav row items --- */
+      [id^="sidebar-nav-"] {
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        position: relative;
+      }
+
+      [id^="sidebar-nav-"]:hover {
+        transform: translateX(6px);
+        background-color: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+      }
+
+      /* Active gradient background */
+      [id^="sidebar-nav-"].boro-active {
+        background: linear-gradient(90deg, rgba(${accentRGB}, 0.18) 0%, rgba(${accentRGB}, 0.04) 100%) !important;
+        border-color: ${accent30} !important;
+        box-shadow: 0 4px 20px rgba(${accentRGB}, 0.08);
+      }
+
+      /* Active neon left bar */
+      [id^="sidebar-nav-"]::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 22%;
+        height: 56%;
+        width: 3px;
+        border-radius: 4px;
+        background-color: transparent;
+        transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      [id^="sidebar-nav-"].boro-active::before {
+        background-color: ${primaryColor} !important;
+        box-shadow: 0 0 14px ${primaryColor}, 0 0 6px ${primaryColor};
+      }
+
+      /* SVG icon transitions */
+      [id^="sidebar-nav-"] svg {
+        transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      [id^="sidebar-nav-"]:hover svg {
+        transform: scale(1.12) rotate(-3deg);
+        stroke: #ffffff !important;
+      }
+
+      [id^="sidebar-nav-"].boro-active svg {
+        stroke: ${primaryColor} !important;
+        transform: scale(1.06);
+      }
+
+      /* Label text transitions */
+      [id^="sidebar-nav-"]:hover [id$="-label"] {
+        color: #ffffff !important;
+      }
+
+      /* Brand hover */
+      #sidebar-brand {
+        cursor: pointer;
+        transition: opacity 0.25s ease;
+      }
+      #sidebar-brand:hover {
+        opacity: 0.9;
+      }
+      #sidebar-brand:hover img {
+        transform: rotate(8deg) scale(1.08);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      /* API meter hover */
+      #sidebar-api-meter {
+        transition: all 0.3s ease;
+      }
+      #sidebar-api-meter:hover {
+        border-color: ${accent30} !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+      }
+
+      /* Account box hover */
+      #sidebar-account {
+        cursor: default;
+        transition: all 0.3s ease;
+      }
+      #sidebar-account:hover {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+      }
+    `;
+  }, [primaryColor, accentRGB, accent30]);
+}
+
+/**
  * Persistent desktop navigation rail. Replaces the bottom tab bar on wide
  * screens, providing a true desktop app shell (global nav + account + API meter).
  */
@@ -56,6 +175,12 @@ export const DesktopSidebar: React.FC = () => {
       ? require('../../../assets/images/logo2.png')
       : require('../../../assets/images/logo.png');
 
+  const isPurple = colorTheme === 'purple';
+  const accentRGB = isPurple ? '167, 139, 250' : '195, 244, 0';
+
+  // Inject web CSS for hover/active effects (bypasses NativeWind entirely)
+  useInjectSidebarCSS(colors.primaryFixed, accentRGB, colors.accent30);
+
   const handleLogout = async () => {
     await logOut();
     await Promise.all([
@@ -65,13 +190,31 @@ export const DesktopSidebar: React.FC = () => {
     router.replace('/(auth)/intro');
   };
 
-  const isPurple = colorTheme === 'purple';
-  const accentRGB = isPurple ? '167, 139, 250' : '195, 244, 0';
+  // On web, after render, add the boro-active class to active nav items.
+  // We do this via DOM because NativeWind strips className.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    // Clear all boro-active classes first
+    document.querySelectorAll('[id^="sidebar-nav-"]').forEach((el) => {
+      el.classList.remove('boro-active');
+    });
+    // Set boro-active on matching items
+    PRIMARY.forEach((item) => {
+      if (isActive(pathname, item)) {
+        const el = document.getElementById(`sidebar-nav-${item.route.replace(/\//g, '-') || 'home'}`);
+        if (el) el.classList.add('boro-active');
+      }
+    });
+    // Settings
+    if (pathname.startsWith('/settings')) {
+      const el = document.getElementById('sidebar-nav-settings');
+      if (el) el.classList.add('boro-active');
+    }
+  }, [pathname]);
 
   return (
     <View
-      // @ts-ignore
-      className="desktop-sidebar"
+      nativeID="boro-sidebar"
       style={{
         width: 248,
         height: '100%',
@@ -81,19 +224,12 @@ export const DesktopSidebar: React.FC = () => {
         paddingTop: 26,
         paddingBottom: 18,
         paddingHorizontal: 16,
-        // @ts-ignore
-        '--primary-color': colors.primaryFixed,
-        '--accent-15': colors.accent15,
-        '--accent-30': colors.accent30,
-        '--accent-08': colors.accent08,
-        '--accent-rgb': accentRGB,
       }}
     >
       {/* Brand */}
       <Pressable
+        nativeID="sidebar-brand"
         onPress={() => router.push('/')}
-        // @ts-ignore
-        className="sidebar-brand-container"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, marginBottom: 28 }}
       >
         <Image source={logoSource} style={{ width: 30, height: 30 }} resizeMode="contain" />
@@ -110,6 +246,7 @@ export const DesktopSidebar: React.FC = () => {
           return (
             <NavRow
               key={item.route}
+              nativeID={`sidebar-nav-${item.route.replace(/\//g, '-') || 'home'}`}
               icon={item.icon}
               label={t(item.labelKey) || item.fallback}
               active={active}
@@ -121,8 +258,7 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* API usage meter */}
       <View
-        // @ts-ignore
-        className="sidebar-api-meter"
+        nativeID="sidebar-api-meter"
         style={{
           marginTop: 12,
           marginBottom: 12,
@@ -155,6 +291,7 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* Settings */}
       <NavRow
+        nativeID="sidebar-nav-settings"
         icon="settings"
         label={t('profile.settings') || 'Settings'}
         active={pathname.startsWith('/settings')}
@@ -163,8 +300,7 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* Account / logout */}
       <View
-        // @ts-ignore
-        className="sidebar-account-box"
+        nativeID="sidebar-account"
         style={{
           marginTop: 10,
           paddingTop: 10,
@@ -212,7 +348,16 @@ export const DesktopSidebar: React.FC = () => {
   );
 };
 
-const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: () => void }> = ({
+interface NavRowProps {
+  nativeID: string;
+  icon: string;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}
+
+const NavRow: React.FC<NavRowProps> = ({
+  nativeID,
   icon,
   label,
   active,
@@ -221,38 +366,27 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
   const colors = useColors();
   return (
     <Pressable
+      nativeID={nativeID}
       onPress={onPress}
-      // @ts-ignore
-      className={`sidebar-nav-row ${active ? 'active' : ''}`}
       style={({ pressed, hovered }: any) => ({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
         paddingVertical: 11,
         borderRadius: 12,
         borderWidth: 1,
-        backgroundColor: Platform.OS === 'web'
-          ? undefined
-          : active
-            ? colors.accent15
-            : hovered || pressed
-              ? colors.white05
-              : 'transparent',
-        borderColor: Platform.OS === 'web'
-          ? undefined
-          : active
-            ? colors.accent30
+        backgroundColor: active
+          ? colors.accent15
+          : hovered || pressed
+            ? colors.white05
             : 'transparent',
-        // @ts-ignore
-        '--icon-color': active ? colors.primaryFixed : colors.onSurfaceVariant,
-        ...(Platform.OS === 'web' ? ({ transition: 'all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)' } as any) : {}),
+        borderColor: active ? colors.accent30 : 'transparent',
       })}
     >
       <BoroIcon name={icon} size={21} color={active ? colors.primaryFixed : colors.onSurfaceVariant} />
       <Text
-        // @ts-ignore
-        className="sidebar-nav-text"
+        nativeID={`${nativeID}-label`}
         style={{
           color: active ? colors.primaryFixed : colors.onSurface,
           fontFamily: active ? fonts.bodyBold : fonts.body,
@@ -265,4 +399,3 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
     </Pressable>
   );
 };
-
