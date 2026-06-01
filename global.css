@@ -55,18 +55,49 @@
 
   .sidebar-nav-row {
     position: relative;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border-color: transparent !important;
+    background-color: transparent !important;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
   }
 
   .sidebar-nav-row:hover {
-    transform: translateX(4px);
+    transform: translateX(6px);
     background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
   }
 
   .sidebar-nav-row.active {
-    background-color: var(--accent-15) !important;
+    background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.16) 0%, rgba(var(--accent-rgb), 0.03) 100%) !important;
     border-color: var(--accent-30) !important;
-    box-shadow: 0 0 16px var(--accent-08);
+    box-shadow: inset 0 1px 0px rgba(255,255,255,0.05), 0 4px 16px rgba(var(--accent-rgb), 0.06) !important;
+  }
+
+  /* SVG Icon adjustments */
+  .sidebar-nav-row svg {
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.2s ease;
+  }
+
+  .sidebar-nav-row:hover svg {
+    transform: scale(1.1) rotate(-3deg);
+    stroke: #ffffff !important;
+  }
+
+  .sidebar-nav-row.active svg {
+    stroke: var(--primary-color) !important;
+    transform: scale(1.05);
+  }
+
+  /* Label Text adjustments */
+  .sidebar-nav-text {
+    transition: color 0.25s ease, transform 0.25s ease;
+  }
+
+  .sidebar-nav-row:hover .sidebar-nav-text {
+    color: #ffffff !important;
+  }
+
+  .sidebar-nav-row.active .sidebar-nav-text {
+    color: var(--primary-color) !important;
   }
 
   /* Neon glow active bar indicator */
@@ -74,17 +105,18 @@
     content: '';
     position: absolute;
     left: 0;
-    top: 20%;
-    height: 60%;
+    top: 25%;
+    height: 50%;
     width: 3px;
     border-radius: 4px;
     background-color: transparent;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .sidebar-nav-row.active::before {
     background-color: var(--primary-color) !important;
-    box-shadow: 0 0 12px var(--primary-color), 0 0 4px var(--primary-color);
+    box-shadow: 0 0 14px var(--primary-color), 0 0 4px var(--primary-color);
+    height: 50%;
   }
 
   .sidebar-api-meter {

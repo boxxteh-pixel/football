@@ -65,6 +65,9 @@ export const DesktopSidebar: React.FC = () => {
     router.replace('/(auth)/intro');
   };
 
+  const isPurple = colorTheme === 'purple';
+  const accentRGB = isPurple ? '167, 139, 250' : '195, 244, 0';
+
   return (
     <View
       // @ts-ignore
@@ -83,6 +86,7 @@ export const DesktopSidebar: React.FC = () => {
         '--accent-15': colors.accent15,
         '--accent-30': colors.accent30,
         '--accent-08': colors.accent08,
+        '--accent-rgb': accentRGB,
       }}
     >
       {/* Brand */}
@@ -227,18 +231,28 @@ const NavRow: React.FC<{ icon: string; label: string; active: boolean; onPress: 
         paddingHorizontal: 12,
         paddingVertical: 11,
         borderRadius: 12,
-        backgroundColor: active
-          ? colors.accent15
-          : hovered || pressed
-            ? colors.white05
-            : 'transparent',
         borderWidth: 1,
-        borderColor: active ? colors.accent30 : 'transparent',
-        ...(Platform.OS === 'web' ? ({ transition: 'all 0.2s ease' } as any) : {}),
+        backgroundColor: Platform.OS === 'web'
+          ? undefined
+          : active
+            ? colors.accent15
+            : hovered || pressed
+              ? colors.white05
+              : 'transparent',
+        borderColor: Platform.OS === 'web'
+          ? undefined
+          : active
+            ? colors.accent30
+            : 'transparent',
+        // @ts-ignore
+        '--icon-color': active ? colors.primaryFixed : colors.onSurfaceVariant,
+        ...(Platform.OS === 'web' ? ({ transition: 'all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)' } as any) : {}),
       })}
     >
       <BoroIcon name={icon} size={21} color={active ? colors.primaryFixed : colors.onSurfaceVariant} />
       <Text
+        // @ts-ignore
+        className="sidebar-nav-text"
         style={{
           color: active ? colors.primaryFixed : colors.onSurface,
           fontFamily: active ? fonts.bodyBold : fonts.body,
