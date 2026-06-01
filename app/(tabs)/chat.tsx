@@ -13,6 +13,7 @@ import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MatchListItem } from '@/components/match/MatchListItem';
+import { useResponsive } from '@/hooks/useResponsive';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures } from '@/hooks/useFixtures';
@@ -35,6 +36,7 @@ interface Message {
 export default function ChatScreen() {
   const colors = useColors();
   const haptics = useHaptics();
+  const { isDesktop } = useResponsive();
   const settings = useSettingsStore((s) => s.settings);
   const isIt = settings.language === 'it';
   const t = useT();
@@ -172,13 +174,39 @@ export default function ChatScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenContainer title="BORO" showLive={false} scroll={false} bottomSafe={false}>
+      <ScreenContainer title="BORO" showLive={false} scroll={false} bottomSafe={false} maxWidth={880}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
           <View style={{ flex: 1 }}>
+            {isDesktop && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 18 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: colors.accent12,
+                    borderWidth: 1,
+                    borderColor: colors.accent30,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <BoroIcon name="psychology" size={24} color={colors.primaryFixed} />
+                </View>
+                <View>
+                  <Text style={{ color: colors.onSurface, fontFamily: fonts.headline, fontSize: 20 }}>
+                    {isIt ? 'Assistente BORO' : 'BORO Assistant'}
+                  </Text>
+                  <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
+                    {isIt ? 'Pronostici e analisi in chat' : 'AI predictions & match analysis'}
+                  </Text>
+                </View>
+              </View>
+            )}
             {/* Messages List */}
             <FlatList
               ref={flatListRef}

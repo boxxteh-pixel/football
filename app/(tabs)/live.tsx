@@ -5,6 +5,8 @@ import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { ResultListItem } from '@/components/match/ResultListItem';
 import { DateStrip } from '@/components/match/DateStrip';
+import { ResponsiveGrid } from '@/components/layouts/ResponsiveGrid';
+import { useResponsive } from '@/hooks/useResponsive';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -19,6 +21,7 @@ type MarketFilter = 'all' | '1X2' | 'goals' | 'btts';
 export default function ResultsTab() {
   const colors = useColors();
   const t = useT();
+  const { gridColumns } = useResponsive();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
 
@@ -161,7 +164,11 @@ export default function ResultsTab() {
               </View>
             </GlassCard>
           ) : (
-            filteredRows.map((row: ResultRow) => <ResultListItem key={row.fixture.fixture.id} row={row} />)
+            <ResponsiveGrid columns={gridColumns} gap={10}>
+              {filteredRows.map((row: ResultRow) => (
+                <ResultListItem key={row.fixture.fixture.id} row={row} />
+              ))}
+            </ResponsiveGrid>
           )}
         </View>
       </View>

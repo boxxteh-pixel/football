@@ -5,6 +5,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MatchListItem } from '@/components/match/MatchListItem';
+import { ResponsiveGrid } from '@/components/layouts/ResponsiveGrid';
+import { useResponsive } from '@/hooks/useResponsive';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useFavoritesStore } from '@/store/favoritesStore';
@@ -15,6 +17,7 @@ export default function FavoritesScreen() {
   const colors = useColors();
   const t = useT();
   const favorites = useFavoritesStore();
+  const { gridColumns } = useResponsive();
 
   const favoriteMatchesCount = favorites.fixtures.length;
 
@@ -50,11 +53,11 @@ export default function FavoritesScreen() {
             subtitle={t('favorites.emptySub')}
           />
         ) : (
-          <View style={{ gap: 4 }}>
+          <ResponsiveGrid columns={gridColumns} gap={4}>
             {favorites.fixtures.map((id) => (
               <FavoriteMatchItem key={id} id={id} />
             ))}
-          </View>
+          </ResponsiveGrid>
         )}
       </View>
     </ScreenContainer>

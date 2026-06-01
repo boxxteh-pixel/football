@@ -17,7 +17,9 @@ import {
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, LogBox, StyleSheet, Image, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, LogBox, StyleSheet, Image, Platform } from 'react-native';
+import { useResponsive } from '@/hooks/useResponsive';
+import { DesktopSidebar } from '@/components/layouts/DesktopSidebar';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
 import { useColors} from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
@@ -79,7 +81,8 @@ const persister = createAsyncStoragePersister({
 
 export default function RootLayout() {
   const colors = useColors();
-  const { width: windowWidth } = useWindowDimensions();
+  const { isDesktop } = useResponsive();
+  const session = useAuthStore((s) => s.session);
   const [storesReady, setStoresReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
@@ -164,29 +167,42 @@ export default function RootLayout() {
     return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
   }
 
-  const isDesktop = Platform.OS === 'web' && windowWidth > 768;
+  const showSidebar = isDesktop && !!session;
+
+  const stack = (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: showSidebar ? 'none' : 'fade',
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="match/[id]"
+        options={{ animation: showSidebar ? 'none' : 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen name="insights" options={{ animation: showSidebar ? 'none' : 'slide_from_right' }} />
+      <Stack.Screen name="picks" options={{ animation: showSidebar ? 'none' : 'slide_from_right' }} />
+      <Stack.Screen name="favorites" options={{ animation: showSidebar ? 'none' : 'slide_from_right' }} />
+      <Stack.Screen name="settings" options={{ animation: showSidebar ? 'none' : 'slide_from_bottom' }} />
+    </Stack>
+  );
+
+  const appBody = showSidebar ? (
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <DesktopSidebar />
+      <View style={{ flex: 1, minWidth: 0 }}>{stack}</View>
+    </View>
+  ) : (
+    stack
+  );
 
   const content = (
-    <View style={{ flex: 1 }}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-          animation: 'fade',
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="match/[id]"
-          options={{ animation: 'slide_from_right', presentation: 'card' }}
-        />
-        <Stack.Screen name="insights" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="picks" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
-      </Stack>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {appBody}
 
       {splashVisible && (
         <Animated.View
@@ -220,76 +236,14 @@ export default function RootLayout() {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDesktop ? '#0c0b0b' : colors.background, overflow: 'hidden' as any }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
         <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
           <StatusBar style="light" />
-
-          {isDesktop ? (
-            <View style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-              {/* Ambient Background Glows */}
-              <View style={{
-                position: 'absolute',
-                top: '-10%',
-                left: '-5%',
-                width: '50%',
-                height: '50%',
-                borderRadius: 999,
-                backgroundColor: colorTheme === 'purple' ? 'rgba(167, 139, 250, 0.06)' : 'rgba(195, 244, 0, 0.04)',
-                ...Platform.select({
-                  web: {
-                    filter: 'blur(100px)',
-                    WebkitFilter: 'blur(100px)',
-                  } as any
-                }),
-                pointerEvents: 'none',
-              }} />
-              <View style={{
-                position: 'absolute',
-                bottom: '-10%',
-                right: '-5%',
-                width: '50%',
-                height: '50%',
-                borderRadius: 999,
-                backgroundColor: colorTheme === 'purple' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(195, 244, 0, 0.03)',
-                ...Platform.select({
-                  web: {
-                    filter: 'blur(120px)',
-                    WebkitFilter: 'blur(120px)',
-                  } as any
-                }),
-                pointerEvents: 'none',
-              }} />
-
-              {/* Mockup Container for Desktop */}
-              <View
-                style={{
-                  width: '100%',
-                  maxWidth: 440,
-                  height: '92%',
-                  maxHeight: 900,
-                  borderRadius: 40,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255, 255, 255, 0.08)',
-                  backgroundColor: colors.background,
-                  ...Platform.select({
-                    web: {
-                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                    } as any
-                  }),
-                  overflow: 'hidden',
-                  position: 'relative',
-                }}
-              >
-                {content}
-              </View>
-            </View>
-          ) : (
-            content
-          )}
+          {content}
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

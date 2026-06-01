@@ -8,6 +8,7 @@ import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useAuthStore } from '@/store/authStore';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useResponsive } from '@/hooks/useResponsive';
 import { useT } from '@/theme/i18n';
 
 const TABS: Array<{
@@ -49,6 +50,10 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
   const t = useT();
+  const { isDesktop } = useResponsive();
+
+  // On desktop the persistent sidebar replaces the bottom tab bar entirely.
+  if (isDesktop) return null;
 
   return (
     <View

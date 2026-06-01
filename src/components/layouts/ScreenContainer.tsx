@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
 import { TopBar } from './TopBar';
 import { ScreenBackground } from './ScreenBackground';
 
@@ -14,6 +15,8 @@ interface ScreenContainerProps extends ScrollViewProps {
   topBar?: boolean;
   rightSlot?: React.ReactNode;
   hideAvatar?: boolean;
+  /** Override the desktop content max-width (defaults to the responsive value). */
+  maxWidth?: number;
   children?: React.ReactNode;
 }
 
@@ -26,34 +29,56 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   topBar = true,
   rightSlot,
   hideAvatar,
+  maxWidth,
   children,
   contentContainerStyle,
   ...rest
 }) => {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const paddingTop = topBar ? 16 : insets.top + 16;
+  const { isDesktop, contentMaxWidth } = useResponsive();
+
+  // On desktop the persistent sidebar owns global nav + account, so the TopBar
+  // is only kept for sub-pages that need a back affordance.
+  const showTopBar = topBar && !(isDesktop && !showBack);
+  const maxW = maxWidth ?? contentMaxWidth;
+
+  const paddingTop = showTopBar ? 16 : isDesktop ? 36 : insets.top + 16;
   const paddingBottom = bottomSafe ? insets.bottom + 24 : 16;
+  const paddingHorizontal = isDesktop ? 36 : 16;
   const shouldHideAvatar = hideAvatar ?? showBack;
+
+  const topBarNode = showTopBar ? (
+    <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />
+  ) : null;
+
+  // Center content within a comfortable reading column on desktop.
+  const innerWrapper = (node: React.ReactNode) =>
+    isDesktop ? (
+      <View style={{ width: '100%', maxWidth: maxW, alignSelf: 'center' }}>{node}</View>
+    ) : (
+      node
+    );
 
   if (scroll) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenBackground />
-        {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
+        {topBarNode}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             {
               paddingTop,
               paddingBottom,
-              paddingHorizontal: 16,
+              paddingHorizontal,
+              alignItems: isDesktop ? 'center' : 'stretch',
             },
             contentContainerStyle,
           ]}
           {...rest}
         >
-          {children}
+          {innerWrapper(children)}
         </ScrollView>
       </View>
     );
@@ -62,8 +87,10 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenBackground />
-      {topBar && <TopBar title={title} showBack={showBack} showLive={showLive} rightSlot={rightSlot} hideAvatar={shouldHideAvatar} />}
-      <View style={{ flex: 1, paddingTop, paddingBottom, paddingHorizontal: 16 }}>{children}</View>
+      {topBarNode}
+      <View style={{ flex: 1, paddingTop, paddingBottom, paddingHorizontal, alignItems: isDesktop ? 'center' : 'stretch' }}>
+        <View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? maxW : undefined }}>{children}</View>
+      </View>
     </View>
   );
 };

@@ -9,6 +9,7 @@ import { fonts } from '@/theme/typography';
 import { LivePulse } from '@/components/ui/LivePulse';
 import { AvatarMenu } from '@/components/ui/AvatarMenu';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useResponsive } from '@/hooks/useResponsive';
 
 interface TopBarProps {
   title?: string;
@@ -28,7 +29,10 @@ export const TopBar: React.FC<TopBarProps> = ({
   const colors = useColors();
   const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
   const insets = useSafeAreaInsets();
+  const { isDesktop, contentMaxWidth } = useResponsive();
   const showWordmark = title === 'BORO' || title === 'BORO AI';
+  // The desktop sidebar owns the account/API meter, so never duplicate it here.
+  const avatarHidden = hideAvatar || isDesktop;
 
   return (
     <View
@@ -55,7 +59,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: 16,
+          paddingHorizontal: isDesktop ? 36 : 16,
+          width: '100%',
+          maxWidth: isDesktop ? contentMaxWidth + 72 : undefined,
+          alignSelf: 'center',
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -83,7 +90,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {showLive && <LivePulse label="" />}
           {rightSlot}
-          {!hideAvatar && <AvatarMenu />}
+          {!avatarHidden && <AvatarMenu />}
         </View>
       </View>
     </View>

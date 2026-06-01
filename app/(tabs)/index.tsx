@@ -12,6 +12,8 @@ import { MatchListItem } from '@/components/match/MatchListItem';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { ResponsiveGrid } from '@/components/layouts/ResponsiveGrid';
+import { useResponsive } from '@/hooks/useResponsive';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
@@ -26,6 +28,7 @@ import { useIsFocused } from '@react-navigation/native';
 
 export default function PredictorTab() {
   const colors = useColors();
+  const { gridColumns } = useResponsive();
   const [search, setSearch] = useState('');
   const [activeLeague, setActiveLeague] = useState<number | null>(null);
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
@@ -168,7 +171,11 @@ export default function PredictorTab() {
                 subtitle={t('predictor.noLiveUpcomingSub')}
               />
             ) : (
-              fixtures.map((f) => <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />)
+              <ResponsiveGrid columns={gridColumns} gap={12}>
+                {fixtures.map((f) => (
+                  <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+                ))}
+              </ResponsiveGrid>
             )}
           </View>
 
