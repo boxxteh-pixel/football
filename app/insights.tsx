@@ -299,10 +299,11 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
   const t = useT();
   const probColor = probability >= 80 ? colors.probHigh : probability >= 60 ? colors.probMid : colors.error;
   return (
-    <View
-      style={{
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
         backgroundColor: 'rgba(255,255,255,0.03)',
-        borderRadius: 10,
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.08)',
         padding: 14,
@@ -310,7 +311,8 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
-      }}
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+      })}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
         <View style={{ width: 4, height: 36, borderRadius: 2, backgroundColor: probColor }} />
@@ -335,15 +337,18 @@ const AccumulatorRow: React.FC<AccumulatorRowProps> = ({ league, pick, odds, pro
           </Text>
         </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 18 }}>
-          {odds.toFixed(2)}
-        </Text>
-        <Text style={{ color: probColor, fontFamily: fonts.body, fontSize: 11 }}>
-          {Math.round(probability)}% {t('insights.probabilityShort')}
-        </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ color: colors.onSurface, fontFamily: fonts.stats, fontSize: 18 }}>
+            {odds.toFixed(2)}
+          </Text>
+          <Text style={{ color: probColor, fontFamily: fonts.body, fontSize: 11 }}>
+            {Math.round(probability)}% {t('insights.probabilityShort')}
+          </Text>
+        </View>
+        <BoroIcon name="chevron-right" size={18} color={colors.onSurfaceVariant} />
       </View>
-    </View>
+    </Pressable>
   );
 };
 

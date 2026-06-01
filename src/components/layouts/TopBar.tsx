@@ -37,6 +37,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         backgroundColor: Platform.OS === 'web' ? 'rgba(19,19,19,0.55)' : 'rgba(19,19,19,0.3)',
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255,255,255,0.06)',
+        ...(Platform.OS === 'web'
+          ? ({ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' } as any)
+          : {}),
       }}
     >
       {Platform.OS !== 'web' && (

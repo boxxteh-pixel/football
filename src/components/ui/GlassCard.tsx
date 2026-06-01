@@ -32,7 +32,7 @@ const LAYOUT_KEYS = [
  */
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
-  intensity = 24,
+  intensity = 18,
   activeBorder = false,
   rounded = 'xl',
   padding,
@@ -43,7 +43,15 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const colors = useColors();
   const radiusMap = { lg: 14, xl: 18, '2xl': 24 } as const;
   const borderColor = activeBorder ? colors.glassBorderActive : colors.glassBorder;
-  const bg = Platform.OS === 'web' ? colors.glass : 'rgba(26,26,26,0.4)';
+  const isWeb = Platform.OS === 'web';
+  const bg = isWeb ? 'rgba(24,23,23,0.55)' : 'rgba(26,26,26,0.4)';
+  // Real frosted-glass on web via CSS backdrop blur (RN-web passes style through).
+  const webBlur = isWeb
+    ? ({
+        backdropFilter: `blur(${intensity}px) saturate(140%)`,
+        WebkitBackdropFilter: `blur(${intensity}px) saturate(140%)`,
+      } as unknown as ViewStyle)
+    : null;
 
   const flatStyle = StyleSheet.flatten(style) || {};
   const outerStyle: ViewStyle = {};
@@ -79,6 +87,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
                 elevation: 8,
               }
             : {}),
+          ...(webBlur ?? {}),
           ...(padding !== undefined ? { padding } : {}),
         },
         outerStyle,

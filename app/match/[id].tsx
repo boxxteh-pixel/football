@@ -12,7 +12,6 @@ import { StatComparison } from '@/components/match/StatComparison';
 import { QuickBetSlip } from '@/components/match/QuickBetSlip';
 import { MatchTimeline } from '@/components/match/MatchTimeline';
 import { MarketIntelCard } from '@/components/match/MarketIntelCard';
-import { SavePickButton } from '@/components/match/SavePickButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { useColors} from '@/theme/colors';
@@ -351,8 +350,6 @@ export default function MatchDetailScreen() {
             awayName={fixture.teams.away.name}
           />
         )}
-
-        {prediction && <SavePickButton fixture={fixture} prediction={prediction} />}
 
         <View style={{ gap: 12 }}>
           <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 18, letterSpacing: -0.3 }}>

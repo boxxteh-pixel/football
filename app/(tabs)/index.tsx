@@ -126,6 +126,9 @@ export default function PredictorTab() {
 
           <View style={{ gap: 14 }}>
             <SectionHeader eyebrow={t('predictor.topConfidence')} title={t('predictor.bestPicks')} />
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, marginTop: -6 }}>
+              {t('predictor.bestPicksHelp')}
+            </Text>
             {isLoading ? (
               <BestPicksSkeleton />
             ) : error ? (

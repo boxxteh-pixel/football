@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,9 +53,12 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
     <View
       style={{
         paddingBottom: insets.bottom,
-        backgroundColor: '#141312',
+        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,18,0.7)' : '#141312',
         borderTopWidth: 1,
         borderTopColor: 'rgba(255,255,255,0.08)',
+        ...(Platform.OS === 'web'
+          ? ({ backdropFilter: 'blur(22px) saturate(140%)', WebkitBackdropFilter: 'blur(22px) saturate(140%)' } as any)
+          : {}),
       }}
     >
       <View

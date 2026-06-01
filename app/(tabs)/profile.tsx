@@ -10,7 +10,6 @@ import { fonts } from '@/theme/typography';
 import { useAuthStore } from '@/store/authStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBetSlipStore } from '@/store/betSlipStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useT } from '@/theme/i18n';
 import { getPlainPassword } from '@/services/auth/localAuth';
@@ -21,7 +20,6 @@ export default function ProfileTab() {
   const logOut = useAuthStore((s) => s.logOut);
   const favorites = useFavoritesStore();
   const settings = useSettingsStore((s) => s.settings);
-  const trackedPicks = useBetSlipStore((s) => s.picks);
   const haptics = useHaptics();
   const t = useT();
   const [revealPwd, setRevealPwd] = useState(false);
@@ -132,15 +130,6 @@ export default function ProfileTab() {
             onPress={() => {
               haptics.light();
               router.push('/insights');
-            }}
-          />
-          <ActionRow
-            icon="receipt"
-            label={t('picks.title')}
-            value={String(trackedPicks.length)}
-            onPress={() => {
-              haptics.light();
-              router.push('/picks');
             }}
           />
         </View>
