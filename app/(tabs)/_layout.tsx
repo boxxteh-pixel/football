@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
@@ -53,14 +54,18 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
     <View
       style={{
         paddingBottom: insets.bottom,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,18,0.7)' : '#141312',
+        backgroundColor: Platform.OS === 'web' ? 'rgba(18,17,17,0.55)' : 'rgba(20,19,18,0.6)',
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.08)',
+        borderTopColor: 'rgba(255,255,255,0.1)',
+        overflow: 'hidden',
         ...(Platform.OS === 'web'
-          ? ({ backdropFilter: 'blur(22px) saturate(140%)', WebkitBackdropFilter: 'blur(22px) saturate(140%)' } as any)
+          ? ({ backdropFilter: 'blur(30px) saturate(180%) brightness(1.05)', WebkitBackdropFilter: 'blur(30px) saturate(180%) brightness(1.05)' } as any)
           : {}),
       }}
     >
+      {Platform.OS !== 'web' && (
+        <BlurView intensity={70} tint="dark" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+      )}
       <View
         style={{
           height: 64,

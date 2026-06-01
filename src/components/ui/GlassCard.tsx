@@ -2,9 +2,10 @@ import React from 'react';
 import { Platform, View, StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useColors} from '@/theme/colors';
+import { useColors } from '@/theme/colors';
 
 interface GlassCardProps extends ViewProps {
+  /** Blur strength. Defaults tuned for an iOS-like frosted look. */
   intensity?: number;
   activeBorder?: boolean;
   rounded?: 'lg' | 'xl' | '2xl';
@@ -26,13 +27,20 @@ const LAYOUT_KEYS = [
 ];
 
 /**
- * Glassmorphism container matching the HTML `.glass-surface` / `.glass-panel`.
- * Uses BlurView on iOS/Android, falls back to translucent rgba on web.
- * Automatically splits styling so layout styles apply to the inner children container.
+ * iOS-style frosted glass surface.
+ *
+ * The Apple look comes from FOUR layers stacked together:
+ *   1. A heavy background blur with high saturation + slight brightness so the
+ *      colours behind bleed through vividly (not greyed out). On web this is a
+ *      real CSS `backdrop-filter`; on native it's an expo-blur `BlurView`.
+ *   2. A translucent fill tint (kept fairly transparent so the blur shows).
+ *   3. A diagonal sheen gradient (light catching the top-left of the glass).
+ *   4. A bright 1px top hairline + soft hairline border = the glass rim.
+ * A soft ambient drop-shadow makes it float.
  */
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
-  intensity = 18,
+  intensity = 28,
   activeBorder = false,
   rounded = 'xl',
   padding,
@@ -41,15 +49,17 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   ...rest
 }) => {
   const colors = useColors();
-  const radiusMap = { lg: 14, xl: 18, '2xl': 24 } as const;
-  const borderColor = activeBorder ? colors.glassBorderActive : colors.glassBorder;
+  const radiusMap = { lg: 16, xl: 20, '2xl': 26 } as const;
+  const borderColor = activeBorder ? colors.glassBorderActive : 'rgba(255,255,255,0.14)';
   const isWeb = Platform.OS === 'web';
-  const bg = isWeb ? 'rgba(24,23,23,0.55)' : 'rgba(26,26,26,0.4)';
-  // Real frosted-glass on web via CSS backdrop blur (RN-web passes style through).
+  // Keep the fill translucent so the blur behind is clearly visible (iOS look).
+  const bg = isWeb ? 'rgba(28,27,26,0.45)' : 'rgba(28,27,26,0.32)';
+
+  // Real frosted glass on web: heavy blur + high saturation + slight brightness.
   const webBlur = isWeb
     ? ({
-        backdropFilter: `blur(${intensity}px) saturate(140%)`,
-        WebkitBackdropFilter: `blur(${intensity}px) saturate(140%)`,
+        backdropFilter: `blur(${intensity}px) saturate(180%) brightness(1.05)`,
+        WebkitBackdropFilter: `blur(${intensity}px) saturate(180%) brightness(1.05)`,
       } as unknown as ViewStyle)
     : null;
 
@@ -78,15 +88,12 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           borderWidth: 1,
           borderColor,
           backgroundColor: bg,
-          ...(glow
-            ? {
-                shadowColor: '#000',
-                shadowOpacity: Platform.OS === 'web' ? 0 : 0.35,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 8,
-              }
-            : {}),
+          // Ambient float shadow (always on for glass depth; softer on web).
+          shadowColor: '#000',
+          shadowOpacity: isWeb ? 0 : glow ? 0.4 : 0.28,
+          shadowRadius: glow ? 22 : 14,
+          shadowOffset: { width: 0, height: glow ? 10 : 6 },
+          elevation: glow ? 10 : 5,
           ...(webBlur ?? {}),
           ...(padding !== undefined ? { padding } : {}),
         },
@@ -96,34 +103,36 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     >
       {Platform.OS !== 'web' && (
         <BlurView
-          intensity={intensity}
+          intensity={Math.min(100, intensity * 2.6)}
           tint="dark"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
+          style={StyleSheet.absoluteFill}
         />
       )}
-      {/* Subtle glassy sheen along the top edge for depth (neutral, no color glow). */}
+
+      {/* Diagonal sheen — light catching the top-left of the glass. */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(255,255,255,0.05)', 'transparent']}
+        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)', 'transparent']}
+        locations={[0, 0.35, 1]}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Bright top hairline = the glass rim highlight. */}
+      <View
+        pointerEvents="none"
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          height: '50%',
+          height: 1,
+          backgroundColor: 'rgba(255,255,255,0.25)',
         }}
       />
-      <View style={[{ position: 'relative', zIndex: 1 }, innerStyle]}>
-        {children}
-      </View>
+
+      <View style={[{ position: 'relative', zIndex: 1 }, innerStyle]}>{children}</View>
     </View>
   );
 };

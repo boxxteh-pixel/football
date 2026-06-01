@@ -34,17 +34,17 @@ export const TopBar: React.FC<TopBarProps> = ({
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(19,19,19,0.55)' : 'rgba(19,19,19,0.3)',
+        backgroundColor: Platform.OS === 'web' ? 'rgba(18,17,17,0.45)' : 'rgba(19,19,19,0.3)',
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.06)',
+        borderBottomColor: 'rgba(255,255,255,0.08)',
         ...(Platform.OS === 'web'
-          ? ({ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' } as any)
+          ? ({ backdropFilter: 'blur(28px) saturate(180%) brightness(1.05)', WebkitBackdropFilter: 'blur(28px) saturate(180%) brightness(1.05)' } as any)
           : {}),
       }}
     >
       {Platform.OS !== 'web' && (
         <BlurView
-          intensity={30}
+          intensity={60}
           tint="dark"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         />

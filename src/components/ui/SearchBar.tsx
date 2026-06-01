@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, TextInput, View, type TextInputProps } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useColors} from '@/theme/colors';
 import { fonts } from '@/theme/typography';
@@ -21,10 +21,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <View
       style={{
         position: 'relative',
-        backgroundColor: 'rgba(28,27,27,0.6)',
-        borderRadius: 12,
+        backgroundColor: 'rgba(28,27,27,0.5)',
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: focused ? colors.glassBorderActive : 'rgba(255,255,255,0.08)',
+        borderColor: focused ? colors.glassBorderActive : 'rgba(255,255,255,0.12)',
+        ...(Platform.OS === 'web'
+          ? ({ backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } as any)
+          : {}),
       }}
     >
       <BoroIcon
