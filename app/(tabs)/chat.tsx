@@ -119,9 +119,8 @@ export default function CommunityChatScreen() {
   useEffect(() => {
     if (!hasSetNickname) return;
 
-    // Use a public, free echo WebSocket server for live bidirectional communication
-    // Users will broadcast messages to each other using this relay
-    const wsUrl = 'wss://echo.websocket.org';
+    // Use SocketsBay public broadcast server for real-time bidirectional communication among all users
+    const wsUrl = 'wss://socketsbay.com/wss/v2/1/boro_global_chat_v2/';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -525,7 +524,8 @@ export default function CommunityChatScreen() {
                 borderRadius: 24,
                 paddingHorizontal: 6,
                 paddingVertical: 4,
-                marginTop: 12,
+                marginTop: 16,
+                marginBottom: 18,
               }}
             >
               <TextInput
