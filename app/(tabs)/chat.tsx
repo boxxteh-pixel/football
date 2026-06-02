@@ -115,7 +115,14 @@ function generateBotResponse(
   }
 
   type Pair = { fixture: Fixture; pred: PredictionResult };
+  // Deduplica per fixture ID prima di creare le coppie
+  const seenIds = new Set<number>();
   const pairs: Pair[] = fixtures
+    .filter((f) => {
+      if (seenIds.has(f.fixture.id)) return false;
+      seenIds.add(f.fixture.id);
+      return true;
+    })
     .map((f) => ({ fixture: f, pred: predictionMap.get(f.fixture.id) }))
     .filter((p): p is Pair => Boolean(p.pred));
 
@@ -132,12 +139,12 @@ function generateBotResponse(
     lower.includes("sicura") ||
     lower.includes("sicure")
   ) {
-    const sorted = [...pairs]
+    const best = [...pairs]
       .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
-      .slice(0, 3);
+      .slice(0, 1);
     return {
-      text: `🎯 Ho analizzato ${pairs.length} partite di oggi. Queste 3 hanno la più alta confidenza del modello — dati reali Sportmonks + quote bookmaker.`,
-      attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "safe")),
+      text: `🎯 La partita più sicura tra quelle di oggi (su ${pairs.length} analizzate):`,
+      attachments: best.map((p) => toAttachment(p.fixture, p.pred, "safe")),
     };
   }
 
@@ -147,8 +154,11 @@ function generateBotResponse(
       .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
       .slice(0, 3);
     const combined = sorted.reduce((acc, p) => acc * p.pred.topPick.odds, 1);
+    const jointProb = Math.round(
+      sorted.reduce((a, p) => a * (p.pred.topPick.probability / 100), 1) * 100,
+    );
     return {
-      text: `🔥 Multipla consigliata oggi con 3 selezioni ad alta confidenza. Quota combinata: **${combined.toFixed(2)}x** · Probabilità congiunta: ~${Math.round(sorted.reduce((a, p) => a * (p.pred.topPick.probability / 100), 1) * 100)}%`,
+      text: `🔥 La multipla consigliata di oggi — quota combinata @${combined.toFixed(2)} · prob. congiunta ~${jointProb}%:`,
       attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "multi")),
     };
   }
@@ -180,9 +190,9 @@ function generateBotResponse(
       };
     }
 
-    const top = valueBets.slice(0, 4);
+    const top = valueBets.slice(0, 2);
     return {
-      text: `⚡ Rilevate ${valueBets.length} value bet — probabilità del modello superiore alla quota di mercato. Ecco le migliori per edge atteso:`,
+      text: `⚡ La value bet migliore di oggi (edge modello vs mercato):`,
       attachments: top.map((item) => {
         const att = toAttachment(item.fixture, item.pred, "value");
         // Override selection with the specific value pick
@@ -205,11 +215,10 @@ function generateBotResponse(
         attachments: [],
       };
     }
+    const topLive = liveItems.slice(0, 3);
     return {
-      text: `📡 ${liveItems.length} ${liveItems.length === 1 ? "partita live" : "partite live"} in questo momento — punteggi e pronostici aggiornati:`,
-      attachments: liveItems
-        .slice(0, 5)
-        .map((p) => toAttachment(p.fixture, p.pred, "live")),
+      text: `📡 ${liveItems.length === 1 ? "Partita live in questo momento" : `${liveItems.length} partite live ora`}:`,
+      attachments: topLive.map((p) => toAttachment(p.fixture, p.pred, "live")),
     };
   }
 
@@ -217,9 +226,9 @@ function generateBotResponse(
   if (lower.includes("over")) {
     const sorted = [...pairs]
       .sort((a, b) => b.pred.over25Pct - a.pred.over25Pct)
-      .slice(0, 3);
+      .slice(0, 1);
     return {
-      text: `⚽ Le 3 partite con la più alta probabilità Over 2.5 oggi — xG e dati stagionali confermano un alto ritmo offensivo:`,
+      text: `⚽ La partita più probabile per Over 2.5 oggi:`,
       attachments: sorted.map((p) => {
         const att = toAttachment(p.fixture, p.pred, "over");
         att.selection = "Over 2.5 Goals";
@@ -240,9 +249,9 @@ function generateBotResponse(
   ) {
     const sorted = [...pairs]
       .sort((a, b) => b.pred.bttsPct - a.pred.bttsPct)
-      .slice(0, 3);
+      .slice(0, 1);
     return {
-      text: `🥅 Le 3 partite più propizie per Gol/Gol oggi — entrambe le squadre segnano, basato su tassi di realizzazione stagionali:`,
+      text: `🥅 La partita migliore per Gol/Gol oggi:`,
       attachments: sorted.map((p) => {
         const att = toAttachment(p.fixture, p.pred, "btts");
         att.selection = "Both Teams to Score";
@@ -257,12 +266,12 @@ function generateBotResponse(
 
   // ── Default ──
   const highConf = pairs.filter((p) => p.pred.topPick.probability >= 70);
-  const top3 = [...pairs]
+  const top1 = [...pairs]
     .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
-    .slice(0, 3);
+    .slice(0, 1);
   return {
-    text: `🏆 Oggi ci sono **${fixtures.length}** partite in programma, **${pairs.length}** con previsioni complete e **${highConf.length}** ad alta confidenza (≥70%). Ecco le migliori del momento:`,
-    attachments: top3.map((p) => toAttachment(p.fixture, p.pred, "safe")),
+    text: `🏆 Oggi: ${fixtures.length} partite · ${pairs.length} con previsioni · ${highConf.length} ad alta confidenza. Migliore del momento:`,
+    attachments: top1.map((p) => toAttachment(p.fixture, p.pred, "safe")),
   };
 }
 
@@ -441,211 +450,92 @@ const MatchCardContent: React.FC<{
   probPct: number;
   colors: ReturnType<typeof useColors>;
 }> = ({ att, accent, probPct, colors }) => (
-  <View style={{ paddingHorizontal: 14, paddingVertical: 11, gap: 8 }}>
-    {/* Header: league + kickoff/live */}
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
+  <View
+    style={{
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    }}
+  >
+    {/* Creste squadre */}
+    <View style={{ alignItems: "center", gap: 3 }}>
+      <TeamCrest uri={att.homeLogo} size={22} />
+      <TeamCrest uri={att.awayLogo} size={22} />
+    </View>
+
+    {/* Info centrale */}
+    <View style={{ flex: 1, gap: 2 }}>
       <Text
         style={{
           color: colors.onSurfaceVariant,
           fontFamily: fonts.label,
-          fontSize: 9,
-          letterSpacing: 0.5,
-          textTransform: "uppercase",
-          flex: 1,
-          marginRight: 8,
+          fontSize: 8,
+          letterSpacing: 0.4,
         }}
         numberOfLines={1}
       >
-        {att.leagueName}
+        {att.leagueName.toUpperCase()}
       </Text>
-      {att.isLiveMatch ? (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            backgroundColor: "rgba(255,100,0,0.12)",
-            borderWidth: 1,
-            borderColor: "rgba(255,100,0,0.4)",
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-          }}
-        >
-          <View
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: "#ff6600",
-            }}
-          />
-          <Text
-            style={{ color: "#ff6600", fontFamily: fonts.label, fontSize: 9 }}
-          >
-            {att.elapsed ?? "?"}'
-          </Text>
-        </View>
-      ) : (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 3,
-            backgroundColor: "rgba(255,255,255,0.04)",
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-          }}
-        >
-          <BoroIcon name="schedule" size={9} color={colors.onSurfaceVariant} />
-          <Text
-            style={{
-              color: colors.onSurfaceVariant,
-              fontFamily: fonts.label,
-              fontSize: 9,
-            }}
-          >
-            {att.kickoff}
-          </Text>
-        </View>
-      )}
+      <Text
+        style={{
+          color: colors.onSurface,
+          fontFamily: fonts.bodyBold,
+          fontSize: 12,
+        }}
+        numberOfLines={1}
+      >
+        {att.homeTeam}
+        {att.isLiveMatch && att.homeGoals !== null
+          ? ` ${att.homeGoals}–${att.awayGoals} `
+          : " vs "}
+        {att.awayTeam}
+      </Text>
+      <Text
+        style={{ color: accent, fontFamily: fonts.body, fontSize: 11 }}
+        numberOfLines={1}
+      >
+        {att.selection}
+      </Text>
     </View>
 
-    {/* Teams row */}
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <TeamCrest uri={att.homeLogo} size={28} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text
-          style={{
-            color: colors.onSurface,
-            fontFamily: fonts.bodyBold,
-            fontSize: 13,
-          }}
-          numberOfLines={1}
-        >
-          {att.homeTeam}
-        </Text>
-        <Text
-          style={{
-            color: colors.onSurfaceVariant,
-            fontFamily: fonts.body,
-            fontSize: 11,
-          }}
-          numberOfLines={1}
-        >
-          {att.awayTeam}
-        </Text>
-      </View>
-      {att.isLiveMatch &&
-      att.homeGoals !== null &&
-      att.homeGoals !== undefined ? (
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              color: colors.onSurface,
-              fontFamily: fonts.stats,
-              fontSize: 18,
-            }}
-          >
-            {att.homeGoals} – {att.awayGoals}
-          </Text>
-        </View>
-      ) : (
-        <TeamCrest uri={att.awayLogo} size={28} />
-      )}
-    </View>
-
-    {/* Pick row */}
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingTop: 6,
-        borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.06)",
-      }}
-    >
-      <View style={{ flex: 1, gap: 3, marginRight: 8 }}>
-        <Text
-          style={{
-            color: colors.onSurfaceVariant,
-            fontFamily: fonts.label,
-            fontSize: 8,
-            letterSpacing: 0.5,
-          }}
-        >
-          SELEZIONE
-        </Text>
-        <Text
-          style={{ color: accent, fontFamily: fonts.bodyBold, fontSize: 12 }}
-          numberOfLines={1}
-        >
-          {att.selection}
-        </Text>
-      </View>
-
-      {/* Probability ring */}
-      <View style={{ alignItems: "center", gap: 2, marginRight: 12 }}>
-        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 17 }}>
-          {probPct}%
-        </Text>
-        <Text
-          style={{
-            color: colors.onSurfaceVariant,
-            fontFamily: fonts.label,
-            fontSize: 7,
-            letterSpacing: 0.3,
-          }}
-        >
-          PROB.
-        </Text>
-      </View>
-
-      {/* Odds badge */}
+    {/* Destra: prob + odds + orario */}
+    <View style={{ alignItems: "flex-end", gap: 3 }}>
+      <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 15 }}>
+        {probPct}%
+      </Text>
       <View
         style={{
           backgroundColor: `${accent}1A`,
           borderWidth: 1,
           borderColor: `${accent}44`,
-          borderRadius: 8,
-          paddingHorizontal: 8,
-          paddingVertical: 4,
+          borderRadius: 6,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
         }}
       >
-        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 14 }}>
+        <Text style={{ color: accent, fontFamily: fonts.label, fontSize: 10 }}>
           @{att.odds.toFixed(2)}
         </Text>
       </View>
-    </View>
-
-    {/* Probability bar */}
-    <View
-      style={{
-        height: 3,
-        borderRadius: 2,
-        backgroundColor: "rgba(255,255,255,0.06)",
-        overflow: "hidden",
-      }}
-    >
-      <View
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: `${Math.min(100, probPct)}%` as `${number}%`,
-          backgroundColor: accent,
-          borderRadius: 2,
-        }}
-      />
+      {att.isLiveMatch ? (
+        <Text
+          style={{ color: "#ff6600", fontFamily: fonts.label, fontSize: 8 }}
+        >
+          🔴 {att.elapsed}'
+        </Text>
+      ) : (
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.label,
+            fontSize: 8,
+          }}
+        >
+          {att.kickoff}
+        </Text>
+      )}
     </View>
   </View>
 );
