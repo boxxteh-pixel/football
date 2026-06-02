@@ -121,7 +121,7 @@ export default function CommunityChatScreen() {
     if (!hasSetNickname) return;
 
     // Use PieSocket stable public broadcast channel for reliable real-time messages between all users
-    const wsUrl = 'wss://demo.piesocket.com/v3/boro_chat_room_v2?api_key=VCXCEJZvOyUBZTyEPzlgfiy6qCO844537J3g7qW5&notify_self=1';
+    const wsUrl = 'wss://demo.piesocket.com/v3/boro_chat_room_v2?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV&notify_self=1';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
