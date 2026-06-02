@@ -18,6 +18,7 @@ import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, LogBox, StyleSheet, Image, Platform } from 'react-native';
+import { ThemeProvider, DarkTheme } from '@react-navigation/native';
 import { useResponsive } from '@/hooks/useResponsive';
 import { DesktopSidebar } from '@/components/layouts/DesktopSidebar';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
@@ -82,6 +83,14 @@ const persister = createAsyncStoragePersister({
 export default function RootLayout() {
   const colors = useColors();
   const { isDesktop } = useResponsive();
+  const boroTheme = React.useMemo(() => ({
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: '#1a1918',
+      card: '#1a1918',
+    },
+  }), []);
   const session = useAuthStore((s) => s.session);
   const [storesReady, setStoresReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
@@ -243,7 +252,9 @@ export default function RootLayout() {
           persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
         >
           <StatusBar style="light" />
-          {content}
+          <ThemeProvider value={boroTheme}>
+            {content}
+          </ThemeProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

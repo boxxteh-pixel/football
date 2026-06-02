@@ -33,4 +33,12 @@
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
   }
+
+  /* Prevent any light-theme screen background leak in React Native Web */
+  div[style*="background-color: rgb(242, 242, 242)"],
+  div[style*="background-color: rgb(255, 255, 255)"],
+  div[style*="background-color: rgba(255,255,255,1)"],
+  div[style*="background-color: #ffffff"] {
+    background-color: #1a1918 !important;
+  }
 }
