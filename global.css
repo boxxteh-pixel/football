@@ -8,10 +8,13 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    background-color: #0c0b0b !important;
-    /* Prevent pull-to-refresh and bounce on mobile browsers */
+    overflow: hidden !important;
+    background-color: #1a1918 !important;
+    /* Bulletproof viewport locking for React Native Web: prevents browser bounce & overscroll */
+    position: fixed;
     overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Invisible scrollbars everywhere (premium, chrome-less look) */
