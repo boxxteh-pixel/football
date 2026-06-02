@@ -310,7 +310,6 @@ function useRainbowCSS() {
         animation: boro-rainbow-card 6s ease infinite;
         border-radius: 14px;
         padding: 1.5px;
-        margin-top: 8px;
       }
       .boro-match-card-inner {
         background: rgba(22, 21, 20, 0.97);
@@ -1273,9 +1272,9 @@ const MessageRow: React.FC<{
             BORO AI BOT
           </Text>
 
-          {/* Rainbow bubble with text */}
+          {/* Rainbow bubble — solo il testo */}
           <RainbowBubble>
-            <View style={{ padding: 14, gap: 12 }}>
+            <View style={{ padding: 14 }}>
               <Text
                 style={{
                   color: colors.onSurface,
@@ -1286,23 +1285,21 @@ const MessageRow: React.FC<{
               >
                 {item.text}
               </Text>
-
-              {/* Attachment cards */}
-              {item.attachments && item.attachments.length > 0 && (
-                <View style={{ gap: 2 }}>
-                  {item.attachments.map((att) => (
-                    <RainbowMatchCard
-                      key={att.fixtureId}
-                      att={att}
-                      onPress={() =>
-                        router.push(`/match/${att.fixtureId}` as any)
-                      }
-                    />
-                  ))}
-                </View>
-              )}
             </View>
           </RainbowBubble>
+
+          {/* Card partite — sotto il bubble, fuori dal frame */}
+          {item.attachments && item.attachments.length > 0 && (
+            <View style={{ gap: 8, marginTop: 6 }}>
+              {item.attachments.map((att) => (
+                <RainbowMatchCard
+                  key={att.fixtureId}
+                  att={att}
+                  onPress={() => router.push(`/match/${att.fixtureId}` as any)}
+                />
+              ))}
+            </View>
+          )}
 
           <Text
             style={{
