@@ -38,7 +38,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(18,17,17,0.45)' : 'rgba(19,19,19,0.3)',
+        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,17,0.45)' : 'rgba(22,20,18,0.3)',
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255,255,255,0.08)',
         ...(Platform.OS === 'web'

@@ -21,7 +21,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <View
       style={{
         position: 'relative',
-        backgroundColor: 'rgba(28,27,27,0.5)',
+        backgroundColor: 'rgba(28,27,26,0.45)',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: focused ? colors.glassBorderActive : 'rgba(255,255,255,0.12)',

@@ -19,41 +19,57 @@ export const ScreenBackground: React.FC = () => {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <LinearGradient
-        colors={['#171615', '#101010', '#0b0b0b']}
-        locations={[0, 0.55, 1]}
+        colors={['#16140f', '#100f0d', '#0d0c0b']}
+        locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Faint accent field, top-right. Heavily blurred on web. */}
+      {/* Warm ambient wash so glass cards have colour to refract. */}
       <View
         style={[
           {
             position: 'absolute',
             top: -120,
             right: -100,
-            width: 360,
-            height: 360,
-            borderRadius: 180,
+            width: 380,
+            height: 380,
+            borderRadius: 190,
             backgroundColor: colors.primaryFixed,
-            opacity: 0.05,
+            opacity: 0.06,
           },
-          isWeb ? ({ filter: 'blur(90px)' } as any) : null,
+          isWeb ? ({ filter: 'blur(100px)' } as any) : null,
         ]}
       />
-      {/* Faint cool field, bottom-left. */}
+      {/* Secondary cool field, bottom-left — very subtle. */}
       <View
         style={[
           {
             position: 'absolute',
             bottom: -140,
             left: -110,
-            width: 340,
-            height: 340,
-            borderRadius: 170,
+            width: 360,
+            height: 360,
+            borderRadius: 180,
             backgroundColor: colors.secondaryContainer,
-            opacity: 0.05,
+            opacity: 0.04,
           },
-          isWeb ? ({ filter: 'blur(90px)' } as any) : null,
+          isWeb ? ({ filter: 'blur(100px)' } as any) : null,
+        ]}
+      />
+      {/* Warm mid-screen wash for depth continuity with glass surfaces. */}
+      <View
+        style={[
+          {
+            position: 'absolute',
+            top: '30%',
+            left: '20%',
+            width: 500,
+            height: 500,
+            borderRadius: 250,
+            backgroundColor: '#1c1b1a',
+            opacity: 0.25,
+          },
+          isWeb ? ({ filter: 'blur(150px)' } as any) : null,
         ]}
       />
     </View>

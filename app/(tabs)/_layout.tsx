@@ -59,7 +59,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
     <View
       style={{
         paddingBottom: insets.bottom,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(18,17,17,0.55)' : 'rgba(20,19,18,0.6)',
+        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,17,0.55)' : 'rgba(22,20,18,0.6)',
         borderTopWidth: 1,
         borderTopColor: 'rgba(255,255,255,0.1)',
         overflow: 'hidden',

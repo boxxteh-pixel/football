@@ -7,16 +7,16 @@ import { useSettingsStore } from '@/store/settingsStore';
 import type { ColorTheme } from '@/services/storage/settings';
 
 const base = {
-  background: '#0a0a0a',
-  surface: '#0a0a0a',
-  surfaceDim: '#0a0a0a',
-  surfaceBright: '#3a3939',
-  surfaceContainer: '#161616',
-  surfaceContainerLow: '#121212',
-  surfaceContainerLowest: '#060606',
-  surfaceContainerHigh: '#2a2a2a',
-  surfaceContainerHighest: '#353534',
-  surfaceVariant: '#353534',
+  background: '#0d0c0b',
+  surface: '#0d0c0b',
+  surfaceDim: '#0d0c0b',
+  surfaceBright: '#3a3836',
+  surfaceContainer: '#161514',
+  surfaceContainerLow: '#121110',
+  surfaceContainerLowest: '#080706',
+  surfaceContainerHigh: '#2a2826',
+  surfaceContainerHighest: '#353331',
+  surfaceVariant: '#353331',
 
   primary: '#ffffff',
   secondary: '#b3c5ff',
@@ -45,7 +45,7 @@ const base = {
   probLow: '#EF4444',
 
   // Translucent overlays (neutral)
-  glass: 'rgba(26, 26, 26, 0.6)',
+  glass: 'rgba(28, 27, 26, 0.6)',
   glassBorder: 'rgba(255, 255, 255, 0.1)',
   white05: 'rgba(255, 255, 255, 0.05)',
   white10: 'rgba(255, 255, 255, 0.1)',
