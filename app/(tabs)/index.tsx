@@ -313,6 +313,7 @@ export default function PredictorTab() {
               />
             </GlassCard>
           </View>
+        </View>
       </ScreenContainer>
 
       {isSelectionMode && selectedFixtureIds.length > 0 && (
