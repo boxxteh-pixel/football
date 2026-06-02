@@ -109,14 +109,7 @@ export default function MatchDetailScreen() {
   const possessionPct = possessionTotal > 0 ? (homePoss / possessionTotal) * 100 : 50;
   const xgTotal = homeXg + awayXg;
   const xgPct = xgTotal > 0 ? (homeXg / xgTotal) * 100 : 50;
-  const confidenceKey = prediction
-    ? ({
-        ELITE: 'confidence.elite',
-        HIGH: 'confidence.highShort',
-        MEDIUM: 'confidence.mediumShort',
-        LOW: 'confidence.lowShort',
-      }[prediction.confidence as 'ELITE' | 'HIGH' | 'MEDIUM' | 'LOW'] || 'confidence.mediumShort')
-    : 'confidence.mediumShort';
+
 
   return (
     <ScreenContainer
