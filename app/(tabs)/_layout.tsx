@@ -19,7 +19,7 @@ const TABS: Array<{
 }> = [
   { name: 'index', labelKey: 'tabs.predictor', icon: 'analytics' },
   { name: 'live', labelKey: 'tabs.results', icon: 'history' },
-  { name: 'chat', labelKey: 'tabs.chat', icon: 'psychology' },
+  { name: 'chat', labelKey: 'tabs.chat', icon: 'chat' },
   { name: 'profile', labelKey: 'tabs.profile', icon: 'person' },
 ];
 

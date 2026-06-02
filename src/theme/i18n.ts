@@ -18,7 +18,7 @@ const EN: Dict = {
   'tabs.live': 'Live',
   'tabs.results': 'Results',
   'tabs.leagues': 'Leagues',
-  'tabs.chat': 'BORO',
+  'tabs.chat': 'Chat',
   'tabs.stats': 'Stats',
   'tabs.profile': 'Profile',
 
@@ -314,7 +314,7 @@ const IT: Dict = {
   'tabs.live': 'Live',
   'tabs.results': 'Risultati',
   'tabs.leagues': 'Campionati',
-  'tabs.chat': 'BORO',
+  'tabs.chat': 'Chat',
   'tabs.stats': 'Statistiche',
   'tabs.profile': 'Profilo',
 

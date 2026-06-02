@@ -6,6 +6,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'analytics': Lucide.Activity,
   'live-tv': Lucide.Tv,
   'psychology': Lucide.Brain,
+  'chat': Lucide.MessageSquare,
   'leaderboard': Lucide.TrendingUp,
   'person': Lucide.User,
   'arrow-back': Lucide.ArrowLeft,

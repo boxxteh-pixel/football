@@ -22,7 +22,7 @@ interface NavItem {
 const PRIMARY: NavItem[] = [
   { labelKey: 'tabs.predictor', fallback: 'Predictor', icon: 'analytics', route: '/', exact: true },
   { labelKey: 'tabs.results', fallback: 'Results', icon: 'history', route: '/live' },
-  { labelKey: 'tabs.chat', fallback: 'AI Chat', icon: 'psychology', route: '/chat' },
+  { labelKey: 'tabs.chat', fallback: 'Chat', icon: 'chat', route: '/chat' },
   { labelKey: 'insights.title', fallback: 'Discovery', icon: 'auto-awesome', route: '/insights' },
   { labelKey: 'favorites.title', fallback: 'Favorites', icon: 'favorite', route: '/favorites' },
   { labelKey: 'tabs.profile', fallback: 'Profile', icon: 'person', route: '/profile' },
