@@ -7,13 +7,13 @@ module.exports = {
     extend: {
       colors: {
         // BORO AI palette — extracted from design tokens
-        background: '#131313',
-        surface: '#131313',
-        'surface-dim': '#131313',
+        background: '#0a0a0a',
+        surface: '#0a0a0a',
+        'surface-dim': '#0a0a0a',
         'surface-bright': '#3a3939',
-        'surface-container': '#201f1f',
-        'surface-container-low': '#1c1b1b',
-        'surface-container-lowest': '#0e0e0e',
+        'surface-container': '#161616',
+        'surface-container-low': '#121212',
+        'surface-container-lowest': '#060606',
         'surface-container-high': '#2a2a2a',
         'surface-container-highest': '#353534',
         'surface-variant': '#353534',
