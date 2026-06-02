@@ -219,17 +219,21 @@ export default function PredictorTab() {
                     setSelectedFixtureIds([]);
                   }}
                   style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 8,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: isSelectionMode ? colors.accent15 : 'rgba(255,255,255,0.04)',
                     borderWidth: 1,
                     borderColor: isSelectionMode ? colors.accent30 : 'rgba(255,255,255,0.08)',
                   }}
                 >
-                  <Text style={{ color: isSelectionMode ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 12 }}>
-                    {isSelectionMode ? t('common.cancel') || 'Cancel' : t('common.select') || 'Select'}
-                  </Text>
+                  <BoroIcon
+                    name={isSelectionMode ? "close" : "add-task"}
+                    size={18}
+                    color={isSelectionMode ? colors.primaryFixed : colors.onSurface}
+                  />
                 </Pressable>
               )}
             </View>
@@ -338,6 +342,9 @@ export default function PredictorTab() {
                   setSelectedFixtureIds([]);
                 }}
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
                   paddingHorizontal: 16,
                   paddingVertical: 10,
                   borderRadius: 10,
@@ -348,8 +355,9 @@ export default function PredictorTab() {
                   shadowOffset: { width: 0, height: 2 },
                 }}
               >
+                <BoroIcon name="favorite" size={16} color={colors.onPrimary} fill={colors.onPrimary} />
                 <Text style={{ color: colors.onPrimary, fontFamily: fonts.label, fontSize: 13, fontWeight: 'bold' }}>
-                  {t('favorites.add') || 'Aggiungi preferiti'}
+                  Aggiungi
                 </Text>
               </Pressable>
             </View>
