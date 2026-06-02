@@ -1,4 +1,4 @@
-export type ConfidenceTier = 'ELITE' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type ConfidenceTier = "ELITE" | "HIGH" | "MEDIUM" | "LOW";
 
 export interface ValueBetInfo {
   market: string;
@@ -20,7 +20,23 @@ export interface PredictionResult {
   under25Pct: number;
   confidence: ConfidenceTier;
   topPick: {
-    market: 'WIN' | 'DRAW' | 'BTTS' | 'OVER_2_5' | 'UNDER_2_5';
+    market:
+      | "WIN"
+      | "DRAW"
+      | "BTTS"
+      | "OVER_0_5"
+      | "UNDER_0_5"
+      | "OVER_1_5"
+      | "UNDER_1_5"
+      | "OVER_2_5"
+      | "UNDER_2_5"
+      | "OVER_3_5"
+      | "UNDER_3_5"
+      | "OVER_4_5"
+      | "UNDER_4_5"
+      | "DC_1X"
+      | "DC_X2"
+      | "DC_12";
     selection: string; // e.g. "Arsenal to Win"
     probability: number; // 0-100
     odds: number;
@@ -44,7 +60,7 @@ export interface PredictionResult {
   teamToScoreFirst?: { home: number; away: number; draw: number };
   cornersOverUnder?: Array<{ label: string; probability: number }>;
   overUnderGoals?: Array<{ label: string; probability: number }>;
-  source?: 'BORO_AI' | 'SPORTMONKS_PRO' | 'HYBRID';
+  source?: "BORO_AI" | "SPORTMONKS_PRO" | "HYBRID";
 
   // ── Real-data extensions ──
   /** Per-line over/under probabilities, keyed by line ("1.5","2.5","3.5"...). */
@@ -55,8 +71,13 @@ export interface PredictionResult {
   marketProbabilities?: { home: number; draw: number; away: number };
   /** Best available decimal odds across bookmakers (line-shopped). */
   bestOdds?: {
-    home?: number; draw?: number; away?: number;
-    over25?: number; under25?: number; bttsYes?: number; bttsNo?: number;
+    home?: number;
+    draw?: number;
+    away?: number;
+    over25?: number;
+    under25?: number;
+    bttsYes?: number;
+    bttsNo?: number;
   };
   /** Positive expected-value bets detected vs the market. */
   valueBets?: ValueBetInfo[];
@@ -77,5 +98,5 @@ export interface TeamFormSnapshot {
   winStreak: number;
   homeRecord: { played: number; won: number; drawn: number; lost: number };
   awayRecord: { played: number; won: number; drawn: number; lost: number };
-  results: Array<'W' | 'D' | 'L'>;
+  results: Array<"W" | "D" | "L">;
 }

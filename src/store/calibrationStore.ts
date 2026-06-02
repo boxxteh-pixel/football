@@ -15,21 +15,22 @@
  * pool (and the prior) when a group is sparse — so it never over-corrects on a
  * handful of samples. Persisted locally; improves as more matches settle.
  */
-import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const NUM_BINS = 10; // deciles: 0-10%, 10-20%, ... 90-100%
 const PRIOR_GLOBAL = 12; // pseudo-obs anchoring the global pool to each bin midpoint
 const PRIOR_GROUP = 10; // pseudo-obs anchoring a market group to the global pool
 const MAX_SWING = 12; // cap calibration adjustment at ±12 points (stability)
 
-export type MarketGroup = '1X2' | 'GOALS' | 'BTTS' | 'ALL';
+export type MarketGroup = "1X2" | "GOALS" | "BTTS" | "ALL";
 
 /** Map a raw top-pick market to its calibration group. */
 export const marketGroup = (market: string): MarketGroup => {
-  if (market === 'OVER_2_5' || market === 'UNDER_2_5') return 'GOALS';
-  if (market === 'BTTS') return 'BTTS';
-  return '1X2'; // WIN | DRAW
+  if (market.startsWith("OVER_") || market.startsWith("UNDER_")) return "GOALS";
+  if (market === "BTTS") return "BTTS";
+  if (market.startsWith("DC_")) return "1X2"; // DC_1X, DC_X2, DC_12 are result markets
+  return "1X2"; // WIN | DRAW
 };
 
 interface Bin {
@@ -44,16 +45,22 @@ interface CalibrationState {
   recordedIds: Record<string, true>; // fixtureId:market keys already counted
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  record: (key: string, probabilityPct: number, won: boolean, market?: string) => Promise<void>;
+  record: (
+    key: string,
+    probabilityPct: number,
+    won: boolean,
+    market?: string,
+  ) => Promise<void>;
   /** Map a raw probability (0-100) to its calibrated estimate (0-100). */
   calibrate: (probabilityPct: number, market?: string) => number;
   reset: () => Promise<void>;
 }
 
-const KEY = 'boro_calibration_v2';
-const emptyBins = (): Bin[] => Array.from({ length: NUM_BINS }, () => ({ n: 0, wins: 0 }));
+const KEY = "boro_calibration_v2";
+const emptyBins = (): Bin[] =>
+  Array.from({ length: NUM_BINS }, () => ({ n: 0, wins: 0 }));
 const emptyGroups = (): Groups => ({
-  '1X2': emptyBins(),
+  "1X2": emptyBins(),
   GOALS: emptyBins(),
   BTTS: emptyBins(),
   ALL: emptyBins(),
@@ -65,7 +72,7 @@ const binIndex = (p: number): number => {
 };
 
 const cloneGroups = (g: Groups): Groups => ({
-  '1X2': g['1X2'].map((b) => ({ ...b })),
+  "1X2": g["1X2"].map((b) => ({ ...b })),
   GOALS: g.GOALS.map((b) => ({ ...b })),
   BTTS: g.BTTS.map((b) => ({ ...b })),
   ALL: g.ALL.map((b) => ({ ...b })),
@@ -81,10 +88,10 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       if (raw) {
         const parsed = JSON.parse(raw);
         const g = parsed?.groups;
-        if (g && Array.isArray(g['1X2']) && g['1X2'].length === NUM_BINS) {
+        if (g && Array.isArray(g["1X2"]) && g["1X2"].length === NUM_BINS) {
           set({
             groups: {
-              '1X2': g['1X2'],
+              "1X2": g["1X2"],
               GOALS: g.GOALS ?? emptyBins(),
               BTTS: g.BTTS ?? emptyBins(),
               ALL: g.ALL ?? emptyBins(),
@@ -105,7 +112,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     if (get().recordedIds[key]) return;
     const groups = cloneGroups(get().groups);
     const i = binIndex(probabilityPct);
-    const grp = marketGroup(market ?? '');
+    const grp = marketGroup(market ?? "");
     groups[grp][i].n += 1;
     if (won) groups[grp][i].wins += 1;
     // Always feed the global pool too (shared strength for sparse groups).
@@ -127,16 +134,20 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // Level 1: global pool, smoothed toward the bin midpoint.
     const all = groups.ALL[i];
     const globalRate =
-      ((all.wins + (PRIOR_GLOBAL * midpoint) / 100) / (all.n + PRIOR_GLOBAL)) * 100;
+      ((all.wins + (PRIOR_GLOBAL * midpoint) / 100) / (all.n + PRIOR_GLOBAL)) *
+      100;
 
     // Level 2: market group, smoothed toward the global-pool rate.
-    const grp = marketGroup(market ?? '');
-    const g = grp === 'ALL' ? all : groups[grp][i];
+    const grp = marketGroup(market ?? "");
+    const g = grp === "ALL" ? all : groups[grp][i];
     const calibrated =
       ((g.wins + (PRIOR_GROUP * globalRate) / 100) / (g.n + PRIOR_GROUP)) * 100;
 
     // Stay stable: don't swing more than ±MAX_SWING from the raw value.
-    const delta = Math.max(-MAX_SWING, Math.min(MAX_SWING, calibrated - probabilityPct));
+    const delta = Math.max(
+      -MAX_SWING,
+      Math.min(MAX_SWING, calibrated - probabilityPct),
+    );
     return Math.max(1, Math.min(99, probabilityPct + delta));
   },
   reset: async () => {
