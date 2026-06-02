@@ -5,10 +5,10 @@
  * top pick landed) or red (it missed), and to compute a running hit-rate so the
  * accuracy of the model is transparent — not a black box.
  */
-import type { Fixture } from "@/types/match";
-import type { PredictionResult } from "@/types/prediction";
+import type { Fixture } from '@/types/match';
+import type { PredictionResult } from '@/types/prediction';
 
-export type Grade = "correct" | "incorrect" | "pending";
+export type Grade = 'correct' | 'incorrect' | 'pending';
 
 export interface GradedPrediction {
   grade: Grade;
@@ -23,7 +23,7 @@ export interface GradedPrediction {
 }
 
 const isFinished = (f: Fixture): boolean =>
-  ["FT", "AET", "PEN", "AWD", "WO"].includes(f.fixture.status.short) &&
+  ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(f.fixture.status.short) &&
   f.goals.home !== null &&
   f.goals.away !== null;
 
@@ -41,7 +41,7 @@ export const gradePrediction = (
   const probability = prediction.topPick.probability;
 
   if (!isFinished(fixture)) {
-    return { grade: "pending", market, pick, actual: "—", probability };
+    return { grade: 'pending', market, pick, actual: '—', probability };
   }
 
   const h = fixture.goals.home as number;
@@ -51,137 +51,45 @@ export const gradePrediction = (
   const awayName = fixture.teams.away.name;
 
   const resultLabel =
-    h > a
-      ? `${homeName} won ${h}-${a}`
-      : a > h
-        ? `${awayName} won ${a}-${h}`
-        : `Draw ${h}-${a}`;
+    h > a ? `${homeName} won ${h}-${a}` : a > h ? `${awayName} won ${a}-${h}` : `Draw ${h}-${a}`;
 
   let correct = false;
   let actual = resultLabel;
-  let marketLabel = "1X2";
+  let marketLabel = '1X2';
 
   switch (market) {
-    case "WIN": {
-      marketLabel = "1X2";
+    case 'WIN': {
+      marketLabel = '1X2';
       if (pick.startsWith(homeName)) correct = h > a;
       else correct = a > h;
       break;
     }
-    case "DRAW": {
-      marketLabel = "1X2";
+    case 'DRAW': {
+      marketLabel = '1X2';
       correct = h === a;
       break;
     }
-    case "OVER_2_5": {
-      marketLabel = "Over 2.5";
+    case 'OVER_2_5': {
+      marketLabel = 'Over 2.5';
       correct = total > 2;
       actual = `${total} goals`;
       break;
     }
-    case "UNDER_2_5": {
-      marketLabel = "Under 2.5";
+    case 'UNDER_2_5': {
+      marketLabel = 'Under 2.5';
       correct = total <= 2;
       actual = `${total} goals`;
       break;
     }
-    case "BTTS": {
-      marketLabel = "BTTS";
+    case 'BTTS': {
+      marketLabel = 'BTTS';
       correct = h >= 1 && a >= 1;
-      actual =
-        h >= 1 && a >= 1 ? `Both scored (${h}-${a})` : `Not both (${h}-${a})`;
-      break;
-    }
-    case "OVER_0_5": {
-      marketLabel = "Over 0.5";
-      correct = total > 0;
-      actual = `${total} goals`;
-      break;
-    }
-    case "UNDER_0_5": {
-      marketLabel = "Under 0.5";
-      correct = total === 0;
-      actual = `${total} goals`;
-      break;
-    }
-    case "OVER_1_5": {
-      marketLabel = "Over 1.5";
-      correct = total > 1;
-      actual = `${total} goals`;
-      break;
-    }
-    case "UNDER_1_5": {
-      marketLabel = "Under 1.5";
-      correct = total <= 1;
-      actual = `${total} goals`;
-      break;
-    }
-    case "OVER_3_5": {
-      marketLabel = "Over 3.5";
-      correct = total > 3;
-      actual = `${total} goals`;
-      break;
-    }
-    case "UNDER_3_5": {
-      marketLabel = "Under 3.5";
-      correct = total <= 3;
-      actual = `${total} goals`;
-      break;
-    }
-    case "OVER_4_5": {
-      marketLabel = "Over 4.5";
-      correct = total > 4;
-      actual = `${total} goals`;
-      break;
-    }
-    case "UNDER_4_5": {
-      marketLabel = "Under 4.5";
-      correct = total <= 4;
-      actual = `${total} goals`;
-      break;
-    }
-    case "DC_1X": {
-      marketLabel = "DC 1X";
-      correct = h >= a; // home win or draw
-      actual =
-        h > a
-          ? `Home win ${h}-${a}`
-          : h === a
-            ? `Draw ${h}-${a}`
-            : `Away win ${h}-${a}`;
-      break;
-    }
-    case "DC_X2": {
-      marketLabel = "DC X2";
-      correct = a >= h; // away win or draw
-      actual =
-        a > h
-          ? `Away win ${h}-${a}`
-          : h === a
-            ? `Draw ${h}-${a}`
-            : `Home win ${h}-${a}`;
-      break;
-    }
-    case "DC_12": {
-      marketLabel = "DC 12";
-      correct = h !== a; // either team wins
-      actual =
-        h > a
-          ? `Home win ${h}-${a}`
-          : a > h
-            ? `Away win ${h}-${a}`
-            : `Draw ${h}-${a}`;
+      actual = h >= 1 && a >= 1 ? `Both scored (${h}-${a})` : `Not both (${h}-${a})`;
       break;
     }
   }
 
-  return {
-    grade: correct ? "correct" : "incorrect",
-    market: marketLabel,
-    pick,
-    actual,
-    probability,
-  };
+  return { grade: correct ? 'correct' : 'incorrect', market: marketLabel, pick, actual, probability };
 };
 
 export interface AccuracySummary {
@@ -197,7 +105,7 @@ export interface AccuracySummary {
   /** Current run of consecutive same-grade results (most recent first). */
   streak: number;
   /** 'correct' | 'incorrect' | null — the type of the current streak. */
-  streakType: "correct" | "incorrect" | null;
+  streakType: 'correct' | 'incorrect' | null;
 }
 
 /**
@@ -209,14 +117,14 @@ export interface AccuracySummary {
 export const summarizeAccuracy = (
   graded: Array<{ grade: Grade; probability: number; odds?: number }>,
 ): AccuracySummary => {
-  const decided = graded.filter((g) => g.grade !== "pending");
+  const decided = graded.filter((g) => g.grade !== 'pending');
   const total = decided.length;
-  const correct = decided.filter((g) => g.grade === "correct").length;
+  const correct = decided.filter((g) => g.grade === 'correct').length;
   const brier =
     total > 0
       ? decided.reduce((s, g) => {
           const p = g.probability / 100;
-          const outcome = g.grade === "correct" ? 1 : 0;
+          const outcome = g.grade === 'correct' ? 1 : 0;
           return s + (p - outcome) ** 2;
         }, 0) / total
       : 0;
@@ -228,16 +136,16 @@ export const summarizeAccuracy = (
     const o = g.odds && g.odds > 1 ? g.odds : 0;
     if (o <= 0) continue;
     staked += 1;
-    profitUnits += g.grade === "correct" ? o - 1 : -1;
+    profitUnits += g.grade === 'correct' ? o - 1 : -1;
   }
   const roi = staked > 0 ? (profitUnits / staked) * 100 : 0;
 
   // Current streak from the newest decided results.
   let streak = 0;
-  let streakType: "correct" | "incorrect" | null = null;
+  let streakType: 'correct' | 'incorrect' | null = null;
   for (const g of decided) {
     if (streakType === null) {
-      streakType = g.grade as "correct" | "incorrect";
+      streakType = g.grade as 'correct' | 'incorrect';
       streak = 1;
     } else if (g.grade === streakType) {
       streak += 1;
@@ -258,6 +166,7 @@ export const summarizeAccuracy = (
   };
 };
 
+
 /**
  * Settle a saved pick against a finished fixture.
  * Returns the settlement status and a human-readable result, or null if the
@@ -265,9 +174,9 @@ export const summarizeAccuracy = (
  */
 export const settlePickAgainstFixture = (
   fixture: Fixture,
-  market: "WIN" | "DRAW" | "BTTS" | "OVER_2_5" | "UNDER_2_5",
+  market: 'WIN' | 'DRAW' | 'BTTS' | 'OVER_2_5' | 'UNDER_2_5',
   selection: string,
-): { status: "won" | "lost" | "void"; result: string } | null => {
+): { status: 'won' | 'lost' | 'void'; result: string } | null => {
   if (!isFinished(fixture)) return null;
   const h = fixture.goals.home as number;
   const a = fixture.goals.away as number;
@@ -277,21 +186,21 @@ export const settlePickAgainstFixture = (
   let won = false;
 
   switch (market) {
-    case "WIN":
+    case 'WIN':
       won = selection.startsWith(homeName) ? h > a : a > h;
       break;
-    case "DRAW":
+    case 'DRAW':
       won = h === a;
       break;
-    case "OVER_2_5":
+    case 'OVER_2_5':
       won = total > 2;
       break;
-    case "UNDER_2_5":
+    case 'UNDER_2_5':
       won = total <= 2;
       break;
-    case "BTTS":
+    case 'BTTS':
       won = h >= 1 && a >= 1;
       break;
   }
-  return { status: won ? "won" : "lost", result: score };
+  return { status: won ? 'won' : 'lost', result: score };
 };
