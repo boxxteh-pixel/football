@@ -24,20 +24,34 @@ export const ScreenBackground: React.FC = () => {
         style={StyleSheet.absoluteFill}
       />
 
+      {/* Subtle tech radial dot grid pattern for Web/PC layout depth */}
+      {isWeb && (
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            opacity: 0.45,
+            // @ts-ignore
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       {/* Warm ambient wash so glass cards have colour to refract. */}
       <View
         style={[
           {
             position: 'absolute',
-            top: -120,
-            right: -100,
-            width: 380,
-            height: 380,
-            borderRadius: 190,
+            top: -150,
+            right: -150,
+            width: isWeb ? 680 : 380,
+            height: isWeb ? 680 : 380,
+            borderRadius: isWeb ? 340 : 190,
             backgroundColor: colors.primaryFixed,
-            opacity: 0.06,
+            opacity: isWeb ? 0.08 : 0.06,
           },
-          isWeb ? ({ filter: 'blur(100px)' } as any) : null,
+          isWeb ? ({ filter: 'blur(110px)' } as any) : null,
         ]}
       />
       {/* Secondary cool field, bottom-left — very subtle. */}
@@ -45,15 +59,15 @@ export const ScreenBackground: React.FC = () => {
         style={[
           {
             position: 'absolute',
-            bottom: -140,
-            left: -110,
-            width: 360,
-            height: 360,
-            borderRadius: 180,
+            bottom: -180,
+            left: -150,
+            width: isWeb ? 620 : 360,
+            height: isWeb ? 620 : 360,
+            borderRadius: isWeb ? 310 : 180,
             backgroundColor: colors.secondaryContainer,
-            opacity: 0.04,
+            opacity: isWeb ? 0.06 : 0.04,
           },
-          isWeb ? ({ filter: 'blur(100px)' } as any) : null,
+          isWeb ? ({ filter: 'blur(110px)' } as any) : null,
         ]}
       />
       {/* Warm mid-screen wash for depth continuity with glass surfaces. */}
@@ -62,14 +76,14 @@ export const ScreenBackground: React.FC = () => {
           {
             position: 'absolute',
             top: '30%',
-            left: '20%',
-            width: 500,
-            height: 500,
-            borderRadius: 250,
+            left: '15%',
+            width: isWeb ? 700 : 500,
+            height: isWeb ? 700 : 500,
+            borderRadius: isWeb ? 350 : 250,
             backgroundColor: '#1c1b1a',
-            opacity: 0.25,
+            opacity: isWeb ? 0.35 : 0.25,
           },
-          isWeb ? ({ filter: 'blur(150px)' } as any) : null,
+          isWeb ? ({ filter: 'blur(160px)' } as any) : null,
         ]}
       />
     </View>

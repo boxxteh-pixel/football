@@ -42,6 +42,39 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           src: url(${fontUrl});
           font-family: MaterialIcons;
         }
+
+        /* Tech custom scrollbars for web/PC */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #141312;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 4px;
+          border: 2px solid #141312;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* Tech selection styling matching brand colors */
+        ::selection {
+          background: rgba(195, 244, 0, 0.25);
+          color: #ffffff;
+        }
+        
+        /* Premium responsive glass card hover extensions on web/PC */
+        @media (min-width: 1024px) {
+          div[style*="backdrop-filter"] {
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+          }
+          div[style*="backdrop-filter"]:hover {
+            box-shadow: 0 16px 44px rgba(0, 0, 0, 0.6), 0 0 24px rgba(195, 244, 0, 0.04) !important;
+          }
+        }
       `;
       const style = document.createElement('style');
       style.type = 'text/css';

@@ -55,11 +55,13 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   // Keep the fill translucent so the blur behind is clearly visible (iOS look).
   const bg = isWeb ? 'rgba(28,27,26,0.45)' : 'rgba(28,27,26,0.32)';
 
-  // Real frosted glass on web: heavy blur + high saturation + slight brightness.
+  // Real frosted glass on web: heavy blur + high saturation + slight brightness + soft float shadow
   const webBlur = isWeb
     ? ({
         backdropFilter: `blur(${intensity}px) saturate(180%) brightness(1.05)`,
         WebkitBackdropFilter: `blur(${intensity}px) saturate(180%) brightness(1.05)`,
+        boxShadow: glow ? '0 16px 40px rgba(0,0,0,0.6)' : '0 8px 24px rgba(0,0,0,0.3)',
+        transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease',
       } as unknown as ViewStyle)
     : null;
 
