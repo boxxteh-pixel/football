@@ -450,92 +450,205 @@ const MatchCardContent: React.FC<{
   probPct: number;
   colors: ReturnType<typeof useColors>;
 }> = ({ att, accent, probPct, colors }) => (
-  <View
-    style={{
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    }}
-  >
-    {/* Creste squadre */}
-    <View style={{ alignItems: "center", gap: 3 }}>
-      <TeamCrest uri={att.homeLogo} size={22} />
-      <TeamCrest uri={att.awayLogo} size={22} />
-    </View>
-
-    {/* Info centrale */}
-    <View style={{ flex: 1, gap: 2 }}>
+  <View style={{ paddingHorizontal: 14, paddingVertical: 11, gap: 8 }}>
+    {/* Header: league + kickoff/live */}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
       <Text
         style={{
           color: colors.onSurfaceVariant,
           fontFamily: fonts.label,
-          fontSize: 8,
-          letterSpacing: 0.4,
+          fontSize: 9,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+          flex: 1,
+          marginRight: 8,
         }}
         numberOfLines={1}
       >
-        {att.leagueName.toUpperCase()}
+        {att.leagueName}
       </Text>
-      <Text
-        style={{
-          color: colors.onSurface,
-          fontFamily: fonts.bodyBold,
-          fontSize: 12,
-        }}
-        numberOfLines={1}
-      >
-        {att.homeTeam}
-        {att.isLiveMatch && att.homeGoals !== null
-          ? ` ${att.homeGoals}–${att.awayGoals} `
-          : " vs "}
-        {att.awayTeam}
-      </Text>
-      <Text
-        style={{ color: accent, fontFamily: fonts.body, fontSize: 11 }}
-        numberOfLines={1}
-      >
-        {att.selection}
-      </Text>
+      {att.isLiveMatch ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            backgroundColor: "rgba(255,100,0,0.12)",
+            borderWidth: 1,
+            borderColor: "rgba(255,100,0,0.4)",
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}
+        >
+          <View
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: "#ff6600",
+            }}
+          />
+          <Text
+            style={{ color: "#ff6600", fontFamily: fonts.label, fontSize: 9 }}
+          >
+            {att.elapsed ?? "?"}'
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 3,
+            backgroundColor: "rgba(255,255,255,0.04)",
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}
+        >
+          <BoroIcon name="schedule" size={9} color={colors.onSurfaceVariant} />
+          <Text
+            style={{
+              color: colors.onSurfaceVariant,
+              fontFamily: fonts.label,
+              fontSize: 9,
+            }}
+          >
+            {att.kickoff}
+          </Text>
+        </View>
+      )}
     </View>
 
-    {/* Destra: prob + odds + orario */}
-    <View style={{ alignItems: "flex-end", gap: 3 }}>
-      <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 15 }}>
-        {probPct}%
-      </Text>
-      <View
-        style={{
-          backgroundColor: `${accent}1A`,
-          borderWidth: 1,
-          borderColor: `${accent}44`,
-          borderRadius: 6,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-        }}
-      >
-        <Text style={{ color: accent, fontFamily: fonts.label, fontSize: 10 }}>
-          @{att.odds.toFixed(2)}
+    {/* Teams row */}
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <TeamCrest uri={att.homeLogo} size={28} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text
+          style={{
+            color: colors.onSurface,
+            fontFamily: fonts.bodyBold,
+            fontSize: 13,
+          }}
+          numberOfLines={1}
+        >
+          {att.homeTeam}
+        </Text>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.body,
+            fontSize: 11,
+          }}
+          numberOfLines={1}
+        >
+          {att.awayTeam}
         </Text>
       </View>
-      {att.isLiveMatch ? (
+      {att.isLiveMatch &&
+      att.homeGoals !== null &&
+      att.homeGoals !== undefined ? (
         <Text
-          style={{ color: "#ff6600", fontFamily: fonts.label, fontSize: 8 }}
+          style={{
+            color: colors.onSurface,
+            fontFamily: fonts.stats,
+            fontSize: 18,
+          }}
         >
-          🔴 {att.elapsed}'
+          {att.homeGoals} – {att.awayGoals}
         </Text>
       ) : (
+        <TeamCrest uri={att.awayLogo} size={28} />
+      )}
+    </View>
+
+    {/* Pick row */}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 6,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.06)",
+      }}
+    >
+      <View style={{ flex: 1, gap: 3, marginRight: 8 }}>
         <Text
           style={{
             color: colors.onSurfaceVariant,
             fontFamily: fonts.label,
             fontSize: 8,
+            letterSpacing: 0.5,
           }}
         >
-          {att.kickoff}
+          SELEZIONE
         </Text>
-      )}
+        <Text
+          style={{ color: accent, fontFamily: fonts.bodyBold, fontSize: 12 }}
+          numberOfLines={1}
+        >
+          {att.selection}
+        </Text>
+      </View>
+      <View style={{ alignItems: "center", gap: 2, marginRight: 12 }}>
+        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 17 }}>
+          {probPct}%
+        </Text>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.label,
+            fontSize: 7,
+            letterSpacing: 0.3,
+          }}
+        >
+          PROB.
+        </Text>
+      </View>
+      <View
+        style={{
+          backgroundColor: `${accent}1A`,
+          borderWidth: 1,
+          borderColor: `${accent}44`,
+          borderRadius: 8,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+        }}
+      >
+        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 14 }}>
+          @{att.odds.toFixed(2)}
+        </Text>
+      </View>
+    </View>
+
+    {/* Probability bar */}
+    <View
+      style={{
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        overflow: "hidden",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${Math.min(100, probPct)}%` as `${number}%`,
+          backgroundColor: accent,
+          borderRadius: 2,
+        }}
+      />
     </View>
   </View>
 );
