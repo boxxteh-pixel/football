@@ -218,12 +218,15 @@ export const DesktopSidebar: React.FC = () => {
       style={{
         width: 248,
         height: '100%',
-        backgroundColor: colors.surfaceContainerLowest,
+        backgroundColor: Platform.OS === 'web' ? 'rgba(28, 27, 26, 0.45)' : 'rgba(28, 27, 26, 0.32)',
         borderRightWidth: 1,
         borderRightColor: 'rgba(255,255,255,0.07)',
         paddingTop: 26,
         paddingBottom: 18,
         paddingHorizontal: 16,
+        ...(Platform.OS === 'web'
+          ? ({ backdropFilter: 'blur(30px) saturate(180%) brightness(1.05)', WebkitBackdropFilter: 'blur(30px) saturate(180%) brightness(1.05)' } as any)
+          : {}),
       }}
     >
       {/* Brand */}
@@ -264,9 +267,9 @@ export const DesktopSidebar: React.FC = () => {
           marginBottom: 12,
           padding: 12,
           borderRadius: 14,
-          backgroundColor: colors.white05,
+          backgroundColor: 'rgba(255,255,255,0.03)',
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.06)',
+          borderColor: 'rgba(255,255,255,0.08)',
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -308,7 +311,8 @@ export const DesktopSidebar: React.FC = () => {
           paddingHorizontal: 10,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.05)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          backgroundColor: 'rgba(255,255,255,0.02)',
           flexDirection: 'row',
           alignItems: 'center',
           gap: 10,

@@ -11,6 +11,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { Chip } from '@/components/ui/Chip';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useResults, type ResultRow } from '@/hooks/useResults';
@@ -114,27 +115,14 @@ export default function ResultsTab() {
 
         {/* Market filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
-          {filters.map((f) => {
-            const active = marketFilter === f.id;
-            return (
-              <Pressable
-                key={f.id}
-                onPress={() => setMarketFilter(f.id)}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 18,
-                  backgroundColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.05)',
-                  borderWidth: 1,
-                  borderColor: active ? colors.primaryFixed : 'rgba(255,255,255,0.1)',
-                }}
-              >
-                <Text style={{ color: active ? colors.onPrimaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 12 }}>
-                  {f.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {filters.map((f) => (
+            <Chip
+              key={f.id}
+              label={f.label}
+              active={marketFilter === f.id}
+              onPress={() => setMarketFilter(f.id)}
+            />
+          ))}
         </ScrollView>
 
         {/* Results list */}
