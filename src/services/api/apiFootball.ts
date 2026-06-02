@@ -1,5 +1,6 @@
 import { config, hasApiKey } from '@/constants/config';
 import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord } from '@/types/match';
+import { isLive, isScheduled } from '@/types/match';
 import type { League, StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
 import { DEFAULT_LEAGUES, DEFAULT_LEAGUE_IDS } from '@/constants/leagues';
@@ -111,7 +112,7 @@ export const fetchUpcomingFixtures = async (
     // Fallback (off-season / empty window): earliest upcoming day with games.
     const byDay = new Map<string, Fixture[]>();
     all
-      .filter((f) => f.fixture.timestamp * 1000 >= now - MATCH_WINDOW_FUTURE_MS)
+      .filter((f) => (isLive(f.fixture.status.short) || isScheduled(f.fixture.status.short)) && f.fixture.timestamp * 1000 >= now - MATCH_WINDOW_FUTURE_MS)
       .forEach((f) => {
         const day = new Date(f.fixture.timestamp * 1000).toISOString().split('T')[0];
         const arr = byDay.get(day) ?? [];

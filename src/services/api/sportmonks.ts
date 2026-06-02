@@ -93,11 +93,11 @@ export const fetchSportmonksPredictions = async (
     const cleanDate = date.split('T')[0];
     const sportmonksLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
 
-    const isLocalWeb = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isLocalWeb = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.port === '8081' || window.location.port === '8082');
     const baseUrl = (Platform.OS === 'web' && !isLocalWeb) ? '/api/sportmonks' : config.sportmonks.baseUrl;
     let url = `${baseUrl}/fixtures/date/${cleanDate}?include=participants;predictions.type`;
     if (sportmonksLeagueId) {
-      url += `&filters=fixtureLeagues:${sportmonksLeagueId}`;
+      url += `&filters=leagues:${sportmonksLeagueId}`;
     }
 
     console.log(`[Sportmonks] Fetching fixtures for date ${cleanDate}...`);
@@ -293,7 +293,7 @@ import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord, FixtureStatus 
 import type { StandingRow } from '@/types/league';
 import type { TeamStatistics } from '@/types/team';
 
-const isLocalWebClient = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const isLocalWebClient = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.port === '8081' || window.location.port === '8082');
 
 const sportmonksClient = axios.create({
   baseURL: (Platform.OS === 'web' && !isLocalWebClient) ? '/api/sportmonks' : config.sportmonks.baseUrl,
@@ -635,7 +635,7 @@ export const fetchSportmonksFixturesByDate = async (
 
     let url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores`;
     if (smLeagueId) {
-      url += `&filters=fixtureLeagues:${smLeagueId}`;
+      url += `&filters=leagues:${smLeagueId}`;
     }
 
     console.log(`[Sportmonks Adapter] Fetching fixtures for date ${cleanDate}...`);
@@ -671,13 +671,13 @@ export const fetchSportmonksFixturesByDateMulti = async (
     const collected: any[] = [];
     const MAX_PAGES = 8; // safety guard (8 * 50 = 400 fixtures/day is plenty)
 
-    // SportMonks caps fixtureLeagues at 50 IDs → fetch in chunks and merge.
+    // SportMonks caps leagues at 50 IDs → fetch in chunks and merge.
     for (const chunk of chunkLeagueIds(smLeagueIds)) {
       const filterIds = chunk.join(',');
       let page = 1;
       let hasMore = true;
       while (hasMore && page <= MAX_PAGES) {
-        const url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${filterIds}&per_page=50&page=${page}`;
+        const url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores&filters=leagues:${filterIds}&per_page=50&page=${page}`;
         const response = await sportmonksClient.get(url);
         const data = response.data?.data;
         if (Array.isArray(data) && data.length > 0) collected.push(...data);
@@ -713,12 +713,12 @@ export const fetchSportmonksFixturesBetween = async (
 
     const collected: any[] = [];
     const MAX_PAGES = 10;
-    // SportMonks caps fixtureLeagues at 50 IDs → fetch in chunks and merge.
+    // SportMonks caps leagues at 50 IDs → fetch in chunks and merge.
     for (const chunk of chunkLeagueIds(smLeagueIds)) {
       let page = 1;
       let hasMore = true;
       while (hasMore && page <= MAX_PAGES) {
-        const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&filters=fixtureLeagues:${chunk.join(',')}&per_page=50&page=${page}`;
+        const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&filters=leagues:${chunk.join(',')}&per_page=50&page=${page}`;
         const response = await sportmonksClient.get(url);
         const data = response.data?.data;
         if (Array.isArray(data) && data.length > 0) collected.push(...data);

@@ -23,7 +23,7 @@ const isWeb = Platform.OS === 'web';
 const isLocalWeb =
   isWeb &&
   typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  (window.location.port === '8081' || window.location.port === '8082');
 
 // On deployed web we proxy through our own serverless function (token hidden).
 // On native and local-web dev we hit SportMonks directly with the env token.
@@ -199,7 +199,7 @@ export const smGetAll = async (
 };
 
 /**
- * SportMonks caps the `fixtureLeagues` filter at 50 league IDs per request.
+ * SportMonks caps the `leagues` filter at 50 league IDs per request.
  * This helper splits the league list into ≤`chunkSize` batches, runs the
  * paginated `smGetAll` for each batch, and concatenates the results — so the
  * app can track more than 50 leagues without hitting a 400 "Error parsing
@@ -228,7 +228,7 @@ export const smGetAllByLeagues = async (
   const results = await Promise.all(
     chunks.map((chunk) =>
       smGetAll(path, {
-        params: { ...params, filters: `fixtureLeagues:${chunk.join(',')}` },
+        params: { ...params, filters: `leagues:${chunk.join(',')}` },
         ttl,
         maxPages,
       }).catch(() => [] as any[]),
