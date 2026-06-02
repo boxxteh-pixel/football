@@ -19,7 +19,7 @@ export const ScreenBackground: React.FC = () => {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <LinearGradient
-        colors={['#1e1c19', '#181716', '#141312']}
+        colors={['#23211f', '#1d1c1b', '#1a1918']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
