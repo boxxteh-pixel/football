@@ -414,7 +414,7 @@ export default function CommunityChatScreen() {
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
               renderItem={({ item }) => {
                 const isSystemMsg = item.isSystem;
                 
@@ -517,47 +517,56 @@ export default function CommunityChatScreen() {
             </View>
 
             {/* Input Bar */}
-            <GlassCard padding={6} style={{ overflow: 'visible' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
-                <TextInput
-                  value={inputText}
-                  onChangeText={setInputText}
-                  placeholder="Scrivi un messaggio nella community..."
-                  placeholderTextColor={colors.onSurfaceVariant}
-                  maxLength={160}
-                  style={{
-                    flex: 1,
-                    color: colors.onSurface,
-                    fontFamily: fonts.body,
-                    fontSize: 14,
-                    paddingHorizontal: 12,
-                    height: 40,
-                    outlineStyle: 'none',
-                    outlineWidth: 0,
-                  }}
-                  onSubmitEditing={handleSend}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                borderRadius: 24,
+                paddingHorizontal: 6,
+                paddingVertical: 4,
+              }}
+            >
+              <TextInput
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Scrivi un messaggio nella community..."
+                placeholderTextColor={colors.onSurfaceVariant}
+                maxLength={160}
+                style={{
+                  flex: 1,
+                  color: colors.onSurface,
+                  fontFamily: fonts.body,
+                  fontSize: 14,
+                  paddingHorizontal: 12,
+                  height: 40,
+                  outlineStyle: 'none',
+                  outlineWidth: 0,
+                }}
+                onSubmitEditing={handleSend}
+              />
+              <Pressable
+                onPress={handleSend}
+                style={({ pressed }) => ({
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: inputText.trim() ? colors.primaryFixed : 'rgba(255,255,255,0.03)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: 6,
+                  transform: [{ scale: pressed ? 0.9 : 1 }],
+                })}
+              >
+                <BoroIcon
+                  name="send"
+                  size={16}
+                  color={inputText.trim() ? colors.background : colors.onSurfaceVariant}
                 />
-                <Pressable
-                  onPress={handleSend}
-                  style={({ pressed }) => ({
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: inputText.trim() ? colors.primaryFixed : 'rgba(255,255,255,0.03)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: 6,
-                    transform: [{ scale: pressed ? 0.9 : 1 }],
-                  })}
-                >
-                  <BoroIcon
-                    name="share"
-                    size={16}
-                    color={inputText.trim() ? colors.background : colors.onSurfaceVariant}
-                  />
-                </Pressable>
-              </View>
-            </GlassCard>
+              </Pressable>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </ScreenContainer>

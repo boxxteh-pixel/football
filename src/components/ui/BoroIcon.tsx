@@ -70,6 +70,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'receipt': Lucide.ReceiptText,
   'notifications': Lucide.Bell,
   'calendar-today': Lucide.Calendar,
+  'send': Lucide.SendHorizontal || Lucide.Send,
 };
 
 interface BoroIconProps {

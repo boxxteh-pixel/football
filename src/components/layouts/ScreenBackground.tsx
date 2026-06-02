@@ -17,7 +17,7 @@ export const ScreenBackground: React.FC = () => {
   const isWeb = Platform.OS === 'web';
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
       <LinearGradient
         colors={['#23211f', '#1d1c1b', '#1a1918']}
         locations={[0, 0.5, 1]}
