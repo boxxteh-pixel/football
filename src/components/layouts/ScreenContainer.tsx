@@ -43,9 +43,9 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   const showTopBar = topBar && !(isDesktop && !showBack);
   const maxW = maxWidth ?? contentMaxWidth;
 
-  const paddingTop = showTopBar ? 16 : isDesktop ? 36 : insets.top + 16;
+  const paddingTop = showTopBar ? 16 : isDesktop ? 42 : insets.top + 16;
   const paddingBottom = bottomSafe ? insets.bottom + 24 : 16;
-  const paddingHorizontal = isDesktop ? 36 : 16;
+  const paddingHorizontal = isDesktop ? 44 : 16;
   const shouldHideAvatar = hideAvatar ?? showBack;
 
   const topBarNode = showTopBar ? (

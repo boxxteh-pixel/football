@@ -27,7 +27,7 @@ export function useResponsive() {
   const contentMaxWidth = isDesktop ? 1180 : 760;
 
   // Persistent left navigation rail width (desktop only).
-  const sidebarWidth = isDesktop ? 248 : 0;
+  const sidebarWidth = isDesktop ? 272 : 0;
 
   return {
     width,

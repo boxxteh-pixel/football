@@ -77,7 +77,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: isDesktop ? 36 : 16,
+          paddingHorizontal: isDesktop ? 44 : 16,
           width: '100%',
           maxWidth: isDesktop ? contentMaxWidth + 72 : undefined,
           alignSelf: 'center',
