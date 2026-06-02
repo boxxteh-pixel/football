@@ -1,6 +1,7 @@
 import React from 'react';
-import { Image, Platform, Pressable, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -33,26 +34,40 @@ export const TopBar: React.FC<TopBarProps> = ({
   const showWordmark = title === 'BORO' || title === 'BORO AI';
   // The desktop sidebar owns the account/API meter, so never duplicate it here.
   const avatarHidden = hideAvatar || isDesktop;
+  const isWeb = Platform.OS === 'web';
+  const bg = isWeb ? 'rgba(28,27,26,0.45)' : 'rgba(28,27,26,0.32)';
 
   return (
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,17,0.45)' : 'rgba(22,20,18,0.3)',
+        backgroundColor: bg,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
-        ...(Platform.OS === 'web'
+        borderBottomColor: 'rgba(255,255,255,0.14)',
+        position: 'relative',
+        overflow: 'hidden',
+        ...(isWeb
           ? ({ backdropFilter: 'blur(28px) saturate(180%) brightness(1.05)', WebkitBackdropFilter: 'blur(28px) saturate(180%) brightness(1.05)' } as any)
           : {}),
       }}
     >
       {Platform.OS !== 'web' && (
         <BlurView
-          intensity={60}
+          intensity={70}
           tint="dark"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={StyleSheet.absoluteFill}
         />
       )}
+
+      {/* Ambient diagonal glass sheen */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'transparent']}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <View
         style={{
           height: 56,

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors} from '@/theme/colors';
@@ -55,22 +56,49 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({ state, navigation }) => {
   // On desktop the persistent sidebar replaces the bottom tab bar entirely.
   if (isDesktop) return null;
 
+  const isWeb = Platform.OS === 'web';
+  const bg = isWeb ? 'rgba(28,27,26,0.45)' : 'rgba(28,27,26,0.32)';
+
   return (
     <View
       style={{
         paddingBottom: insets.bottom,
-        backgroundColor: Platform.OS === 'web' ? 'rgba(20,19,17,0.55)' : 'rgba(22,20,18,0.6)',
+        backgroundColor: bg,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.1)',
+        borderTopColor: 'rgba(255,255,255,0.14)',
         overflow: 'hidden',
-        ...(Platform.OS === 'web'
+        position: 'relative',
+        ...(isWeb
           ? ({ backdropFilter: 'blur(30px) saturate(180%) brightness(1.05)', WebkitBackdropFilter: 'blur(30px) saturate(180%) brightness(1.05)' } as any)
           : {}),
       }}
     >
       {Platform.OS !== 'web' && (
-        <BlurView intensity={70} tint="dark" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
       )}
+
+      {/* Diagonal glass sheen */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'transparent']}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Bright top hairline highlight */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: 'rgba(255,255,255,0.25)',
+        }}
+      />
       <View
         style={{
           height: 64,

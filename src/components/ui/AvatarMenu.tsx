@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Animated, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +25,8 @@ export const AvatarMenu: React.FC = () => {
   const haptics = useHaptics();
   const t = useT();
   const rl = useRateLimit();
+  const isWeb = Platform.OS === 'web';
+  const menuBg = isWeb ? 'rgba(28,27,26,0.65)' : 'rgba(28,27,26,0.48)';
 
   const initial = session?.user.name?.[0]?.toUpperCase() ?? 'B';
   // Real remaining API calls (e.g. "52.9k"); falls back to ∞ only if unknown.
@@ -178,28 +181,59 @@ export const AvatarMenu: React.FC = () => {
               borderRadius: 14,
               overflow: 'hidden',
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.1)',
-              backgroundColor: 'rgba(32,31,31,0.92)',
+              borderColor: 'rgba(255,255,255,0.14)',
+              backgroundColor: menuBg,
               shadowColor: '#000',
               shadowOpacity: 0.4,
               shadowRadius: 18,
               shadowOffset: { width: 0, height: 8 },
               elevation: 12,
+              ...(isWeb
+                ? ({
+                    backdropFilter: 'blur(28px) saturate(180%) brightness(1.05)',
+                    WebkitBackdropFilter: 'blur(28px) saturate(180%) brightness(1.05)',
+                  } as any)
+                : {}),
             }}
           >
             {Platform.OS !== 'web' && (
-              <BlurView intensity={40} tint="dark" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+              <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
             )}
+
+            {/* Diagonal glass sheen */}
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)', 'transparent']}
+              locations={[0, 0.35, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Bright top hairline highlight */}
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+              }}
+            />
 
             <View
               style={{
                 paddingHorizontal: 14,
                 paddingVertical: 14,
                 borderBottomWidth: 1,
-                borderBottomColor: 'rgba(255,255,255,0.06)',
+                borderBottomColor: 'rgba(255,255,255,0.08)',
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 12,
+                position: 'relative',
+                zIndex: 1,
               }}
             >
               <View
