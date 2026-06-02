@@ -119,8 +119,8 @@ export default function CommunityChatScreen() {
   useEffect(() => {
     if (!hasSetNickname) return;
 
-    // Use SocketsBay public broadcast server for real-time bidirectional communication among all users
-    const wsUrl = 'wss://socketsbay.com/wss/v2/1/boro_global_chat_v2/';
+    // Use PieSocket stable public broadcast channel for reliable real-time messages between all users
+    const wsUrl = 'wss://demo.piesocket.com/v3/boro_chat_room_v2?api_key=VCXCEJZvOyUBZTyEPzlgfiy6qCO844537J3g7qW5&notify_self=1';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -144,12 +144,11 @@ export default function CommunityChatScreen() {
               AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(combined)).catch(() => {});
               return combined;
             });
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
           }
         }
       } catch (e) {
-        // Echo.websocket.org will echo raw sent messages back too. 
-        // We handle JSON payload to render them safely.
+        // Handle invalid payloads safely
       }
     };
 
@@ -158,30 +157,34 @@ export default function CommunityChatScreen() {
     };
 
     ws.onclose = () => {
-      const sysMsg: ChatMessage = {
-        id: `sys-${Math.random()}`,
-        senderName: 'SYSTEM',
-        text: '🔴 Disconnesso dalla chat live. Riconnessione in corso...',
-        timestamp: new Date().toISOString(),
-        avatarInitial: 'ℹ️',
-        color: '#ef4444',
-        isSelf: false,
-        isSystem: true
-      };
-      setMessages(prev => [...prev.slice(-MAX_MESSAGES), sysMsg]);
-      
-      // Auto-reconnect in 5 seconds
-      setTimeout(() => {
-        if (hasSetNickname) {
-          setHasSetNickname(false);
-          setTimeout(() => setHasSetNickname(true), 50);
-        }
-      }, 5000);
+      // Only trigger disconnect message and reconnect loop if connection dropped unexpectedly (not during cleanup)
+      if (wsRef.current === ws) {
+        const sysMsg: ChatMessage = {
+          id: `sys-${Math.random()}`,
+          senderName: 'SYSTEM',
+          text: '🔴 Disconnesso dalla chat live. Riconnessione in corso...',
+          timestamp: new Date().toISOString(),
+          avatarInitial: 'ℹ️',
+          color: '#ef4444',
+          isSelf: false,
+          isSystem: true
+        };
+        setMessages(prev => [...prev.slice(-MAX_MESSAGES), sysMsg]);
+        
+        // Auto-reconnect in 5 seconds
+        setTimeout(() => {
+          if (wsRef.current === ws && hasSetNickname) {
+            setHasSetNickname(false);
+            setTimeout(() => setHasSetNickname(true), 50);
+          }
+        }, 5000);
+      }
     };
 
     return () => {
-      ws.close();
+      // Clear reference first so ws.onclose knows it's an intentional disconnect
       wsRef.current = null;
+      ws.close();
     };
   }, [hasSetNickname, currentUserName]);
 
