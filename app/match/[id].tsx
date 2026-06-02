@@ -605,7 +605,7 @@ export default function MatchDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <BoroIcon name="psychology" size={20} color={colors.primaryFixed} />
               <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 16 }}>
-                Chatbot Assistente Tattico (AI Coach)
+                AI Coach
               </Text>
             </View>
             <View style={{ backgroundColor: colors.accent12, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>

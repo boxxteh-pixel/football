@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
   FlatList,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BoroIcon } from '@/components/ui/BoroIcon';
@@ -493,7 +494,11 @@ export default function CommunityChatScreen() {
               <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, letterSpacing: 0.5, marginLeft: 4 }}>
                 FAI UNA DOMANDA RAPIDA ALL'AI DI BORO
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ flexDirection: 'row', gap: 6, paddingHorizontal: 4 }}
+              >
                 {QUICK_BOT_SUGGESTIONS.map((sug, i) => (
                   <Pressable
                     key={i}
@@ -513,7 +518,7 @@ export default function CommunityChatScreen() {
                     </Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             </View>
 
             {/* Input Bar */}
