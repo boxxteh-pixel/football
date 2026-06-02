@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,9 +11,11 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { BoroIcon } from "@/components/ui/BoroIcon";
 import { ScreenContainer } from "@/components/layouts/ScreenContainer";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { TeamCrest } from "@/components/ui/TeamCrest";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useColors } from "@/theme/colors";
 import { fonts } from "@/theme/typography";
@@ -24,170 +27,27 @@ import { useTodayFixtures } from "@/hooks/useFixtures";
 import { isLive } from "@/types/match";
 import type { Fixture } from "@/types/match";
 import type { PredictionResult, ValueBetInfo } from "@/types/prediction";
+import { format, parseISO } from "date-fns";
 
-// ─── Data-driven community bot reply ────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-function generateBotReply(
-  query: string,
-  fixtures: Fixture[],
-  predictionMap: Map<number, PredictionResult>,
-): string {
-  const lower = query.toLowerCase();
-
-  if (predictionMap.size === 0 || fixtures.length === 0) {
-    return "⏳ I dati di oggi sono ancora in caricamento. Riprova tra qualche secondo...";
-  }
-
-  type Pair = { fixture: Fixture; pred: PredictionResult };
-  const pairs: Pair[] = fixtures
-    .map((f) => ({ fixture: f, pred: predictionMap.get(f.fixture.id) }))
-    .filter((p): p is Pair => Boolean(p.pred));
-
-  if (pairs.length === 0) {
-    return "⏳ Previsioni non ancora disponibili per le partite di oggi. Riprova tra qualche minuto.";
-  }
-
-  // Most confident picks
-  if (
-    lower.includes("più sicure") ||
-    lower.includes("sicura") ||
-    lower.includes("sicure")
-  ) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
-      .slice(0, 3);
-    let resp = `🎯 Le 3 più sicure oggi:\n\n`;
-    sorted.forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      const pick = item.pred.topPick;
-      resp +=
-        `${i + 1}. ${home} vs ${away}\n` +
-        `   → ${pick.selection} · ${Math.round(pick.probability)}% · @${pick.odds.toFixed(2)}\n\n`;
-    });
-    return resp.trim();
-  }
-
-  // Accumulator
-  if (lower.includes("multipla") || lower.includes("raddoppio")) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
-      .slice(0, 3);
-    let combinedOdds = 1;
-    let resp = `🔥 Multipla consigliata oggi:\n\n`;
-    sorted.forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      const pick = item.pred.topPick;
-      combinedOdds *= pick.odds;
-      resp += `${i + 1}. ${home} vs ${away}: ${pick.selection} (@${pick.odds.toFixed(2)})\n`;
-    });
-    resp += `\n💰 Quota Multipla Totale: ${combinedOdds.toFixed(2)}x`;
-    return resp;
-  }
-
-  // Value bets / underdogs
-  if (
-    lower.includes("valore") ||
-    lower.includes("underdog") ||
-    lower.includes("value")
-  ) {
-    const valueBets: Array<{ fixture: Fixture; vb: ValueBetInfo }> = [];
-    pairs.forEach((item) => {
-      (item.pred.valueBets ?? [])
-        .filter((vb) => vb.edge >= 0.05)
-        .forEach((vb) => {
-          valueBets.push({ fixture: item.fixture, vb });
-        });
-    });
-    valueBets.sort((a, b) => b.vb.edge - a.vb.edge);
-    if (valueBets.length === 0) {
-      return "⚠️ Nessuna value bet con edge ≥5% rilevata oggi. Il mercato sembra efficiente.";
-    }
-    let resp = `⚠️ Value Bets con Edge ≥5%:\n\n`;
-    valueBets.slice(0, 5).forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      resp +=
-        `${i + 1}. ${home} vs ${away}\n` +
-        `   ${item.vb.selection} (${item.vb.market}) · Edge: +${Math.round(item.vb.edge * 100)}%\n\n`;
-    });
-    return resp.trim();
-  }
-
-  // Live
-  if (lower.includes("live")) {
-    const liveItems = pairs.filter((item) =>
-      isLive(item.fixture.fixture.status.short),
-    );
-    if (liveItems.length === 0)
-      return "📡 Nessuna partita live in questo momento.";
-    let resp = `📡 Partite Live Ora:\n\n`;
-    liveItems.forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      const gh = item.fixture.goals.home ?? 0;
-      const ga = item.fixture.goals.away ?? 0;
-      const elapsed = item.fixture.fixture.status.elapsed;
-      resp +=
-        `${i + 1}. ${home} ${gh}-${ga} ${away}` +
-        ` (${elapsed ?? "?"}'\u2019)\n` +
-        `   Pronostico: ${item.pred.topPick.selection} · ${Math.round(item.pred.topPick.probability)}%\n\n`;
-    });
-    return resp.trim();
-  }
-
-  // Over 2.5
-  if (lower.includes("over 2.5")) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.over25Pct - a.pred.over25Pct)
-      .slice(0, 3);
-    let resp = `⚽ Top Over 2.5 oggi:\n\n`;
-    sorted.forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      const odds = item.pred.bestOdds?.over25
-        ? ` · @${item.pred.bestOdds.over25.toFixed(2)}`
-        : "";
-      resp += `${i + 1}. ${home} vs ${away}: ${Math.round(item.pred.over25Pct)}%${odds}\n`;
-    });
-    return resp;
-  }
-
-  // BTTS / Gol-Gol
-  if (
-    lower.includes("gol/gol") ||
-    lower.includes("segnano") ||
-    lower.includes("btts")
-  ) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.bttsPct - a.pred.bttsPct)
-      .slice(0, 3);
-    let resp = `🥅 Top Gol/Gol oggi:\n\n`;
-    sorted.forEach((item, i) => {
-      const home = item.fixture.teams.home.name;
-      const away = item.fixture.teams.away.name;
-      const odds = item.pred.bestOdds?.bttsYes
-        ? ` · @${item.pred.bestOdds.bttsYes.toFixed(2)}`
-        : "";
-      resp += `${i + 1}. ${home} vs ${away}: ${Math.round(item.pred.bttsPct)}%${odds}\n`;
-    });
-    return resp;
-  }
-
-  // Default summary
-  const highConf = pairs.filter((p) => p.pred.topPick.probability >= 70);
-  return (
-    `🏆 Riepilogo di Oggi:\n\n` +
-    `• Partite totali: ${fixtures.length}\n` +
-    `• Con previsioni: ${pairs.length}\n` +
-    `• Alta confidenza (≥70%): ${highConf.length}\n\n` +
-    `Usa i pulsanti rapidi sopra per filtrare per tipo di scommessa.`
-  );
+export interface MatchAttachment {
+  fixtureId: number;
+  homeTeam: string;
+  homeLogo?: string | null;
+  awayTeam: string;
+  awayLogo?: string | null;
+  leagueName: string;
+  kickoff: string; // formatted time string
+  selection: string;
+  probability: number;
+  odds: number;
+  isLiveMatch: boolean;
+  homeGoals?: number | null;
+  awayGoals?: number | null;
+  elapsed?: number | null;
+  highlightType?: "safe" | "value" | "over" | "btts" | "live" | "multi";
 }
-
-const CHAT_STORAGE_KEY = "boro_community_chat_v2";
-const MAX_MESSAGES = 100;
 
 interface ChatMessage {
   id: string;
@@ -198,41 +58,630 @@ interface ChatMessage {
   color: string;
   isSelf: boolean;
   isSystem?: boolean;
+  isAiReply?: boolean;
+  attachments?: MatchAttachment[];
 }
 
-// Fixed quick questions / prompt chips for quick bot interactions
+// ─── Bot response generator ───────────────────────────────────────────────────
+
+interface BotResponse {
+  text: string;
+  attachments: MatchAttachment[];
+}
+
+function toAttachment(
+  fixture: Fixture,
+  pred: PredictionResult,
+  highlightType?: MatchAttachment["highlightType"],
+): MatchAttachment {
+  const live = isLive(fixture.fixture.status.short);
+  let kickoff = "";
+  try {
+    kickoff = format(parseISO(fixture.fixture.date), "HH:mm");
+  } catch {
+    kickoff = "--:--";
+  }
+  return {
+    fixtureId: fixture.fixture.id,
+    homeTeam: fixture.teams.home.name,
+    homeLogo: fixture.teams.home.logo,
+    awayTeam: fixture.teams.away.name,
+    awayLogo: fixture.teams.away.logo,
+    leagueName: fixture.league.name,
+    kickoff,
+    selection: pred.topPick.selection,
+    probability: pred.topPick.probability,
+    odds: pred.topPick.odds,
+    isLiveMatch: live,
+    homeGoals: fixture.goals.home,
+    awayGoals: fixture.goals.away,
+    elapsed: fixture.fixture.status.elapsed,
+    highlightType,
+  };
+}
+
+function generateBotResponse(
+  query: string,
+  fixtures: Fixture[],
+  predictionMap: Map<number, PredictionResult>,
+): BotResponse {
+  const lower = query.toLowerCase();
+
+  if (predictionMap.size === 0 || fixtures.length === 0) {
+    return {
+      text: "⏳ I dati di oggi sono ancora in caricamento. Riprova tra qualche secondo.",
+      attachments: [],
+    };
+  }
+
+  type Pair = { fixture: Fixture; pred: PredictionResult };
+  const pairs: Pair[] = fixtures
+    .map((f) => ({ fixture: f, pred: predictionMap.get(f.fixture.id) }))
+    .filter((p): p is Pair => Boolean(p.pred));
+
+  if (pairs.length === 0) {
+    return {
+      text: "⏳ Previsioni non ancora disponibili. Riprova tra qualche minuto.",
+      attachments: [],
+    };
+  }
+
+  // ── Più sicure ──
+  if (
+    lower.includes("più sicure") ||
+    lower.includes("sicura") ||
+    lower.includes("sicure")
+  ) {
+    const sorted = [...pairs]
+      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+      .slice(0, 3);
+    return {
+      text: `🎯 Ho analizzato ${pairs.length} partite di oggi. Queste 3 hanno la più alta confidenza del modello — dati reali Sportmonks + quote bookmaker.`,
+      attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "safe")),
+    };
+  }
+
+  // ── Multipla ──
+  if (lower.includes("multipla") || lower.includes("raddoppio")) {
+    const sorted = [...pairs]
+      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+      .slice(0, 3);
+    const combined = sorted.reduce((acc, p) => acc * p.pred.topPick.odds, 1);
+    return {
+      text: `🔥 Multipla consigliata oggi con 3 selezioni ad alta confidenza. Quota combinata: **${combined.toFixed(2)}x** · Probabilità congiunta: ~${Math.round(sorted.reduce((a, p) => a * (p.pred.topPick.probability / 100), 1) * 100)}%`,
+      attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "multi")),
+    };
+  }
+
+  // ── Value / valore ──
+  if (
+    lower.includes("valore") ||
+    lower.includes("underdog") ||
+    lower.includes("value")
+  ) {
+    const valueBets: Array<{
+      fixture: Fixture;
+      vb: ValueBetInfo;
+      pred: PredictionResult;
+    }> = [];
+    pairs.forEach((item) => {
+      (item.pred.valueBets ?? [])
+        .filter((vb) => vb.edge >= 0.05)
+        .forEach((vb) =>
+          valueBets.push({ fixture: item.fixture, vb, pred: item.pred }),
+        );
+    });
+    valueBets.sort((a, b) => b.vb.edge - a.vb.edge);
+
+    if (valueBets.length === 0) {
+      return {
+        text: "⚠️ Nessuna value bet con edge ≥5% rilevata oggi. Il mercato sembra piuttosto efficiente al momento.",
+        attachments: [],
+      };
+    }
+
+    const top = valueBets.slice(0, 4);
+    return {
+      text: `⚡ Rilevate ${valueBets.length} value bet — probabilità del modello superiore alla quota di mercato. Ecco le migliori per edge atteso:`,
+      attachments: top.map((item) => {
+        const att = toAttachment(item.fixture, item.pred, "value");
+        // Override selection with the specific value pick
+        att.selection = item.vb.selection;
+        att.probability = item.vb.modelProb;
+        att.odds = item.vb.bestOdds;
+        return att;
+      }),
+    };
+  }
+
+  // ── Live ──
+  if (lower.includes("live")) {
+    const liveItems = pairs.filter((p) =>
+      isLive(p.fixture.fixture.status.short),
+    );
+    if (liveItems.length === 0) {
+      return {
+        text: "📡 Nessuna partita live in questo momento. Ricontrolla tra poco!",
+        attachments: [],
+      };
+    }
+    return {
+      text: `📡 ${liveItems.length} ${liveItems.length === 1 ? "partita live" : "partite live"} in questo momento — punteggi e pronostici aggiornati:`,
+      attachments: liveItems
+        .slice(0, 5)
+        .map((p) => toAttachment(p.fixture, p.pred, "live")),
+    };
+  }
+
+  // ── Over 2.5 ──
+  if (lower.includes("over")) {
+    const sorted = [...pairs]
+      .sort((a, b) => b.pred.over25Pct - a.pred.over25Pct)
+      .slice(0, 3);
+    return {
+      text: `⚽ Le 3 partite con la più alta probabilità Over 2.5 oggi — xG e dati stagionali confermano un alto ritmo offensivo:`,
+      attachments: sorted.map((p) => {
+        const att = toAttachment(p.fixture, p.pred, "over");
+        att.selection = "Over 2.5 Goals";
+        att.probability = p.pred.over25Pct;
+        att.odds =
+          p.pred.bestOdds?.over25 ??
+          parseFloat((100 / p.pred.over25Pct).toFixed(2));
+        return att;
+      }),
+    };
+  }
+
+  // ── BTTS / Gol-Gol ──
+  if (
+    lower.includes("gol/gol") ||
+    lower.includes("segnano") ||
+    lower.includes("btts")
+  ) {
+    const sorted = [...pairs]
+      .sort((a, b) => b.pred.bttsPct - a.pred.bttsPct)
+      .slice(0, 3);
+    return {
+      text: `🥅 Le 3 partite più propizie per Gol/Gol oggi — entrambe le squadre segnano, basato su tassi di realizzazione stagionali:`,
+      attachments: sorted.map((p) => {
+        const att = toAttachment(p.fixture, p.pred, "btts");
+        att.selection = "Both Teams to Score";
+        att.probability = p.pred.bttsPct;
+        att.odds =
+          p.pred.bestOdds?.bttsYes ??
+          parseFloat((100 / p.pred.bttsPct).toFixed(2));
+        return att;
+      }),
+    };
+  }
+
+  // ── Default ──
+  const highConf = pairs.filter((p) => p.pred.topPick.probability >= 70);
+  const top3 = [...pairs]
+    .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+    .slice(0, 3);
+  return {
+    text: `🏆 Oggi ci sono **${fixtures.length}** partite in programma, **${pairs.length}** con previsioni complete e **${highConf.length}** ad alta confidenza (≥70%). Ecco le migliori del momento:`,
+    attachments: top3.map((p) => toAttachment(p.fixture, p.pred, "safe")),
+  };
+}
+
+// ─── Rainbow CSS injection ────────────────────────────────────────────────────
+
+function useRainbowCSS() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const STYLE_ID = "boro-rainbow-chat-css";
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      @keyframes boro-rainbow {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .boro-rainbow-border {
+        background: linear-gradient(
+          270deg,
+          #c3f400, #00ffcc, #0066ff, #cc00ff, #ff0044, #ff8800, #c3f400
+        );
+        background-size: 300% 300%;
+        animation: boro-rainbow 4s ease infinite;
+        border-radius: 16px;
+        padding: 2px;
+      }
+      .boro-rainbow-inner {
+        background: rgba(22, 21, 20, 0.96);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      @keyframes boro-rainbow-card {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .boro-match-card-border {
+        background: linear-gradient(
+          135deg,
+          #c3f400aa, #00ffcc88, #0066ffaa, #cc00ff88
+        );
+        background-size: 300% 300%;
+        animation: boro-rainbow-card 6s ease infinite;
+        border-radius: 14px;
+        padding: 1.5px;
+        margin-top: 8px;
+      }
+      .boro-match-card-inner {
+        background: rgba(22, 21, 20, 0.97);
+        border-radius: 12.5px;
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+}
+
+// ─── RainbowBubble wrapper ────────────────────────────────────────────────────
+
+const RainbowBubble: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  // Native: animated gradient via Animated
+  const animValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Animated.loop(
+      Animated.timing(animValue, {
+        toValue: 1,
+        duration: 4000,
+        useNativeDriver: false,
+      }),
+    ).start();
+  }, [animValue]);
+
+  if (Platform.OS === "web") {
+    return (
+      <div className="boro-rainbow-border">
+        <div className="boro-rainbow-inner">{children}</div>
+      </div>
+    );
+  }
+
+  // Native fallback: simple accent border (gradient border needs complex trick)
+  return (
+    <View
+      style={{
+        borderRadius: 16,
+        padding: 2,
+        backgroundColor: "rgba(195,244,0,0.6)",
+      }}
+    >
+      <View
+        style={{
+          borderRadius: 14,
+          overflow: "hidden",
+          backgroundColor: "rgba(22,21,20,0.97)",
+        }}
+      >
+        {children}
+      </View>
+    </View>
+  );
+};
+
+// ─── RainbowMatchCard ─────────────────────────────────────────────────────────
+
+const HIGHLIGHT_COLOR: Record<
+  NonNullable<MatchAttachment["highlightType"]>,
+  string
+> = {
+  safe: "#c3f400",
+  value: "#ffaa00",
+  over: "#00ccff",
+  btts: "#cc66ff",
+  live: "#ff6600",
+  multi: "#ff3399",
+};
+
+const RainbowMatchCard: React.FC<{
+  att: MatchAttachment;
+  onPress: () => void;
+}> = ({ att, onPress }) => {
+  const colors = useColors();
+  const accent = HIGHLIGHT_COLOR[att.highlightType ?? "safe"];
+  const probPct = Math.round(att.probability);
+
+  if (Platform.OS === "web") {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+      >
+        <div className="boro-match-card-border">
+          <div className="boro-match-card-inner">
+            <MatchCardContent
+              att={att}
+              accent={accent}
+              probPct={probPct}
+              colors={colors}
+            />
+          </div>
+        </div>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.85 : 1,
+        marginTop: 8,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: `${accent}88`,
+        overflow: "hidden",
+        backgroundColor: "rgba(22,21,20,0.97)",
+      })}
+    >
+      <MatchCardContent
+        att={att}
+        accent={accent}
+        probPct={probPct}
+        colors={colors}
+      />
+    </Pressable>
+  );
+};
+
+const MatchCardContent: React.FC<{
+  att: MatchAttachment;
+  accent: string;
+  probPct: number;
+  colors: ReturnType<typeof useColors>;
+}> = ({ att, accent, probPct, colors }) => (
+  <View style={{ paddingHorizontal: 14, paddingVertical: 11, gap: 8 }}>
+    {/* Header: league + kickoff/live */}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <Text
+        style={{
+          color: colors.onSurfaceVariant,
+          fontFamily: fonts.label,
+          fontSize: 9,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+          flex: 1,
+          marginRight: 8,
+        }}
+        numberOfLines={1}
+      >
+        {att.leagueName}
+      </Text>
+      {att.isLiveMatch ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            backgroundColor: "rgba(255,100,0,0.12)",
+            borderWidth: 1,
+            borderColor: "rgba(255,100,0,0.4)",
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}
+        >
+          <View
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: "#ff6600",
+            }}
+          />
+          <Text
+            style={{ color: "#ff6600", fontFamily: fonts.label, fontSize: 9 }}
+          >
+            {att.elapsed ?? "?"}'
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 3,
+            backgroundColor: "rgba(255,255,255,0.04)",
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}
+        >
+          <BoroIcon name="schedule" size={9} color={colors.onSurfaceVariant} />
+          <Text
+            style={{
+              color: colors.onSurfaceVariant,
+              fontFamily: fonts.label,
+              fontSize: 9,
+            }}
+          >
+            {att.kickoff}
+          </Text>
+        </View>
+      )}
+    </View>
+
+    {/* Teams row */}
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <TeamCrest uri={att.homeLogo} size={28} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text
+          style={{
+            color: colors.onSurface,
+            fontFamily: fonts.bodyBold,
+            fontSize: 13,
+          }}
+          numberOfLines={1}
+        >
+          {att.homeTeam}
+        </Text>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.body,
+            fontSize: 11,
+          }}
+          numberOfLines={1}
+        >
+          {att.awayTeam}
+        </Text>
+      </View>
+      {att.isLiveMatch &&
+      att.homeGoals !== null &&
+      att.homeGoals !== undefined ? (
+        <View style={{ alignItems: "center" }}>
+          <Text
+            style={{
+              color: colors.onSurface,
+              fontFamily: fonts.stats,
+              fontSize: 18,
+            }}
+          >
+            {att.homeGoals} – {att.awayGoals}
+          </Text>
+        </View>
+      ) : (
+        <TeamCrest uri={att.awayLogo} size={28} />
+      )}
+    </View>
+
+    {/* Pick row */}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 6,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.06)",
+      }}
+    >
+      <View style={{ flex: 1, gap: 3, marginRight: 8 }}>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.label,
+            fontSize: 8,
+            letterSpacing: 0.5,
+          }}
+        >
+          SELEZIONE
+        </Text>
+        <Text
+          style={{ color: accent, fontFamily: fonts.bodyBold, fontSize: 12 }}
+          numberOfLines={1}
+        >
+          {att.selection}
+        </Text>
+      </View>
+
+      {/* Probability ring */}
+      <View style={{ alignItems: "center", gap: 2, marginRight: 12 }}>
+        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 17 }}>
+          {probPct}%
+        </Text>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.label,
+            fontSize: 7,
+            letterSpacing: 0.3,
+          }}
+        >
+          PROB.
+        </Text>
+      </View>
+
+      {/* Odds badge */}
+      <View
+        style={{
+          backgroundColor: `${accent}1A`,
+          borderWidth: 1,
+          borderColor: `${accent}44`,
+          borderRadius: 8,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+        }}
+      >
+        <Text style={{ color: accent, fontFamily: fonts.stats, fontSize: 14 }}>
+          @{att.odds.toFixed(2)}
+        </Text>
+      </View>
+    </View>
+
+    {/* Probability bar */}
+    <View
+      style={{
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        overflow: "hidden",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${Math.min(100, probPct)}%` as `${number}%`,
+          backgroundColor: accent,
+          borderRadius: 2,
+        }}
+      />
+    </View>
+  </View>
+);
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const CHAT_STORAGE_KEY = "boro_community_chat_v3";
+const MAX_MESSAGES = 100;
+
 const QUICK_BOT_SUGGESTIONS = [
   {
-    text: "🛡️ Più sicura",
+    text: "🛡️ Più sicure",
     query:
       "Quali sono le partite più sicure e con più alta confidenza di oggi?",
   },
   {
     text: "🔥 Multipla",
-    query:
-      "Consigliami una giocata multipla / raddoppio a quota interessante basata sui dati reali di oggi.",
+    query: "Consigliami una giocata multipla basata sui dati reali di oggi.",
   },
   {
-    text: "⚠️ Valore",
-    query:
-      "Ci sono quote underdog o ad alto valore atteso positivo rispetto ai bookmaker?",
+    text: "⚡ Valore",
+    query: "Ci sono value bet con edge positivo rispetto ai bookmaker?",
   },
-  {
-    text: "📡 Live ora",
-    query:
-      "Quali partite in corso hanno dinamiche interessanti o variazioni di pressione live?",
-  },
+  { text: "📡 Live ora", query: "Quali partite live ci sono adesso?" },
   {
     text: "⚽ Over 2.5",
-    query:
-      "Quali partite di oggi hanno le probabilità più alte per l'esito Over 2.5?",
+    query: "Quali partite di oggi hanno più probabilità per Over 2.5?",
   },
   {
     text: "🥅 Gol/Gol",
-    query:
-      "Quali incontri offrono ottime statistiche per l'esito Entrambe le Squadre Segnano (Gol/Gol)?",
+    query: "Quali incontri hanno le migliori statistiche per Gol/Gol?",
   },
 ];
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CommunityChatScreen() {
   const colors = useColors();
@@ -243,41 +692,40 @@ export default function CommunityChatScreen() {
   const { predictionMap } = useTodayPredictions();
   const { data: todayFixtures = [] } = useTodayFixtures();
 
+  useRainbowCSS();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [nickname, setNickname] = useState("");
   const [hasSetNickname, setHasSetNickname] = useState(false);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
-  // WebSocket reference
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Resolve current username
   const currentUserName = useMemo(() => {
     if (session?.user?.name) return session.user.name;
     if (nickname) return nickname;
     return "Guest";
   }, [session, nickname]);
 
-  // Load local chat history (up to 100 messages) on mount
   useEffect(() => {
     const loadChat = async () => {
       try {
         const raw = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as ChatMessage[];
-          const updated = parsed.map((msg) => ({
-            ...msg,
-            isSelf: msg.senderName === currentUserName,
-          }));
-          setMessages(updated);
+          setMessages(
+            parsed.map((msg) => ({
+              ...msg,
+              isSelf: msg.senderName === currentUserName,
+            })),
+          );
         } else {
           const defaultMsgs: ChatMessage[] = [
             {
               id: "init-1",
               senderName: "BORO AI BOT",
-              text: "Benvenuti nella chat globale di BORO! Qui potete scambiare opinioni con altre persone vere sul sito o fare domande rapide toccando i suggerimenti sopra la barra di testo.",
+              text: "👋 Benvenuti nella chat globale di BORO! Scambiate opinioni con altri utenti o usate i pulsanti rapidi in basso per ottenere analisi AI in tempo reale sulle partite di oggi.",
               timestamp: new Date().toISOString(),
               avatarInitial: "🤖",
               color: colors.primaryFixed,
@@ -292,13 +740,11 @@ export default function CommunityChatScreen() {
           );
         }
       } catch (err) {
-        console.warn("Failed to load chat messages:", err);
+        console.warn("Failed to load chat:", err);
       }
     };
-
     loadChat();
 
-    // Check cached nickname or user session
     if (session?.user?.name) {
       setHasSetNickname(true);
     } else {
@@ -311,37 +757,25 @@ export default function CommunityChatScreen() {
     }
   }, [currentUserName]);
 
-  // WebSocket Connection Lifecycle
   useEffect(() => {
     if (!hasSetNickname) return;
-
-    // Use the user's dedicated PieSocket BORO cluster for global chat broadcasting
     const wsUrl =
       "wss://free.blr2.piesocket.com/v3/boro_global_chat?api_key=2tTwAggvcqEi0T6JumM94kqR71NIrySWQeWvTNUk&notify_self=1";
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => {
-      // System connection message hidden as requested
-    };
-
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        if (payload && payload.senderName && payload.text && payload.id) {
+        if (payload?.senderName && payload?.text && payload?.id) {
           setMessages((prev) => {
-            // Check if the message is already in our list to prevent duplicates
-            if (prev.some((m) => m.id === payload.id)) {
-              return prev;
-            }
-
-            const receivedMsg: ChatMessage = {
+            if (prev.some((m) => m.id === payload.id)) return prev;
+            const msg: ChatMessage = {
               ...payload,
               isSelf: payload.senderName === currentUserName,
-              timestamp: new Date().toISOString(), // set local timestamp
+              timestamp: new Date().toISOString(),
             };
-
-            const combined = [...prev, receivedMsg].slice(-MAX_MESSAGES);
+            const combined = [...prev, msg].slice(-MAX_MESSAGES);
             AsyncStorage.setItem(
               CHAT_STORAGE_KEY,
               JSON.stringify(combined),
@@ -353,37 +787,33 @@ export default function CommunityChatScreen() {
             50,
           );
         }
-      } catch (e) {
-        // Handle invalid payloads safely
+      } catch {
+        /* ignore */
       }
     };
 
-    ws.onerror = (e) => {
-      console.warn("WebSocket connection error:", e);
-    };
-
     ws.onclose = () => {
-      // Only trigger reconnect loop if connection dropped unexpectedly (not during cleanup)
       if (wsRef.current === ws) {
-        console.log(
-          "WebSocket disconnected silently, reconnecting in background...",
-        );
-
-        // Auto-reconnect silently in 5 seconds
         setTimeout(() => {
-          if (wsRef.current === ws && hasSetNickname) {
-            setReconnectTrigger((prev) => prev + 1);
-          }
+          if (wsRef.current === ws && hasSetNickname)
+            setReconnectTrigger((p) => p + 1);
         }, 5000);
       }
     };
 
     return () => {
-      // Clear reference first so ws.onclose knows it's an intentional disconnect
       wsRef.current = null;
       ws.close();
     };
   }, [hasSetNickname, currentUserName, reconnectTrigger]);
+
+  const broadcastMessage = (msg: ChatMessage) => {
+    // Strip attachments before broadcasting (raw fixture data is too large for WS)
+    const toSend = { ...msg, attachments: undefined, isAiReply: undefined };
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(toSend));
+    }
+  };
 
   const handleSaveNickname = async () => {
     if (!nickname.trim()) return;
@@ -392,20 +822,11 @@ export default function CommunityChatScreen() {
     setHasSetNickname(true);
   };
 
-  // Live broadcast message to WebSocket
-  const broadcastMessage = (msg: ChatMessage) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
-    }
-  };
-
   const handleSend = async () => {
     if (!inputText.trim()) return;
-
     haptics.light();
     const textToSend = inputText.trim();
     setInputText("");
-
     const userMsg: ChatMessage = {
       id: Math.random().toString(),
       senderName: currentUserName,
@@ -415,78 +836,69 @@ export default function CommunityChatScreen() {
       color: colors.primaryFixed,
       isSelf: true,
     };
-
-    // Save locally
-    const nextMessages = [...messages, userMsg].slice(-MAX_MESSAGES);
-    setMessages(nextMessages);
-
-    // Broadcast globally via WebSocket
+    const next = [...messages, userMsg].slice(-MAX_MESSAGES);
+    setMessages(next);
     broadcastMessage(userMsg);
-
     try {
-      await AsyncStorage.setItem(
-        CHAT_STORAGE_KEY,
-        JSON.stringify(nextMessages),
-      );
-    } catch (err) {
-      console.warn("Failed to save chat message:", err);
+      await AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
     }
-
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
-  // Fast AI quick action triggered
-  const handleQuickAiAction = async (text: string, query: string) => {
-    // Add user message
+  const handleQuickAiAction = async (chipText: string, query: string) => {
+    haptics.medium();
+
     const userMsg: ChatMessage = {
       id: `ai-query-${Math.random()}`,
       senderName: currentUserName,
-      text: text,
+      text: chipText,
       timestamp: new Date().toISOString(),
       avatarInitial: currentUserName[0].toUpperCase(),
       color: colors.primaryFixed,
       isSelf: true,
     };
-
-    let updatedMsgs = [...messages, userMsg].slice(-MAX_MESSAGES);
-    setMessages(updatedMsgs);
+    setMessages((prev) => [...prev, userMsg].slice(-MAX_MESSAGES));
+    broadcastMessage(userMsg);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
 
-    // Broadcast user's visual action
-    broadcastMessage(userMsg);
-
-    // Trigger local AI response loading
+    // Loading indicator
+    const loadingId = `ai-loading-${Math.random()}`;
     const loadingMsg: ChatMessage = {
-      id: `ai-loading-${Math.random()}`,
+      id: loadingId,
       senderName: "BORO AI BOT",
-      text: "✍️ Analisi in corso e calcolo probabilità in tempo reale...",
+      text: "✍️  Analisi in corso…",
       timestamp: new Date().toISOString(),
       avatarInitial: "🤖",
       color: colors.primaryFixed,
       isSelf: false,
       isSystem: true,
     };
-
     setMessages((prev) => [...prev, loadingMsg]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
 
-    // Generate real data-driven response
-    setTimeout(async () => {
-      const replyText = generateBotReply(query, todayFixtures, predictionMap);
+    setTimeout(() => {
+      const { text, attachments } = generateBotResponse(
+        query,
+        todayFixtures,
+        predictionMap,
+      );
 
       const aiReply: ChatMessage = {
         id: `ai-reply-${Math.random()}`,
         senderName: "BORO AI BOT",
-        text: replyText,
+        text,
         timestamp: new Date().toISOString(),
         avatarInitial: "🤖",
         color: colors.primaryFixed,
         isSelf: false,
+        isAiReply: true,
+        attachments,
       };
 
       setMessages((prev) => {
-        // remove the temporary loading message and append true response
-        const filtered = prev.filter((m) => !m.id.startsWith("ai-loading-"));
+        const filtered = prev.filter((m) => m.id !== loadingId);
         const next = [...filtered, aiReply].slice(-MAX_MESSAGES);
         AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next)).catch(
           () => {},
@@ -494,15 +906,13 @@ export default function CommunityChatScreen() {
         return next;
       });
       setTimeout(
-        () => flatListRef.current?.scrollToEnd({ animated: false }),
-        50,
+        () => flatListRef.current?.scrollToEnd({ animated: true }),
+        100,
       );
-
-      // Broadcast the AI response so other users see it too
-      broadcastMessage(aiReply);
-    }, 500);
+    }, 600);
   };
 
+  // ── Nickname gate ──
   if (!hasSetNickname) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -545,11 +955,10 @@ export default function CommunityChatScreen() {
                     textAlign: "center",
                   }}
                 >
-                  Inserisci un nickname per entrare nella chat globale in tempo
-                  reale con gli altri tifosi di BORO.
+                  Inserisci un nickname per entrare nella chat globale con gli
+                  altri utenti BORO.
                 </Text>
               </View>
-
               <View style={{ gap: 12 }}>
                 <TextInput
                   value={nickname}
@@ -599,6 +1008,7 @@ export default function CommunityChatScreen() {
     );
   }
 
+  // ── Main chat UI ──
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenContainer
@@ -614,7 +1024,7 @@ export default function CommunityChatScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
-          <View style={{ flex: 1, paddingBottom: 0 }}>
+          <View style={{ flex: 1 }}>
             {isDesktop && (
               <View
                 style={{
@@ -659,179 +1069,51 @@ export default function CommunityChatScreen() {
                       fontSize: 13,
                     }}
                   >
-                    Confrontati in tempo reale con gli altri utenti del sito
+                    Confrontati in tempo reale con gli altri utenti · AI bot con
+                    dati live
                   </Text>
                 </View>
               </View>
             )}
 
-            {/* Messages List */}
+            {/* Messages */}
             <FlatList
               ref={flatListRef}
               data={messages}
               style={{ flex: 1 }}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
+              contentContainerStyle={{ gap: 14, paddingBottom: 16 }}
               onContentSizeChange={() =>
                 flatListRef.current?.scrollToEnd({ animated: false })
               }
-              renderItem={({ item }) => {
-                const isSystemMsg = item.isSystem;
-
-                if (isSystemMsg) {
-                  return (
-                    <View
-                      style={{
-                        width: "100%",
-                        alignItems: "center",
-                        marginVertical: 6,
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: "rgba(255,255,255,0.02)",
-                          borderWidth: 1,
-                          borderColor: "rgba(255,255,255,0.06)",
-                          borderRadius: 12,
-                          paddingVertical: 6,
-                          paddingHorizontal: 12,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: item.color,
-                            fontFamily: fonts.body,
-                            fontSize: 11,
-                            textAlign: "center",
-                            lineHeight: 16,
-                          }}
-                        >
-                          {item.text}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                }
-
-                return (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: item.isSelf ? "flex-end" : "flex-start",
-                      width: "100%",
-                    }}
-                  >
-                    {!item.isSelf && (
-                      <View
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: `${item.color}1F`,
-                          borderWidth: 1,
-                          borderColor: `${item.color}4D`,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 8,
-                          marginTop: 4,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: item.color,
-                            fontFamily: fonts.display,
-                            fontSize: 12,
-                          }}
-                        >
-                          {item.avatarInitial}
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={{ flexShrink: 1, maxWidth: "80%", gap: 3 }}>
-                      {!item.isSelf && (
-                        <Text
-                          style={{
-                            color: colors.onSurfaceVariant,
-                            fontFamily: fonts.label,
-                            fontSize: 9,
-                            marginLeft: 4,
-                          }}
-                        >
-                          {item.senderName}
-                        </Text>
-                      )}
-                      <GlassCard
-                        padding={12}
-                        style={{
-                          backgroundColor: item.isSelf
-                            ? `${colors.primaryFixed}14`
-                            : "rgba(255,255,255,0.03)",
-                          borderColor: item.isSelf
-                            ? colors.accent20
-                            : "rgba(255,255,255,0.06)",
-                          borderWidth: 1,
-                          borderBottomRightRadius: item.isSelf ? 2 : 12,
-                          borderBottomLeftRadius: item.isSelf ? 12 : 2,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: colors.onSurface,
-                            fontFamily: fonts.body,
-                            fontSize: 14,
-                            lineHeight: 20,
-                          }}
-                        >
-                          {item.text}
-                        </Text>
-                      </GlassCard>
-                      <Text
-                        style={{
-                          color: colors.onSurfaceVariant,
-                          fontFamily: fonts.body,
-                          fontSize: 8,
-                          alignSelf: item.isSelf ? "flex-end" : "flex-start",
-                          opacity: 0.6,
-                          marginRight: item.isSelf ? 4 : 0,
-                          marginLeft: !item.isSelf ? 4 : 0,
-                        }}
-                      >
-                        {new Date(item.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              }}
+              renderItem={({ item }) => (
+                <MessageRow item={item} colors={colors} />
+              )}
             />
 
-            {/* Suggestions/Quick Bot Prompts Header */}
-            <View style={{ paddingVertical: 8, gap: 8 }}>
+            {/* Quick chips */}
+            <View style={{ paddingVertical: 8 }}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  flexDirection: "row",
-                  gap: 12,
-                  paddingHorizontal: 4,
-                }}
+                contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}
               >
                 {QUICK_BOT_SUGGESTIONS.map((sug, i) => (
                   <Pressable
                     key={i}
                     onPress={() => handleQuickAiAction(sug.text, sug.query)}
                     style={({ pressed }) => ({
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
                       borderRadius: 20,
-                      backgroundColor: "rgba(255,255,255,0.03)",
+                      backgroundColor: pressed
+                        ? colors.accent08
+                        : "rgba(255,255,255,0.03)",
                       borderWidth: 1,
-                      borderColor: "rgba(255,255,255,0.08)",
-                      opacity: pressed ? 0.7 : 1,
+                      borderColor: pressed
+                        ? colors.accent30
+                        : "rgba(255,255,255,0.08)",
                     })}
                   >
                     <Text
@@ -848,25 +1130,25 @@ export default function CommunityChatScreen() {
               </ScrollView>
             </View>
 
-            {/* Input Bar */}
+            {/* Input bar */}
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                backgroundColor: "rgba(255,255,255,0.05)",
                 borderWidth: 1,
-                borderColor: "rgba(255, 255, 255, 0.08)",
+                borderColor: "rgba(255,255,255,0.08)",
                 borderRadius: 24,
                 paddingHorizontal: 6,
                 paddingVertical: 4,
-                marginTop: 16,
+                marginTop: 10,
                 marginBottom: 2,
               }}
             >
               <TextInput
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Scrivi un messaggio nella community..."
+                placeholder="Scrivi nella community…"
                 placeholderTextColor={colors.onSurfaceVariant}
                 maxLength={160}
                 style={{
@@ -893,7 +1175,7 @@ export default function CommunityChatScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                   marginLeft: 6,
-                  transform: [{ scale: pressed ? 0.9 : 1 }],
+                  transform: [{ scale: pressed ? 0.88 : 1 }],
                 })}
               >
                 <BoroIcon
@@ -913,3 +1195,226 @@ export default function CommunityChatScreen() {
     </View>
   );
 }
+
+// ─── MessageRow ───────────────────────────────────────────────────────────────
+
+const MessageRow: React.FC<{
+  item: ChatMessage;
+  colors: ReturnType<typeof useColors>;
+}> = ({ item, colors }) => {
+  if (item.isSystem) {
+    return (
+      <View style={{ width: "100%", alignItems: "center", marginVertical: 4 }}>
+        <View
+          style={{
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.06)",
+            borderRadius: 12,
+            paddingVertical: 7,
+            paddingHorizontal: 14,
+            maxWidth: "85%",
+          }}
+        >
+          <Text
+            style={{
+              color: item.color,
+              fontFamily: fonts.body,
+              fontSize: 11,
+              textAlign: "center",
+              lineHeight: 17,
+            }}
+          >
+            {item.text}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // AI reply with rainbow border + attachment cards
+  if (item.isAiReply) {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "flex-start",
+          width: "100%",
+        }}
+      >
+        {/* Bot avatar */}
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            backgroundColor: "rgba(195,244,0,0.1)",
+            borderWidth: 1.5,
+            borderColor: "rgba(195,244,0,0.35)",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 10,
+            marginTop: 2,
+          }}
+        >
+          <Text style={{ fontSize: 16 }}>🤖</Text>
+        </View>
+
+        <View style={{ flexShrink: 1, maxWidth: "84%", gap: 2 }}>
+          <Text
+            style={{
+              color: colors.primaryFixed,
+              fontFamily: fonts.label,
+              fontSize: 9,
+              marginLeft: 2,
+              letterSpacing: 0.5,
+            }}
+          >
+            BORO AI BOT
+          </Text>
+
+          {/* Rainbow bubble with text */}
+          <RainbowBubble>
+            <View style={{ padding: 14, gap: 12 }}>
+              <Text
+                style={{
+                  color: colors.onSurface,
+                  fontFamily: fonts.body,
+                  fontSize: 14,
+                  lineHeight: 21,
+                }}
+              >
+                {item.text}
+              </Text>
+
+              {/* Attachment cards */}
+              {item.attachments && item.attachments.length > 0 && (
+                <View style={{ gap: 2 }}>
+                  {item.attachments.map((att) => (
+                    <RainbowMatchCard
+                      key={att.fixtureId}
+                      att={att}
+                      onPress={() =>
+                        router.push(`/match/${att.fixtureId}` as any)
+                      }
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          </RainbowBubble>
+
+          <Text
+            style={{
+              color: colors.onSurfaceVariant,
+              fontFamily: fonts.body,
+              fontSize: 8,
+              opacity: 0.5,
+              marginLeft: 4,
+              marginTop: 2,
+            }}
+          >
+            {new Date(item.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Normal user / other message
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: item.isSelf ? "flex-end" : "flex-start",
+        width: "100%",
+      }}
+    >
+      {!item.isSelf && (
+        <View
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: `${item.color}1F`,
+            borderWidth: 1,
+            borderColor: `${item.color}4D`,
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 8,
+            marginTop: 4,
+          }}
+        >
+          <Text
+            style={{
+              color: item.color,
+              fontFamily: fonts.display,
+              fontSize: 12,
+            }}
+          >
+            {item.avatarInitial}
+          </Text>
+        </View>
+      )}
+
+      <View style={{ flexShrink: 1, maxWidth: "80%", gap: 3 }}>
+        {!item.isSelf && (
+          <Text
+            style={{
+              color: colors.onSurfaceVariant,
+              fontFamily: fonts.label,
+              fontSize: 9,
+              marginLeft: 4,
+            }}
+          >
+            {item.senderName}
+          </Text>
+        )}
+        <GlassCard
+          padding={12}
+          style={{
+            backgroundColor: item.isSelf
+              ? `${colors.primaryFixed}14`
+              : "rgba(255,255,255,0.03)",
+            borderColor: item.isSelf
+              ? colors.accent20
+              : "rgba(255,255,255,0.06)",
+            borderWidth: 1,
+            borderBottomRightRadius: item.isSelf ? 2 : 12,
+            borderBottomLeftRadius: item.isSelf ? 12 : 2,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.onSurface,
+              fontFamily: fonts.body,
+              fontSize: 14,
+              lineHeight: 20,
+            }}
+          >
+            {item.text}
+          </Text>
+        </GlassCard>
+        <Text
+          style={{
+            color: colors.onSurfaceVariant,
+            fontFamily: fonts.body,
+            fontSize: 8,
+            alignSelf: item.isSelf ? "flex-end" : "flex-start",
+            opacity: 0.6,
+            marginRight: item.isSelf ? 4 : 0,
+            marginLeft: !item.isSelf ? 4 : 0,
+          }}
+        >
+          {new Date(item.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
+    </View>
+  );
+};
