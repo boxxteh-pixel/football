@@ -7,16 +7,16 @@ import { useSettingsStore } from '@/store/settingsStore';
 import type { ColorTheme } from '@/services/storage/settings';
 
 const base = {
-  background: '#0d0c0b',
-  surface: '#0d0c0b',
-  surfaceDim: '#0d0c0b',
-  surfaceBright: '#3a3836',
-  surfaceContainer: '#161514',
-  surfaceContainerLow: '#121110',
-  surfaceContainerLowest: '#080706',
-  surfaceContainerHigh: '#2a2826',
-  surfaceContainerHighest: '#353331',
-  surfaceVariant: '#353331',
+  background: '#141312',
+  surface: '#141312',
+  surfaceDim: '#111010',
+  surfaceBright: '#3d3b38',
+  surfaceContainer: '#1a1918',
+  surfaceContainerLow: '#171615',
+  surfaceContainerLowest: '#0e0d0c',
+  surfaceContainerHigh: '#2d2b29',
+  surfaceContainerHighest: '#383634',
+  surfaceVariant: '#383634',
 
   primary: '#ffffff',
   secondary: '#b3c5ff',
