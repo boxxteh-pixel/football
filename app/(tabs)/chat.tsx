@@ -374,7 +374,7 @@ export default function CommunityChatScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <View style={{ flex: 1, paddingBottom: 16 }}>
+          <View style={{ flex: 1, paddingBottom: 0 }}>
             {isDesktop && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 18 }}>
                 <View
@@ -525,7 +525,7 @@ export default function CommunityChatScreen() {
                 paddingHorizontal: 6,
                 paddingVertical: 4,
                 marginTop: 16,
-                marginBottom: 18,
+                marginBottom: 2,
               }}
             >
               <TextInput
