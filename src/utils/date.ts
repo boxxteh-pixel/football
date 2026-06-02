@@ -22,7 +22,7 @@ export const dateIso = (date: Date): string => format(date, 'yyyy-MM-dd');
  * bucket is still captured, instead of vanishing after local midnight.
  */
 export const MATCH_WINDOW_PAST_MS = 3.5 * 60 * 60 * 1000; // keep in-play games (~kicked off up to 3.5h ago)
-export const MATCH_WINDOW_FUTURE_MS = 30 * 60 * 60 * 1000; // rest of today + tonight + early next day
+export const MATCH_WINDOW_FUTURE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days lookahead
 
 /** True if a kickoff (unix seconds) falls in the current live+upcoming window. */
 export const inMatchWindow = (tsSeconds: number, now: number = Date.now()): boolean => {

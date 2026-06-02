@@ -154,24 +154,22 @@ export default function PredictorTab() {
         <View style={{ gap: 28 }}>
           <View style={{ gap: 14 }}>
             <SearchBar value={search} onChangeText={setSearch} placeholder={t('predictor.search')} />
-            <View style={{ width: '100%', overflow: 'hidden' }}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ width: '100%', marginHorizontal: -16 }}
-                contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }}
-              >
-                <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
-                {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
-                  <Chip
-                    key={l.id}
-                    label={l.shortName}
-                    active={activeLeague === l.id}
-                    onPress={() => setActiveLeague(l.id === activeLeague ? null : l.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ width: '100%' }}
+              contentContainerStyle={{ gap: 10 }}
+            >
+              <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
+              {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
+                <Chip
+                  key={l.id}
+                  label={l.shortName}
+                  active={activeLeague === l.id}
+                  onPress={() => setActiveLeague(l.id === activeLeague ? null : l.id)}
+                />
+              ))}
+            </ScrollView>
           </View>
 
           <View style={{ gap: 14 }}>
@@ -190,18 +188,16 @@ export default function PredictorTab() {
                 subtitle={t('common.noMatchesSub')}
               />
             ) : (
-              <View style={{ width: '100%', overflow: 'hidden' }}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={{ width: '100%', marginHorizontal: -16 }}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
-                  {bestPicks.map((f) => (
-                    <BestPickCard key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
-                  ))}
-                </ScrollView>
-              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ width: '100%' }}
+                contentContainerStyle={{ gap: 14 }}
+              >
+                {bestPicks.map((f) => (
+                  <BestPickCard key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+                ))}
+              </ScrollView>
             )}
           </View>
 
