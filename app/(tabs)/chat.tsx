@@ -133,20 +133,23 @@ export default function CommunityChatScreen() {
       try {
         const payload = JSON.parse(event.data);
         if (payload && payload.senderName && payload.text && payload.id) {
-          // If we receive a message that isn't ours, display it
-          if (payload.senderName !== currentUserName) {
+          setMessages(prev => {
+            // Check if the message is already in our list to prevent duplicates
+            if (prev.some(m => m.id === payload.id)) {
+              return prev;
+            }
+            
             const receivedMsg: ChatMessage = {
               ...payload,
-              isSelf: false,
+              isSelf: payload.senderName === currentUserName,
               timestamp: new Date().toISOString(), // set local timestamp
             };
-            setMessages(prev => {
-              const combined = [...prev, receivedMsg].slice(-MAX_MESSAGES);
-              AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(combined)).catch(() => {});
-              return combined;
-            });
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
-          }
+            
+            const combined = [...prev, receivedMsg].slice(-MAX_MESSAGES);
+            AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(combined)).catch(() => {});
+            return combined;
+          });
+          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
         }
       } catch (e) {
         // Handle invalid payloads safely
@@ -298,6 +301,9 @@ export default function CommunityChatScreen() {
         return next;
       });
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
+
+      // Broadcast the AI response so other users see it too
+      broadcastMessage(aiReply);
     }, 500);
   };
 
