@@ -126,18 +126,7 @@ export default function CommunityChatScreen() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      // Add a system connection message
-      const sysMsg: ChatMessage = {
-        id: `sys-${Math.random()}`,
-        senderName: 'SYSTEM',
-        text: '🟢 Connesso alla chat live di BORO. Scambia messaggi in tempo reale con gli altri tifosi online!',
-        timestamp: new Date().toISOString(),
-        avatarInitial: 'ℹ️',
-        color: '#10b981',
-        isSelf: false,
-        isSystem: true
-      };
-      setMessages(prev => [...prev.slice(-MAX_MESSAGES), sysMsg]);
+      // System connection message hidden as requested
     };
 
     ws.onmessage = (event) => {
@@ -246,8 +235,6 @@ export default function CommunityChatScreen() {
 
   // Fast AI quick action triggered
   const handleQuickAiAction = async (text: string, query: string) => {
-    haptics.notificationSuccess();
-    
     // Add user message
     const userMsg: ChatMessage = {
       id: `ai-query-${Math.random()}`,
@@ -261,7 +248,7 @@ export default function CommunityChatScreen() {
 
     let updatedMsgs = [...messages, userMsg].slice(-MAX_MESSAGES);
     setMessages(updatedMsgs);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
 
     // Broadcast user's visual action
     broadcastMessage(userMsg);
@@ -279,7 +266,7 @@ export default function CommunityChatScreen() {
     };
     
     setMessages(prev => [...prev, loadingMsg]);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
 
     // Simulate smart analytical football response based on the actual request
     setTimeout(async () => {
@@ -318,8 +305,8 @@ export default function CommunityChatScreen() {
         AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
         return next;
       });
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 1500);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
+    }, 500);
   };
 
   if (!hasSetNickname) {
@@ -500,13 +487,10 @@ export default function CommunityChatScreen() {
 
             {/* Suggestions/Quick Bot Prompts Header */}
             <View style={{ paddingVertical: 8, gap: 8 }}>
-              <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, letterSpacing: 0.5, marginLeft: 4 }}>
-                FAI UNA DOMANDA RAPIDA ALL'AI DI BORO
-              </Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ flexDirection: 'row', gap: 6, paddingHorizontal: 4 }}
+                contentContainerStyle={{ flexDirection: 'row', gap: 12, paddingHorizontal: 4 }}
               >
                 {QUICK_BOT_SUGGESTIONS.map((sug, i) => (
                   <Pressable
@@ -541,6 +525,7 @@ export default function CommunityChatScreen() {
                 borderRadius: 24,
                 paddingHorizontal: 6,
                 paddingVertical: 4,
+                marginTop: 12,
               }}
             >
               <TextInput
