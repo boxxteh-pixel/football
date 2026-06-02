@@ -115,7 +115,7 @@ export default function MatchDetailScreen() {
         HIGH: 'confidence.highShort',
         MEDIUM: 'confidence.mediumShort',
         LOW: 'confidence.lowShort',
-      } as const)[prediction.confidence]
+      }[prediction.confidence as 'ELITE' | 'HIGH' | 'MEDIUM' | 'LOW'] || 'confidence.mediumShort')
     : 'confidence.mediumShort';
 
   return (

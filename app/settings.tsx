@@ -13,6 +13,10 @@ import { config, hasApiKey } from '@/constants/config';
 import { useEffect, useState } from 'react';
 import { LOCALES, useT } from '@/theme/i18n';
 
+const RISK_PROFILES = ['default', 'conservative', 'aggressive'] as const;
+const NEWS_FREQUENCIES = ['always', 'daily', 'off'] as const;
+const COLOR_THEMES = ['green', 'purple'] as const;
+
 export default function SettingsScreen() {
   const haptics = useHaptics();
   const colors = useColors();
@@ -214,7 +218,7 @@ export default function SettingsScreen() {
 
         <Section title="CALIBRO DEL RISCHIO AI">
           <GlassCard padding={4}>
-            {(['default', 'conservative', 'aggressive'] as const).map((profile, idx) => {
+            {RISK_PROFILES.map((profile, idx) => {
               const active = settings.riskProfile === profile || (profile === 'default' && !settings.riskProfile);
               const label = profile === 'default' ? 'Default (Bilanciato)' : profile === 'conservative' ? 'Prudente (Massima Sicurezza)' : 'Aggressivo (Value Odds)';
               const sub = profile === 'default' ? 'I pronostici standard calibrati dall\'algoritmo.' : profile === 'conservative' ? 'Predilige partite ad altissima probabilità (>80%) ed ELITE.' : 'Cerca quote di valore e potenziali sbilanciamenti di mercato.';
@@ -270,7 +274,7 @@ export default function SettingsScreen() {
 
         <Section title="FEED NOTIZIE AI">
           <GlassCard padding={4}>
-            {(['always', 'daily', 'off'] as const).map((freq, idx) => {
+            {NEWS_FREQUENCIES.map((freq, idx) => {
               const active = settings.newsFrequency === freq || (freq === 'always' && !settings.newsFrequency);
               const label = freq === 'always' ? 'Sempre Attivo' : freq === 'daily' ? 'Solo Sommario Giornaliero' : 'Disattivato';
               const sub = freq === 'always' ? 'Aggiornamenti in tempo reale su infortuni, squalifiche e news tattiche.' : freq === 'daily' ? 'Ricevi un unico report quotidiano al mattino.' : 'Nessuna notizia o notifica sul feed notizie.';
@@ -361,7 +365,7 @@ export default function SettingsScreen() {
 
         <Section title={t('settings.colorTheme') || 'THEME'}>
           <GlassCard padding={4}>
-            {(['green', 'purple'] as const).map((themeName, idx) => {
+            {COLOR_THEMES.map((themeName, idx) => {
               const active = settings.colorTheme === themeName;
               const dotColor = themeName === 'green' ? '#c3f400' : '#a78bfa';
               const label = themeName === 'green' ? t('settings.green') : t('settings.purple');
