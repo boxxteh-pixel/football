@@ -19,6 +19,7 @@ import { StatComparison } from "@/components/match/StatComparison";
 import { QuickBetSlip } from "@/components/match/QuickBetSlip";
 import { MatchTimeline } from "@/components/match/MatchTimeline";
 import { MarketIntelCard } from "@/components/match/MarketIntelCard";
+import { MarketsPanel } from "@/components/match/MarketsPanel";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ConfidenceBadge } from "@/components/ui/ConfidenceBadge";
 import { useColors } from "@/theme/colors";
@@ -44,6 +45,206 @@ import {
   formatPredictionSelection,
   formatReasoningLine,
 } from "@/utils/predictionText";
+import type { PredictionResult } from "@/types/prediction";
+import type { Fixture } from "@/types/match";
+
+// ─── Data-driven AI chat response generator ──────────────────────────────────
+
+function generateMatchChatResponse(
+  prompt: string,
+  prediction: PredictionResult | null,
+  fixture: Fixture,
+): string {
+  const lower = prompt.toLowerCase();
+  const home = fixture.teams.home.name;
+  const away = fixture.teams.away.name;
+
+  if (!prediction) {
+    return `Sto ancora caricando i dati per ${home} vs ${away}. Riprova tra qualche secondo.`;
+  }
+
+  // 1X2 / Winner
+  if (
+    lower.includes("vince") ||
+    lower.includes("1x2") ||
+    lower.includes("risultato")
+  ) {
+    const maxPct = Math.max(
+      prediction.homeWinPct,
+      prediction.drawPct,
+      prediction.awayWinPct,
+    );
+    const homeO = prediction.bestOdds?.home
+      ? ` @${prediction.bestOdds.home.toFixed(2)}`
+      : "";
+    const drawO = prediction.bestOdds?.draw
+      ? ` @${prediction.bestOdds.draw.toFixed(2)}`
+      : "";
+    const awayO = prediction.bestOdds?.away
+      ? ` @${prediction.bestOdds.away.toFixed(2)}`
+      : "";
+    const topLabel =
+      prediction.homeWinPct === maxPct
+        ? `${home} Vince`
+        : prediction.awayWinPct === maxPct
+          ? `${away} Vince`
+          : "Pareggio";
+    return (
+      `📊 Pronostico 1X2:\n` +
+      `• ${home}: ${Math.round(prediction.homeWinPct)}%${homeO}\n` +
+      `• Pareggio: ${Math.round(prediction.drawPct)}%${drawO}\n` +
+      `• ${away}: ${Math.round(prediction.awayWinPct)}%${awayO}\n\n` +
+      `🎯 Selezione top: ${topLabel} — ${Math.round(maxPct)}% — Confidenza ${prediction.confidence}`
+    );
+  }
+
+  // Goals / Over / Under
+  if (
+    lower.includes("gol") ||
+    lower.includes("over") ||
+    lower.includes("under") ||
+    lower.includes("xg")
+  ) {
+    let resp =
+      `⚽ Analisi Gol:\n` +
+      `• Over 2.5: ${Math.round(prediction.over25Pct)}%\n` +
+      `• Under 2.5: ${Math.round(prediction.under25Pct)}%`;
+    if (prediction.expectedGoals) {
+      resp +=
+        `\n• xG ${home}: ${prediction.expectedGoals.home.toFixed(2)}` +
+        `\n• xG ${away}: ${prediction.expectedGoals.away.toFixed(2)}` +
+        `\n• xG Totale: ${prediction.expectedGoals.total.toFixed(2)}`;
+    }
+    if (prediction.overUnderLines?.["2.5"]) {
+      const l = prediction.overUnderLines["2.5"];
+      resp += `\n\nLinea 2.5 → Over: ${Math.round(l.over)}% | Under: ${Math.round(l.under)}%`;
+    }
+    if (prediction.bestOdds?.over25) {
+      resp += `\nMiglior quota Over 2.5: @${prediction.bestOdds.over25.toFixed(2)}`;
+    }
+    return resp;
+  }
+
+  // BTTS
+  if (
+    lower.includes("btts") ||
+    lower.includes("segnano") ||
+    lower.includes("gol/gol") ||
+    lower.includes("golgol")
+  ) {
+    let resp =
+      `🥅 Entrambe Segnano (BTTS):\n` +
+      `• Sì: ${Math.round(prediction.bttsPct)}%\n` +
+      `• No: ${Math.round(100 - prediction.bttsPct)}%`;
+    if (prediction.bestOdds?.bttsYes)
+      resp += `\nQuota Sì: @${prediction.bestOdds.bttsYes.toFixed(2)}`;
+    if (prediction.bestOdds?.bttsNo)
+      resp += `\nQuota No: @${prediction.bestOdds.bttsNo.toFixed(2)}`;
+    return resp;
+  }
+
+  // Value bets
+  if (
+    lower.includes("valore") ||
+    lower.includes("value") ||
+    lower.includes("edge")
+  ) {
+    if (!prediction.valueBets || prediction.valueBets.length === 0) {
+      return "⚠️ Nessuna value bet significativa rilevata per questo match. Il modello non ha trovato quote con valore atteso positivo rispetto al mercato.";
+    }
+    let resp = `⚡ Value Bets rilevate:\n`;
+    prediction.valueBets.slice(0, 3).forEach((vb, i) => {
+      resp +=
+        `\n${i + 1}. ${vb.selection} (${vb.market})` +
+        `\n   Modello: ${Math.round(vb.modelProb)}% · Quota: @${vb.bestOdds.toFixed(2)} · Edge: +${Math.round(vb.edge * 100)}%`;
+    });
+    return resp;
+  }
+
+  // Best odds
+  if (lower.includes("quota") || lower.includes("quote")) {
+    if (!prediction.bestOdds)
+      return "Quote non disponibili per questa partita.";
+    const bo = prediction.bestOdds;
+    let resp = `💰 Migliori Quote:\n`;
+    if (bo.home) resp += `• ${home}: @${bo.home.toFixed(2)}\n`;
+    if (bo.draw) resp += `• Pareggio: @${bo.draw.toFixed(2)}\n`;
+    if (bo.away) resp += `• ${away}: @${bo.away.toFixed(2)}\n`;
+    if (bo.over25) resp += `• Over 2.5: @${bo.over25.toFixed(2)}\n`;
+    if (bo.under25) resp += `• Under 2.5: @${bo.under25.toFixed(2)}\n`;
+    if (bo.bttsYes) resp += `• BTTS Sì: @${bo.bttsYes.toFixed(2)}\n`;
+    if (bo.bttsNo) resp += `• BTTS No: @${bo.bttsNo.toFixed(2)}`;
+    return resp;
+  }
+
+  // Correct score
+  if (lower.includes("esatto") || lower.includes("score")) {
+    if (!prediction.correctScores || prediction.correctScores.length === 0) {
+      return "Risultati esatti non disponibili per questo match.";
+    }
+    let resp = `🎯 Top Risultati Esatti:\n`;
+    prediction.correctScores.slice(0, 3).forEach((cs, i) => {
+      resp += `${i + 1}. ${cs.score} — ${cs.probability.toFixed(1)}%\n`;
+    });
+    return resp;
+  }
+
+  // Half time
+  if (lower.includes("primo tempo") || lower.includes("ht")) {
+    if (!prediction.halfTimeResult)
+      return "Dati Primo Tempo non disponibili per questa partita.";
+    const ht = prediction.halfTimeResult;
+    const maxHt = Math.max(ht.home, ht.draw, ht.away);
+    const htPick =
+      ht.home === maxHt
+        ? `${home} Vince PT`
+        : ht.away === maxHt
+          ? `${away} Vince PT`
+          : "Pareggio PT";
+    return (
+      `⏱️ Pronostico Primo Tempo:\n` +
+      `• ${home} Vince: ${Math.round(ht.home)}%\n` +
+      `• Pareggio: ${Math.round(ht.draw)}%\n` +
+      `• ${away} Vince: ${Math.round(ht.away)}%\n\n` +
+      `→ Pronostico PT: ${htPick} (${Math.round(maxHt)}%)`
+    );
+  }
+
+  // Corners
+  if (lower.includes("angoli") || lower.includes("corner")) {
+    if (
+      !prediction.cornersOverUnder ||
+      prediction.cornersOverUnder.length === 0
+    ) {
+      return "Dati angoli non disponibili per questa partita.";
+    }
+    let resp = `📐 Angoli O/U:\n`;
+    prediction.cornersOverUnder.forEach((c) => {
+      resp += `• ${c.label}: ${Math.round(c.probability)}%\n`;
+    });
+    return resp;
+  }
+
+  // Referee
+  if (lower.includes("arbitro") || lower.includes("referee")) {
+    const ref = fixture.fixture.referee;
+    if (!ref) return "Arbitro non ancora designato per questa partita.";
+    return `👤 Arbitro Designato: ${ref}\n\nNota: i dati statistici dettagliati dell'arbitro saranno disponibili nelle prossime versioni.`;
+  }
+
+  // Default summary
+  const topProb = Math.round(prediction.topPick.probability);
+  return (
+    `📋 Riepilogo ${home} vs ${away}:\n\n` +
+    `🎯 Pronostico Top: ${prediction.topPick.selection} (${topProb}%)\n` +
+    `• Over 2.5: ${Math.round(prediction.over25Pct)}%\n` +
+    `• BTTS Sì: ${Math.round(prediction.bttsPct)}%\n` +
+    `• Confidenza: ${prediction.confidence}` +
+    (prediction.valueBets?.length
+      ? `\n\n⚡ ${prediction.valueBets.length} value bet rilevata/e`
+      : "")
+  );
+}
 
 export default function MatchDetailScreen() {
   const colors = useColors();
@@ -53,40 +254,20 @@ export default function MatchDetailScreen() {
   const haptics = useHaptics();
   const favorites = useFavoritesStore();
   const isFav = favorites.isFavorite("fixtures", id);
-  const [activeMarketTab, setActiveMarketTab] = useState<
-    "dc" | "goals" | "corners" | "fh" | "firstScore"
-  >("dc");
+
   const [chatMessages, setChatMessages] = useState<
     Array<{ sender: "user" | "ai"; text: string }>
   >([]);
 
   const handleSendTacticalMessage = (prompt: string) => {
     haptics.light();
-    const newMsg = { sender: "user" as const, text: prompt };
-    setChatMessages((prev) => [...prev, newMsg]);
-
-    // Simulate AI response based on match predictions
-    setTimeout(() => {
-      const currentPrediction = prediction;
-      let aiResponse = "";
-      if (prompt.includes("Chi vincerà")) {
-        const homeIsFav =
-          (currentPrediction?.homeWinPct ?? 50) >=
-          (currentPrediction?.awayWinPct ?? 50);
-        const favName = homeIsFav
-          ? fixture?.teams.home.name
-          : fixture?.teams.away.name;
-        const favPct = homeIsFav
-          ? currentPrediction?.homeWinPct
-          : currentPrediction?.awayWinPct;
-        aiResponse = `Secondo le simulazioni Monte Carlo, il ${favName ?? "team favorito"} ha un vantaggio col ${Math.round(favPct ?? 50)}%. Il possesso palla atteso favorisce chi controllerà il centrocampo.`;
-      } else if (prompt.includes("gol")) {
-        aiResponse = `La proiezione Over 2.5 è al ${Math.round(prediction?.over25Pct || 50)}%. ${prediction?.over25Pct && prediction.over25Pct > 55 ? "Attacco spumeggiante consigliato." : "Partita tattica con difese molto chiuse."}`;
-      } else {
-        aiResponse = `L'arbitro designato ${fixture?.fixture.referee || "del match"} ha una media cartellini gialli di 4.2 a partita. Questo potrebbe influenzare l'aggressività dei difensori centrali nei primi minuti.`;
-      }
-      setChatMessages((prev) => [...prev, { sender: "ai", text: aiResponse }]);
-    }, 600);
+    setChatMessages((prev) => [
+      ...prev,
+      { sender: "user" as const, text: prompt },
+    ]);
+    if (!fixture) return;
+    const aiResponse = generateMatchChatResponse(prompt, prediction, fixture);
+    setChatMessages((prev) => [...prev, { sender: "ai", text: aiResponse }]);
   };
 
   const { data: fixture, isLoading, refetch, isRefetching } = useFixture(id);
@@ -419,189 +600,6 @@ export default function MatchDetailScreen() {
                     </GlassCard>
                   </View>
                 )}
-
-              {/* Advanced Pro Forecasts */}
-              {(() => {
-                const tabs = [];
-                if (prediction.doubleChance)
-                  tabs.push({
-                    id: "dc",
-                    label: t("match.market.doubleChance"),
-                  });
-                if (
-                  prediction.overUnderGoals &&
-                  prediction.overUnderGoals.length > 0
-                )
-                  tabs.push({ id: "goals", label: t("match.market.goals") });
-                if (
-                  prediction.cornersOverUnder &&
-                  prediction.cornersOverUnder.length > 0
-                )
-                  tabs.push({
-                    id: "corners",
-                    label: t("match.market.corners"),
-                  });
-                if (prediction.halfTimeResult)
-                  tabs.push({ id: "fh", label: t("match.market.halfTime") });
-                if (prediction.teamToScoreFirst)
-                  tabs.push({
-                    id: "firstScore",
-                    label: t("match.market.firstGoal"),
-                  });
-
-                if (tabs.length === 0) return null;
-
-                return (
-                  <View style={{ gap: 12, marginTop: 8 }}>
-                    <Text
-                      style={{
-                        color: colors.onSurface,
-                        fontFamily: fonts.headlineMd,
-                        fontSize: 16,
-                        letterSpacing: -0.3,
-                      }}
-                    >
-                      {t("match.advancedForecasts")}
-                    </Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-                    >
-                      {tabs.map((tab) => {
-                        const active = activeMarketTab === tab.id;
-                        return (
-                          <Pressable
-                            key={tab.id}
-                            onPress={() => {
-                              haptics.light();
-                              setActiveMarketTab(tab.id as any);
-                            }}
-                            style={{
-                              paddingHorizontal: 14,
-                              paddingVertical: 7,
-                              borderRadius: 18,
-                              backgroundColor: active
-                                ? colors.primaryFixed
-                                : "rgba(255,255,255,0.05)",
-                              borderWidth: 1,
-                              borderColor: active
-                                ? colors.primaryFixed
-                                : "rgba(255,255,255,0.1)",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: active
-                                  ? colors.onPrimaryFixed
-                                  : colors.onSurface,
-                                fontFamily: fonts.label,
-                                fontSize: 11,
-                              }}
-                            >
-                              {tab.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </ScrollView>
-
-                    <GlassCard padding={16} style={{ gap: 12 }}>
-                      {activeMarketTab === "dc" && prediction.doubleChance && (
-                        <View style={{ gap: 10 }}>
-                          <MarketRow
-                            label={t("match.homeDraw")}
-                            value={prediction.doubleChance.homeDraw}
-                            color={colors.primaryFixed}
-                          />
-                          <MarketRow
-                            label={t("match.awayDraw")}
-                            value={prediction.doubleChance.awayDraw}
-                            color={colors.secondaryFixed}
-                          />
-                          <MarketRow
-                            label={t("match.homeAway")}
-                            value={prediction.doubleChance.homeAway}
-                            color={colors.primaryFixed}
-                          />
-                        </View>
-                      )}
-
-                      {activeMarketTab === "goals" &&
-                        prediction.overUnderGoals && (
-                          <View style={{ gap: 10 }}>
-                            {prediction.overUnderGoals.map((g, idx) => (
-                              <MarketRow
-                                key={idx}
-                                label={g.label}
-                                value={g.probability}
-                                color={colors.primaryFixed}
-                              />
-                            ))}
-                          </View>
-                        )}
-
-                      {activeMarketTab === "corners" &&
-                        prediction.cornersOverUnder && (
-                          <View style={{ gap: 10 }}>
-                            {prediction.cornersOverUnder.map((c, idx) => (
-                              <MarketRow
-                                key={idx}
-                                label={c.label}
-                                value={c.probability}
-                                color={colors.secondaryFixed}
-                              />
-                            ))}
-                          </View>
-                        )}
-
-                      {activeMarketTab === "fh" &&
-                        prediction.halfTimeResult && (
-                          <View style={{ gap: 10 }}>
-                            <MarketRow
-                              label={t("match.homeWinHt")}
-                              value={prediction.halfTimeResult.home}
-                              color={colors.primaryFixed}
-                            />
-                            <MarketRow
-                              label={t("match.drawHt")}
-                              value={prediction.halfTimeResult.draw}
-                              color="rgba(255,255,255,0.4)"
-                            />
-                            <MarketRow
-                              label={t("match.awayWinHt")}
-                              value={prediction.halfTimeResult.away}
-                              color={colors.secondaryFixed}
-                            />
-                          </View>
-                        )}
-
-                      {activeMarketTab === "firstScore" &&
-                        prediction.teamToScoreFirst && (
-                          <View style={{ gap: 10 }}>
-                            <MarketRow
-                              label={t("match.homeScoresFirst")}
-                              value={prediction.teamToScoreFirst.home}
-                              color={colors.primaryFixed}
-                            />
-                            <MarketRow
-                              label={t("match.awayScoresFirst")}
-                              value={prediction.teamToScoreFirst.away}
-                              color={colors.secondaryFixed}
-                            />
-                            {prediction.teamToScoreFirst.draw > 0 && (
-                              <MarketRow
-                                label={t("match.noGoalsDraw")}
-                                value={prediction.teamToScoreFirst.draw}
-                                color="rgba(255,255,255,0.4)"
-                              />
-                            )}
-                          </View>
-                        )}
-                    </GlassCard>
-                  </View>
-                );
-              })()}
             </View>
           )}
         </View>
@@ -774,6 +772,15 @@ export default function MatchDetailScreen() {
                 ),
               },
             ]}
+          />
+        )}
+
+        {/* Comprehensive Betting Markets */}
+        {prediction && (
+          <MarketsPanel
+            prediction={prediction}
+            homeName={fixture.teams.home.name}
+            awayName={fixture.teams.away.name}
           />
         )}
 
@@ -1204,8 +1211,60 @@ export default function MatchDetailScreen() {
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Pressable
               onPress={() =>
+                handleSendTacticalMessage("Chi vincerà? Analisi 1X2")
+              }
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(255,255,255,0.03)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.06)",
+                borderRadius: 18,
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.onSurface,
+                  fontFamily: fonts.body,
+                  fontSize: 11,
+                }}
+                numberOfLines={1}
+              >
+                Chi vince? 🏆
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                handleSendTacticalMessage("Gol over under xG previsti")
+              }
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(255,255,255,0.03)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.06)",
+                borderRadius: 18,
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.onSurface,
+                  fontFamily: fonts.body,
+                  fontSize: 11,
+                }}
+                numberOfLines={1}
+              >
+                Gol & xG ⚽
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
                 handleSendTacticalMessage(
-                  "Chi vincerà la partita secondo la tattica?",
+                  "Ci sono value bets per questa partita?",
                 )
               }
               style={{
@@ -1227,59 +1286,7 @@ export default function MatchDetailScreen() {
                 }}
                 numberOfLines={1}
               >
-                Chi vincerà?
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                handleSendTacticalMessage("Ci saranno più di 2.5 gol?")
-              }
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(255,255,255,0.03)",
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.06)",
-                borderRadius: 18,
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.onSurface,
-                  fontFamily: fonts.body,
-                  fontSize: 11,
-                }}
-                numberOfLines={1}
-              >
-                Gol Over 2.5?
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                handleSendTacticalMessage("Qual è l'impatto dell'arbitro?")
-              }
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(255,255,255,0.03)",
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.06)",
-                borderRadius: 18,
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.onSurface,
-                  fontFamily: fonts.body,
-                  fontSize: 11,
-                }}
-                numberOfLines={1}
-              >
-                Analisi Arbitro?
+                Value Bets ⚡
               </Text>
             </Pressable>
           </View>
