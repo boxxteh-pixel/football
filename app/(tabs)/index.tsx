@@ -81,6 +81,46 @@ export default function PredictorTab() {
 
   const liveCount = useMemo(() => fixtures.filter((f) => isLive(f.fixture.status.short)).length, [fixtures]);
 
+  const groupedFixtures = useMemo(() => {
+    const groups: Array<{ dateLabel: string; items: Fixture[] }> = [];
+    fixtures.forEach((f) => {
+      const dateObj = new Date(f.fixture.timestamp * 1000);
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+
+      let label = '';
+      const isSameDay = (d1: Date, d2: Date) =>
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+      if (isLive(f.fixture.status.short)) {
+        label = 'Live';
+      } else if (isSameDay(dateObj, today)) {
+        label = t('common.today') || 'Today';
+      } else if (isSameDay(dateObj, tomorrow)) {
+        label = t('common.tomorrow') || 'Tomorrow';
+      } else {
+        label = dateObj.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+
+      const existing = groups.find((g) => g.dateLabel === label);
+      if (existing) {
+        existing.items.push(f);
+      } else {
+        groups.push({ dateLabel: label, items: [f] });
+      }
+    });
+
+    return groups.sort((a, b) => {
+      if (a.dateLabel === 'Live') return -1;
+      if (b.dateLabel === 'Live') return 1;
+      return 0;
+    });
+  }, [fixtures, t]);
+
   const bestPicks = useMemo(
     () =>
       [...fixtures]
@@ -114,17 +154,24 @@ export default function PredictorTab() {
         <View style={{ gap: 28 }}>
           <View style={{ gap: 14 }}>
             <SearchBar value={search} onChangeText={setSearch} placeholder={t('predictor.search')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }}>
-              <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
-              {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
-                <Chip
-                  key={l.id}
-                  label={l.shortName}
-                  active={activeLeague === l.id}
-                  onPress={() => setActiveLeague(l.id === activeLeague ? null : l.id)}
-                />
-              ))}
-            </ScrollView>
+            <View style={{ width: '100%', overflow: 'hidden' }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ width: '100%', marginHorizontal: -16 }}
+                contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }}
+              >
+                <Chip label={t('predictor.allPicks')} active={activeLeague === null} onPress={() => setActiveLeague(null)} />
+                {DEFAULT_LEAGUES.filter((l) => selectedLeagueIds.includes(l.id)).map((l) => (
+                  <Chip
+                    key={l.id}
+                    label={l.shortName}
+                    active={activeLeague === l.id}
+                    onPress={() => setActiveLeague(l.id === activeLeague ? null : l.id)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
           </View>
 
           <View style={{ gap: 14 }}>
@@ -143,15 +190,18 @@ export default function PredictorTab() {
                 subtitle={t('common.noMatchesSub')}
               />
             ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                {bestPicks.map((f) => (
-                  <BestPickCard key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
-                ))}
-              </ScrollView>
+              <View style={{ width: '100%', overflow: 'hidden' }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ width: '100%', marginHorizontal: -16 }}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  {bestPicks.map((f) => (
+                    <BestPickCard key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+                  ))}
+                </ScrollView>
+              </View>
             )}
           </View>
 
@@ -171,11 +221,24 @@ export default function PredictorTab() {
                 subtitle={t('predictor.noLiveUpcomingSub')}
               />
             ) : (
-              <ResponsiveGrid columns={gridColumns} gap={12}>
-                {fixtures.map((f) => (
-                  <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+              <View style={{ gap: 24 }}>
+                {groupedFixtures.map((group) => (
+                  <View key={group.dateLabel} style={{ gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 6 }}>
+                      <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
+                      <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                        {group.dateLabel}
+                      </Text>
+                      <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
+                    </View>
+                    <ResponsiveGrid columns={gridColumns} gap={12}>
+                      {group.items.map((f) => (
+                        <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+                      ))}
+                    </ResponsiveGrid>
+                  </View>
                 ))}
-              </ResponsiveGrid>
+              </View>
             )}
           </View>
 
