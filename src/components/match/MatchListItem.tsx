@@ -20,9 +20,18 @@ interface MatchListItemProps {
   /** Optional pre-resolved prediction (from the batch map). If absent, the row
    *  resolves the SAME real prediction itself via the shared cache. */
   prediction?: PredictionResult;
+  showCheckbox?: boolean;
+  checked?: boolean;
+  onCheckboxToggle?: () => void;
 }
 
-export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, prediction: provided }) => {
+export const MatchListItem: React.FC<MatchListItemProps> = ({
+  fixture,
+  prediction: provided,
+  showCheckbox = false,
+  checked = false,
+  onCheckboxToggle,
+}) => {
   const colors = useColors();
   const haptics = useHaptics();
   const t = useT();
@@ -44,7 +53,11 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
     <Pressable
       onPress={() => {
         haptics.light();
-        router.push(`/match/${fixture.fixture.id}`);
+        if (showCheckbox && onCheckboxToggle) {
+          onCheckboxToggle();
+        } else {
+          router.push(`/match/${fixture.fixture.id}`);
+        }
       }}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], marginBottom: 10 })}
     >
@@ -56,6 +69,32 @@ export const MatchListItem: React.FC<MatchListItemProps> = ({ fixture, predictio
         } : undefined}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          
+          {/* Glass Checkbox Column */}
+          {showCheckbox && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                haptics.light();
+                onCheckboxToggle?.();
+              }}
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                borderWidth: 1.5,
+                borderColor: checked ? colors.primaryFixed : 'rgba(255, 255, 255, 0.25)',
+                backgroundColor: checked ? colors.accent15 : 'rgba(255, 255, 255, 0.02)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}
+            >
+              {checked && (
+                <BoroIcon name="check" size={14} color={colors.primaryFixed} />
+              )}
+            </Pressable>
+          )}
           
           {/* 1. Time / Live Status Column */}
           <View

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Platform } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Platform, Pressable } from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
@@ -19,6 +19,7 @@ import { fonts } from '@/theme/typography';
 import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { hasApiKey } from '@/constants/config';
 import type { Fixture } from '@/types/match';
@@ -34,6 +35,10 @@ export default function PredictorTab() {
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const isFocused = useIsFocused();
   const t = useT();
+
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFixtureIds, setSelectedFixtureIds] = useState<number[]>([]);
+  const favorites = useFavoritesStore();
 
   const { data, isLoading, refetch, isRefetching, error } = useTodayFixtures(activeLeague ?? undefined);
   const { predictionMap } = useTodayPredictions();
@@ -202,10 +207,32 @@ export default function PredictorTab() {
           </View>
 
           <View style={{ gap: 14 }}>
-            <SectionHeader
-              title={t('predictor.liveUpcoming')}
-              right={liveCount > 0 ? <LivePulse label={`${liveCount} LIVE`} /> : undefined}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <SectionHeader
+                title={t('predictor.liveUpcoming')}
+                right={liveCount > 0 ? <LivePulse label={`${liveCount} LIVE`} /> : undefined}
+              />
+              {fixtures.length > 0 && (
+                <Pressable
+                  onPress={() => {
+                    setIsSelectionMode(!isSelectionMode);
+                    setSelectedFixtureIds([]);
+                  }}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    backgroundColor: isSelectionMode ? colors.accent15 : 'rgba(255,255,255,0.04)',
+                    borderWidth: 1,
+                    borderColor: isSelectionMode ? colors.accent30 : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <Text style={{ color: isSelectionMode ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 12 }}>
+                    {isSelectionMode ? t('common.cancel') || 'Cancel' : t('common.select') || 'Select'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
             {isLoading ? (
               <ListSkeleton />
             ) : error ? (
@@ -229,7 +256,20 @@ export default function PredictorTab() {
                     </View>
                     <ResponsiveGrid columns={gridColumns} gap={12}>
                       {group.items.map((f) => (
-                        <MatchListItem key={f.fixture.id} fixture={f} prediction={predictionMap.get(f.fixture.id)} />
+                        <MatchListItem
+                          key={f.fixture.id}
+                          fixture={f}
+                          prediction={predictionMap.get(f.fixture.id)}
+                          showCheckbox={isSelectionMode}
+                          checked={selectedFixtureIds.includes(f.fixture.id)}
+                          onCheckboxToggle={() => {
+                            setSelectedFixtureIds((prev) =>
+                              prev.includes(f.fixture.id)
+                                ? prev.filter((id) => id !== f.fixture.id)
+                                : [...prev, f.fixture.id]
+                            );
+                          }}
+                        />
                       ))}
                     </ResponsiveGrid>
                   </View>
@@ -273,8 +313,48 @@ export default function PredictorTab() {
               />
             </GlassCard>
           </View>
-        </View>
       </ScreenContainer>
+
+      {isSelectionMode && selectedFixtureIds.length > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: Platform.OS === 'web' ? 24 : 84,
+            left: 20,
+            right: 20,
+            zIndex: 100,
+          }}
+        >
+          <GlassCard padding={16} activeBorder glow>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
+                {selectedFixtureIds.length} {selectedFixtureIds.length === 1 ? 'partita selezionata' : 'partite selezionate'}
+              </Text>
+              <Pressable
+                onPress={async () => {
+                  await favorites.addMultiple('fixtures', selectedFixtureIds);
+                  setIsSelectionMode(false);
+                  setSelectedFixtureIds([]);
+                }}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  backgroundColor: colors.primaryFixed,
+                  shadowColor: colors.primaryFixed,
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  shadowOffset: { width: 0, height: 2 },
+                }}
+              >
+                <Text style={{ color: colors.onPrimary, fontFamily: fonts.label, fontSize: 13, fontWeight: 'bold' }}>
+                  {t('favorites.add') || 'Aggiungi preferiti'}
+                </Text>
+              </Pressable>
+            </View>
+          </GlassCard>
+        </View>
+      )}
     </View>
   );
 }

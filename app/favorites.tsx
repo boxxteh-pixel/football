@@ -1,5 +1,7 @@
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useQueries } from '@tanstack/react-query';
+import { fetchFixtureById } from '@/services/api/apiFootball';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BoroIcon } from '@/components/ui/BoroIcon';
@@ -11,7 +13,8 @@ import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useT } from '@/theme/i18n';
-import { useFixture } from '@/hooks/useFixtures';
+import { isLive } from '@/types/match';
+import type { Fixture } from '@/types/match';
 
 export default function FavoritesScreen() {
   const colors = useColors();
@@ -19,62 +22,209 @@ export default function FavoritesScreen() {
   const favorites = useFavoritesStore();
   const { gridColumns } = useResponsive();
 
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFixtureIds, setSelectedFixtureIds] = useState<number[]>([]);
+
+  // Batch query all favorite fixtures in parallel using useQueries
+  const results = useQueries({
+    queries: favorites.fixtures.map((id) => ({
+      queryKey: ['fixture', id],
+      queryFn: () => fetchFixtureById(id),
+      staleTime: Infinity,
+    })),
+  });
+
+  const isLoading = results.some((r) => r.isLoading);
+  const favoriteMatches = useMemo<Fixture[]>(() => {
+    return results
+      .map((r) => r.data)
+      .filter((f): f is Fixture => !!f);
+  }, [results]);
+
   const favoriteMatchesCount = favorites.fixtures.length;
 
+  // Group favorites by day (matching Home screen logic)
+  const groupedFavorites = useMemo(() => {
+    const groups: Array<{ dateLabel: string; items: Fixture[] }> = [];
+    favoriteMatches.forEach((f) => {
+      const dateObj = new Date(f.fixture.timestamp * 1000);
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+
+      let label = '';
+      const isSameDay = (d1: Date, d2: Date) =>
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+      if (isLive(f.fixture.status.short)) {
+        label = 'Live';
+      } else if (isSameDay(dateObj, today)) {
+        label = t('common.today') || 'Today';
+      } else if (isSameDay(dateObj, tomorrow)) {
+        label = t('common.tomorrow') || 'Tomorrow';
+      } else {
+        label = dateObj.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+      }
+
+      const existing = groups.find((g) => g.dateLabel === label);
+      if (existing) {
+        existing.items.push(f);
+      } else {
+        groups.push({ dateLabel: label, items: [f] });
+      }
+    });
+
+    return groups.sort((a, b) => {
+      if (a.dateLabel === 'Live') return -1;
+      if (b.dateLabel === 'Live') return 1;
+      return 0;
+    });
+  }, [favoriteMatches, t]);
+
   return (
-    <ScreenContainer showBack title={t('favorites.title')}>
-      <View style={{ gap: 20, paddingTop: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
-            {t('favorites.title')}
-          </Text>
-          {favoriteMatchesCount > 0 && (
-            <View
-              style={{
-                backgroundColor: colors.accent12,
-                borderRadius: 8,
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderWidth: 1,
-                borderColor: colors.accent30,
-              }}
-            >
-              <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, fontWeight: 'bold' }}>
-                {favoriteMatchesCount} {favoriteMatchesCount === 1 ? t('match.result').toLowerCase() : 'matches'}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScreenContainer showBack title={t('favorites.title')}>
+        <View style={{ gap: 20, paddingTop: 8, paddingBottom: 100 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
+                {t('favorites.title')}
               </Text>
+              {favoriteMatchesCount > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.accent12,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderWidth: 1,
+                    borderColor: colors.accent30,
+                  }}
+                >
+                  <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, fontWeight: 'bold' }}>
+                    {favoriteMatchesCount} {favoriteMatchesCount === 1 ? t('match.result').toLowerCase() : 'matches'}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {favoriteMatchesCount > 0 && (
+              <Pressable
+                onPress={() => {
+                  setIsSelectionMode(!isSelectionMode);
+                  setSelectedFixtureIds([]);
+                }}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  backgroundColor: isSelectionMode ? colors.accent15 : 'rgba(255,255,255,0.04)',
+                  borderWidth: 1,
+                  borderColor: isSelectionMode ? colors.accent30 : 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <Text style={{ color: isSelectionMode ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.label, fontSize: 12 }}>
+                  {isSelectionMode ? t('common.cancel') || 'Cancel' : t('common.select') || 'Select'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          {isLoading ? (
+            <View style={{ gap: 12 }}>
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={84} radius={18} />
+              ))}
+            </View>
+          ) : favoriteMatchesCount === 0 ? (
+            <EmptyFavoritesState
+              icon="sports-soccer"
+              title={t('favorites.empty')}
+              subtitle={t('favorites.emptySub')}
+            />
+          ) : (
+            <View style={{ gap: 24 }}>
+              {groupedFavorites.map((group) => (
+                <View key={group.dateLabel} style={{ gap: 12 }}>
+                  {/* Day Divider */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 6 }}>
+                    <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
+                    <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                      {group.dateLabel}
+                    </Text>
+                    <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
+                  </View>
+                  <ResponsiveGrid columns={gridColumns} gap={4}>
+                    {group.items.map((f) => (
+                      <MatchListItem
+                        key={f.fixture.id}
+                        fixture={f}
+                        showCheckbox={isSelectionMode}
+                        checked={selectedFixtureIds.includes(f.fixture.id)}
+                        onCheckboxToggle={() => {
+                          setSelectedFixtureIds((prev) =>
+                            prev.includes(f.fixture.id)
+                              ? prev.filter((id) => id !== f.fixture.id)
+                              : [...prev, f.fixture.id]
+                          );
+                        }}
+                      />
+                    ))}
+                  </ResponsiveGrid>
+                </View>
+              ))}
             </View>
           )}
         </View>
+      </ScreenContainer>
 
-        {favorites.fixtures.length === 0 ? (
-          <EmptyFavoritesState
-            icon="sports-soccer"
-            title={t('favorites.empty')}
-            subtitle={t('favorites.emptySub')}
-          />
-        ) : (
-          <ResponsiveGrid columns={gridColumns} gap={4}>
-            {favorites.fixtures.map((id) => (
-              <FavoriteMatchItem key={id} id={id} />
-            ))}
-          </ResponsiveGrid>
-        )}
-      </View>
-    </ScreenContainer>
+      {/* Floating Action Bar for Bulk Unfavoriting */}
+      {isSelectionMode && selectedFixtureIds.length > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: Platform.OS === 'web' ? 24 : 84,
+            left: 20,
+            right: 20,
+            zIndex: 100,
+          }}
+        >
+          <GlassCard padding={16} activeBorder glow>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
+                {selectedFixtureIds.length} {selectedFixtureIds.length === 1 ? 'partita selezionata' : 'partite selezionate'}
+              </Text>
+              <Pressable
+                onPress={async () => {
+                  await favorites.removeMultiple('fixtures', selectedFixtureIds);
+                  setIsSelectionMode(false);
+                  setSelectedFixtureIds([]);
+                }}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  backgroundColor: colors.error,
+                  shadowColor: colors.error,
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  shadowOffset: { width: 0, height: 2 },
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontFamily: fonts.label, fontSize: 13, fontWeight: 'bold' }}>
+                  {t('favorites.remove') || 'Rimuovi'}
+                </Text>
+              </Pressable>
+            </View>
+          </GlassCard>
+        </View>
+      )}
+    </View>
   );
 }
-
-const FavoriteMatchItem: React.FC<{ id: number }> = ({ id }) => {
-  const { data: fixture, isLoading } = useFixture(id);
-
-  if (isLoading) {
-    return <Skeleton height={84} radius={12} style={{ marginBottom: 10 }} />;
-  }
-
-  if (!fixture) return null;
-
-  return <MatchListItem fixture={fixture} />;
-};
 
 interface EmptyFavoritesStateProps {
   icon: string;

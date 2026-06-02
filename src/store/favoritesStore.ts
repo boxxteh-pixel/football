@@ -36,6 +36,8 @@ interface FavoritesState {
   hydrated: boolean;
   hydrate: () => Promise<void>;
   toggle: (kind: 'teams' | 'fixtures' | 'leagues', id: number) => Promise<void>;
+  addMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => Promise<void>;
+  removeMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => Promise<void>;
   isFavorite: (kind: 'teams' | 'fixtures' | 'leagues', id: number) => boolean;
 }
 
@@ -80,6 +82,34 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     const state = await toggleFavorite(kind, id);
     set(state);
     syncProfileFavorites(kind, state[kind]).catch(() => {});
+  },
+  addMultiple: async (kind, ids) => {
+    const current = get()[kind];
+    const toAdd = ids.filter(id => !current.includes(id));
+    if (toAdd.length === 0) return;
+    const next = [...current, ...toAdd];
+    const updated = {
+      teams: get().teams,
+      fixtures: get().fixtures,
+      leagues: get().leagues,
+      [kind]: next
+    };
+    await writeFavorites(updated);
+    set(updated);
+    syncProfileFavorites(kind, next).catch(() => {});
+  },
+  removeMultiple: async (kind, ids) => {
+    const current = get()[kind];
+    const next = current.filter(id => !ids.includes(id));
+    const updated = {
+      teams: get().teams,
+      fixtures: get().fixtures,
+      leagues: get().leagues,
+      [kind]: next
+    };
+    await writeFavorites(updated);
+    set(updated);
+    syncProfileFavorites(kind, next).catch(() => {});
   },
   isFavorite: (kind, id) => get()[kind].includes(id),
 }));
