@@ -733,6 +733,39 @@ export const fetchSportmonksFixturesBetween = async (
   }
 };
 
+/**
+ * Fetch ALL fixtures across a date range WITHOUT any league filter.
+ * Used as a fallback when no tracked leagues have matches (e.g. off-season).
+ * Returns whatever the subscription covers — broadens discovery.
+ */
+export const fetchSportmonksFixturesBetweenAll = async (
+  fromDate: string,
+  toDate: string,
+): Promise<Fixture[]> => {
+  try {
+    const from = fromDate.split('T')[0];
+    const to = toDate.split('T')[0];
+
+    const collected: any[] = [];
+    const MAX_PAGES = 6;
+    let page = 1;
+    let hasMore = true;
+    while (hasMore && page <= MAX_PAGES) {
+      const url = `/fixtures/between/${from}/${to}?include=participants;league;venue;state;scores&per_page=50&page=${page}`;
+      const response = await sportmonksClient.get(url);
+      const data = response.data?.data;
+      if (Array.isArray(data) && data.length > 0) collected.push(...data);
+      hasMore = Boolean(response.data?.pagination?.has_more);
+      page++;
+    }
+    console.log(`[Sportmonks Adapter] Unfiltered between ${from}/${to}: ${collected.length} fixtures.`);
+    return collected.map(mapSportmonksFixture);
+  } catch (err: any) {
+    console.error('[Sportmonks Adapter] Error in fetchSportmonksFixturesBetweenAll:', err.message);
+    return [];
+  }
+};
+
 export const fetchSportmonksLiveFixtures = async (
   apiFootballLeagueIds?: number[]
 ): Promise<Fixture[]> => {

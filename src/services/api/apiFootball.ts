@@ -21,6 +21,7 @@ import {
   fetchSportmonksFixturesByDate,
   fetchSportmonksFixturesByDateMulti,
   fetchSportmonksFixturesBetween,
+  fetchSportmonksFixturesBetweenAll,
   fetchSportmonksLiveFixtures,
   fetchSportmonksFixtureById,
   fetchSportmonksFixtureEvents,
@@ -61,8 +62,12 @@ export const fetchFixturesByDate = async (
       const byId = new Map<number, Fixture>();
       smResults.forEach((fixture) => byId.set(fixture.fixture.id, fixture));
 
-      // If there are no matches today, return empty — do NOT inject fake mock data
-      return [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
+      let results = [...byId.values()].sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
+      if (results.length === 0) {
+        console.log(`[apiFootball] No tracked fixtures on ${date}. Querying unfiltered fallback...`);
+        results = await fetchSportmonksFixturesBetweenAll(date, date);
+      }
+      return results;
     }
 
     // Single league query — return whatever the API gives (even if empty)
@@ -98,7 +103,11 @@ export const fetchUpcomingFixtures = async (
     end.setUTCDate(end.getUTCDate() + lookaheadDays);
     const toIso = end.toISOString().split('T')[0];
 
-    const all = await fetchSportmonksFixturesBetween(fromIso, toIso, leagueIds);
+    let all = await fetchSportmonksFixturesBetween(fromIso, toIso, leagueIds);
+    if (all.length === 0) {
+      console.log(`[apiFootball] No tracked fixtures between ${fromIso} and ${toIso}. Querying unfiltered fallback...`);
+      all = await fetchSportmonksFixturesBetweenAll(fromIso, toIso);
+    }
 
     // Primary: live + upcoming matches in the rolling window relative to now.
     const now = Date.now();
