@@ -36,10 +36,12 @@ interface ChatMessage {
 
 // Fixed quick questions / prompt chips for quick bot interactions
 const QUICK_BOT_SUGGESTIONS = [
-  { text: 'Partite più sicure oggi 🎯', query: 'Quali sono le partite più sicure e con più alta confidenza di oggi?' },
-  { text: 'Raddoppio consigliato 📈', query: 'Consigliami una giocata raddoppio a quota circa 2.00 basata sui dati reali di oggi.' },
-  { text: 'Underdog di valore 💎', query: 'Ci sono quote underdog o ad alto rischio/alto rendimento con valore atteso positivo?' },
-  { text: 'Analisi campionati 🏆', query: 'Quali sono i trend principali dei campionati di oggi?' }
+  { text: '🛡️ Più sicura', query: 'Quali sono le partite più sicure e con più alta confidenza di oggi?' },
+  { text: '🔥 Multipla', query: 'Consigliami una giocata multipla / raddoppio a quota interessante basata sui dati reali di oggi.' },
+  { text: '⚠️ Valore', query: 'Ci sono quote underdog o ad alto valore atteso positivo rispetto ai bookmaker?' },
+  { text: '📡 Live ora', query: 'Quali partite in corso hanno dinamiche interessanti o variazioni di pressione live?' },
+  { text: '⚽ Over 2.5', query: 'Quali partite di oggi hanno le probabilità più alte per l\'esito Over 2.5?' },
+  { text: '🥅 Gol/Gol', query: 'Quali incontri offrono ottime statistiche per l\'esito Entrambe le Squadre Segnano (Gol/Gol)?' }
 ];
 
 export default function CommunityChatScreen() {
@@ -282,14 +284,21 @@ export default function CommunityChatScreen() {
     // Simulate smart analytical football response based on the actual request
     setTimeout(async () => {
       let replyText = '';
-      if (query.includes('più sicure')) {
+      const lowercaseQuery = query.toLowerCase();
+      if (lowercaseQuery.includes('più sicure') || lowercaseQuery.includes('sicura')) {
         replyText = '⚽ Le partite ad alta confidenza consigliate dal modello di oggi:\n\n1. Milan vs Verona: 1 (Prob. 84%, Quota 1.45) 🎯 MOLTO SICURA\n2. Inter vs Torino: 1 (Prob. 80%, Quota 1.38) 🎯 MOLTO SICURA\n3. Atalanta vs Genoa: Over 1.5 (Prob. 88%, Quota 1.25) 🎯 MOLTO SICURA\n\nPuoi visualizzarle nella schermata "Previsioni" ordinate per confidenza.';
-      } else if (query.includes('raddoppio')) {
-        replyText = '📈 Raddoppio statistico consigliato oggi (Moltiplicatore 2.01):\n\n• Juventus vs Lazio - Esito: 1X (Quota 1.32)\n• Fiorentina vs Empoli - Esito: Over 1.5 (Quota 1.28)\n• Roma vs Monza - Esito: 1 (Quota 1.52)\n\nQuota Totale combinata: 2.01x con probabilità totale calcolata del 71.4%. Consigliata puntata da 1 unità.';
-      } else if (query.includes('underdog')) {
-        replyText = '💎 Anomalie rilevate (Valore Atteso Positivo):\n\n• Udinese vs Napoli: Esito X (Quota 3.80, Modello dà 31% vs Mercato 26%) - Edge: +5%\n• Cagliari vs Bologna: Esito 1 (Quota 3.40, Modello dà 34% vs Mercato 29%) - Edge: +5%\n\nQuesti pronostici presentano un divario a favore dell\'utente rispetto alle quote esposte dai bookmaker.';
+      } else if (lowercaseQuery.includes('multipla') || lowercaseQuery.includes('raddoppio')) {
+        replyText = '🔥 Multipla consigliata oggi (Quota totale 3.05):\n\n• Milan vs Verona: 1 (Quota 1.45)\n• Inter vs Torino: 1 (Quota 1.38)\n• Atalanta vs Genoa: Over 1.5 (Quota 1.25)\n• Real Madrid vs Chelsea: Over 0.5 FH (Quota 1.22)\n\nMoltiplicatore totale: 3.05x. Consigliato stakeholder medio (2/5).';
+      } else if (lowercaseQuery.includes('valore') || lowercaseQuery.includes('underdog')) {
+        replyText = '⚠️ Anomalie rilevate (Valore Atteso Positivo / Value Bet):\n\n• Udinese vs Napoli: Esito X (Quota 3.80, Modello dà 31% vs Mercato 26%) - Edge: +5%\n• Cagliari vs Bologna: Esito 1 (Quota 3.40, Modello dà 34% vs Mercato 29%) - Edge: +5%\n\nQuesti pronostici presentano un divario a favore dell\'utente rispetto alle quote esposte dai bookmaker.';
+      } else if (lowercaseQuery.includes('live')) {
+        replyText = '📡 Analisi Live Ora (Variazioni di Pressione):\n\n• Lazio vs Fiorentina (0-0, 22\'): La pressione offensiva della Lazio è aumentata del 40% negli ultimi 5 minuti (Pressure Swing: +1.8). Consigliato: Over 0.5 1° Tempo (Quota 1.72).\n• Sassuolo vs Empoli (1-0, 58\'): Sassuolo in controllo ma baricentro difensivo basso. Valore su contropiede Empoli.';
+      } else if (lowercaseQuery.includes('over 2.5')) {
+        replyText = '⚽ Top Over 2.5 Statistici di Oggi:\n\n• Atalanta vs Genoa (Prob. 68%, Quota 1.82)\n• Borussia Dortmund vs Mainz (Prob. 74%, Quota 1.48)\n• Arsenal vs Everton (Prob. 71%, Quota 1.55)\n\nQueste sfide mostrano una media gol attesa superiore a 2.95 basata sugli ultimi 8 incontri.';
+      } else if (lowercaseQuery.includes('gol/gol') || lowercaseQuery.includes('segnano')) {
+        replyText = '🥅 Top Gol/Gol (Entrambe le Squadre Segnano):\n\n• Sassuolo vs Empoli (Prob. 62%, Quota 1.70)\n• Roma vs Monza (Prob. 59%, Quota 1.85)\n• Tottenham vs Brentford (Prob. 68%, Quota 1.50)\n\nForte propensione offensiva combinata a debolezze nelle marcature su palla inattiva.';
       } else {
-        replyText = '🏆 Trend dei Campionati italiani ed europei di oggi:\n\n• Serie A: Si nota un aumento del 14% di Gol nei secondi tempi rispetto alla media stagionale.\n• Premier League: Il fattore campo si è ridotto del 4%, gli away win offrono quote generose per le favorite.\n• La Liga: Forte aumento dei cartellini estratti dagli arbitri nei derby regionali.';
+        replyText = '🏆 Trend dei Campionati di oggi:\n\n• Serie A: Si nota un aumento del 14% di Gol nei secondi tempi rispetto alla media stagionale.\n• Premier League: Il fattore campo si è ridotto del 4%, gli away win offrono quote generose per le favorite.';
       }
 
       const aiReply: ChatMessage = {
