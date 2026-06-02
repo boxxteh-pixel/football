@@ -333,7 +333,8 @@ export default function InsightsScreen() {
             ))}
           </View>
         </GlassCard>
-      </ScreenContainer>
+      </View>
+    </ScreenContainer>
 
       {/* Share Betslip Widget Modal */}
       <Modal transparent visible={showShareModal} animationType="fade" onRequestClose={() => setShowShareModal(false)}>
