@@ -57,6 +57,7 @@ export default function InsightsScreen() {
   ], [t]);
 
   return (
+    <View style={{ flex: 1 }}>
     <ScreenContainer showBack title={t('profile.insights')}>
       <View style={{ gap: 24 }}>
         <View style={{ gap: 6 }}>
