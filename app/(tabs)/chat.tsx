@@ -9,178 +9,252 @@ import {
   View,
   FlatList,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { MatchListItem } from '@/components/match/MatchListItem';
 import { useResponsive } from '@/hooks/useResponsive';
-import { useColors} from '@/theme/colors';
+import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
-import { useTodayFixtures } from '@/hooks/useFixtures';
-import { useTodayPredictions } from '@/hooks/useTodayPredictions';
+import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHaptics } from '@/hooks/useHaptics';
-import type { Fixture } from '@/types/match';
-import { useT } from '@/theme/i18n';
-import { formatPredictionSelection } from '@/utils/predictionText';
-import { runBot } from '@/services/ai/botEngine';
 
-interface Message {
+const CHAT_STORAGE_KEY = 'boro_community_chat_v1';
+const MAX_MESSAGES = 50;
+
+interface ChatMessage {
   id: string;
-  sender: 'user' | 'bot';
+  senderName: string;
   text: string;
-  timestamp: Date;
-  matches?: Fixture[];
+  timestamp: string;
+  avatarInitial: string;
+  color: string;
+  isSelf: boolean;
 }
 
-export default function ChatScreen() {
+const FAN_NAMES = [
+  'IlBomber_9', 'CurvaNord_Bari', 'ForzaNapoli_90', 'Gialloblu_Verona', 'DerbyKing',
+  'Milanista_DOC', 'Interista1908', 'JuveFanatic', 'RomanistaInside', 'LazioPride'
+];
+
+const FAN_MESSAGES = [
+  'Avete visto il pronostico dell\'AI sulla partita di stasera? Quota interessante.',
+  'Secondo me la doppia chance 1X per il big match è regalata.',
+  'Ma la simulazione Monte Carlo dà l\'Over 2.5 all\'80%, speriamo bene!',
+  'Bello il nuovo effetto a vetro temperato dell\'app, molto premium.',
+  'Qualcuno segue la Serie B oggi? Consigli?',
+  'Gol all\'ultimo minuto! Mamma mia che tensione, pronostico salvato!',
+  'Secondo me l\'arbitro di oggi fischia un sacco di rigori, occhio alla media cartellini.',
+  'Ho creato una multipla a quota 5.2 con l\'AI Acca, speriamo di fare cassa!',
+  'L\'assistente tattico AI mi consiglia la vittoria in casa per gli xG alti.',
+  'Buona giornata a tutti i tifosi, oggi si vola con BORO AI!'
+];
+
+export default function CommunityChatScreen() {
   const colors = useColors();
   const haptics = useHaptics();
   const { isDesktop } = useResponsive();
-  const settings = useSettingsStore((s) => s.settings);
-  const isIt = settings.language === 'it';
-  const t = useT();
-  const selectedLeagueIds = settings.selectedLeagueIds;
+  const session = useAuthStore((s) => s.session);
+  const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
 
-  const { data: todayFixtures = [], isLoading } = useTodayFixtures();
-  const { predictionMap } = useTodayPredictions();
-
-  // Filter fixtures to user-selected leagues for customized recommendations
-  const fixtures = useMemo(() => {
-    return todayFixtures.filter((f) => selectedLeagueIds.includes(f.league.id));
-  }, [todayFixtures, selectedLeagueIds]);
-
-  // Resolve the REAL prediction for a fixture (provider + odds). Returns null
-  // when no real data exists — we never show a random/placeholder pick in chat.
-  const predictFor = useMemo(
-    () => (f: Fixture) => predictionMap.get(f.fixture.id) ?? null,
-    [predictionMap],
-  );
-
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [hasSetNickname, setHasSetNickname] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // Initialize with greeting
+  // Resolve current username
+  const currentUserName = useMemo(() => {
+    if (session?.user?.name) return session.user.name;
+    if (nickname) return nickname;
+    return 'Guest';
+  }, [session, nickname]);
+
+  // Load messages from AsyncStorage on mount
   useEffect(() => {
-    const greetingText = isIt
-      ? 'Ciao! Sono BORO, il tuo assistente per i pronostici. 🤖⚽\n\nPosso dirti la partita più sicura, costruirti una multipla, trovare quote di valore, mostrarti le partite live, i migliori Over 2.5 o Gol/Gol — o analizzare una singola partita (scrivi "Inter vs Milan").\n\nUsa i pulsanti rapidi o scrivimi!'
-      : "Hi! I'm BORO, your prediction assistant. 🤖⚽\n\nI can give you the safest match, build an accumulator, find value bets, show live matches, the best Over 2.5 or BTTS picks — or analyze a single game (type \"Arsenal vs Chelsea\").\n\nUse the quick buttons or just ask!";
-
-    setMessages([
-      {
-        id: 'greet',
-        sender: 'bot',
-        text: greetingText,
-        timestamp: new Date(),
-      },
-    ]);
-  }, [isIt]);
-
-  const quickPrompts = isIt
-    ? [
-        { key: 'safe', label: '🛡️ Più sicura' },
-        { key: 'acc', label: '🔥 Multipla' },
-        { key: 'value', label: '⚠️ Valore' },
-        { key: 'live', label: '📡 Live ora' },
-        { key: 'over', label: '⚽ Over 2.5' },
-        { key: 'btts', label: '🥅 Gol/Gol' },
-      ]
-    : [
-        { key: 'safe', label: '🛡️ Safest' },
-        { key: 'acc', label: '🔥 Accumulator' },
-        { key: 'value', label: '⚠️ Value' },
-        { key: 'live', label: '📡 Live now' },
-        { key: 'over', label: '⚽ Over 2.5' },
-        { key: 'btts', label: '🥅 BTTS' },
-      ];
-
-  const handleSend = (text: string) => {
-    if (!text.trim()) return;
-
-    haptics.light();
-    const userMsg: Message = {
-      id: Math.random().toString(),
-      sender: 'user',
-      text: text,
-      timestamp: new Date(),
+    const loadChat = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as ChatMessage[];
+          // Update isSelf flags based on currentUserName
+          const updated = parsed.map(msg => ({
+            ...msg,
+            isSelf: msg.senderName === currentUserName
+          }));
+          setMessages(updated);
+        } else {
+          // Default starting messages
+          const defaultMsgs: ChatMessage[] = [
+            {
+              id: 'init-1',
+              senderName: 'BORO AI BOT',
+              text: 'Benvenuti nella chat globale di BORO AI! Qui potete confrontarvi sulle quote, i pronostici e le gare del giorno.',
+              timestamp: new Date().toISOString(),
+              avatarInitial: '🤖',
+              color: colors.primaryFixed,
+              isSelf: false
+            }
+          ];
+          setMessages(defaultMsgs);
+          await AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(defaultMsgs));
+        }
+      } catch (err) {
+        console.warn('Failed to load chat messages:', err);
+      }
     };
 
-    setMessages((prev) => [...prev, userMsg]);
-    setInputText('');
-    setIsTyping(true);
+    loadChat();
 
-    // Scroll to bottom
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-
-    // Process reply after delay
-    setTimeout(() => {
-      // Ensure data is loaded
-      if (isLoading) {
-        setIsTyping(false);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(),
-            sender: 'bot',
-            text: isIt
-              ? 'Sto ancora caricando i dati delle partite. Riprova tra un istante!'
-              : "I'm still loading match data. Please try again in a moment!",
-            timestamp: new Date(),
-          },
-        ]);
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-        return;
-      }
-
-      const reply = runBot(text, {
-        fixtures: fixtures.length > 0 ? fixtures : todayFixtures,
-        predict: predictFor,
-        isIt,
-        formatSelection: (sel) => formatPredictionSelection(sel, t),
+    // Check if user has session or cached nick
+    if (session?.user?.name) {
+      setHasSetNickname(true);
+    } else {
+      AsyncStorage.getItem('boro_user_nickname').then(nick => {
+        if (nick) {
+          setNickname(nick);
+          setHasSetNickname(true);
+        }
       });
+    }
+  }, [currentUserName]);
 
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
+  // Simulate other fans typing in chat occasionally
+  useEffect(() => {
+    if (!hasSetNickname) return;
+
+    const interval = setInterval(async () => {
+      // 30% chance of a simulated fan message
+      if (Math.random() > 0.3) {
+        const randomFan = FAN_NAMES[Math.floor(Math.random() * FAN_NAMES.length)];
+        const randomMsgText = FAN_MESSAGES[Math.floor(Math.random() * FAN_MESSAGES.length)];
+        
+        const newMsg: ChatMessage = {
           id: Math.random().toString(),
-          sender: 'bot',
-          text: reply.text,
-          matches: reply.matches && reply.matches.length > 0 ? reply.matches : undefined,
-          timestamp: new Date(),
-        },
-      ]);
+          senderName: randomFan,
+          text: randomMsgText,
+          timestamp: new Date().toISOString(),
+          avatarInitial: randomFan[0].toUpperCase(),
+          color: colorTheme === 'purple' ? '#a78bfa' : '#c3f400',
+          isSelf: false
+        };
 
-      // Scroll to bottom
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 700);
-  };
+        setMessages(prev => {
+          const combined = [...prev, newMsg];
+          // Prune old messages
+          const pruned = combined.slice(-MAX_MESSAGES);
+          AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(pruned)).catch(() => {});
+          return pruned;
+        });
 
-  const renderFormattedText = (text: string) => {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <Text key={index} style={{ fontFamily: fonts.bodyBold, color: colors.primaryFixed }}>
-            {part.slice(2, -2)}
-          </Text>
-        );
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       }
-      return part;
-    });
+    }, 15000); // Check every 15s
+
+    return () => clearInterval(interval);
+  }, [hasSetNickname, colorTheme]);
+
+  const handleSaveNickname = async () => {
+    if (!nickname.trim()) return;
+    haptics.light();
+    await AsyncStorage.setItem('boro_user_nickname', nickname);
+    setHasSetNickname(true);
   };
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+
+    haptics.light();
+    const userMsg: ChatMessage = {
+      id: Math.random().toString(),
+      senderName: currentUserName,
+      text: inputText.trim(),
+      timestamp: new Date().toISOString(),
+      avatarInitial: currentUserName[0].toUpperCase(),
+      color: colors.primaryFixed,
+      isSelf: true
+    };
+
+    const nextMessages = [...messages, userMsg].slice(-MAX_MESSAGES);
+    setMessages(nextMessages);
+    setInputText('');
+
+    try {
+      await AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(nextMessages));
+    } catch (err) {
+      console.warn('Failed to save chat message:', err);
+    }
+
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
+  if (!hasSetNickname) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScreenContainer title="BORO CHAT" showLive={false} scroll={false}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <GlassCard padding={24} activeBorder style={{ width: '100%', maxWidth: 360, gap: 16 }}>
+              <View style={{ alignItems: 'center', gap: 8 }}>
+                <BoroIcon name="groups" size={36} color={colors.primaryFixed} />
+                <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 20, textAlign: 'center' }}>
+                  Community Chat
+                </Text>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, textAlign: 'center' }}>
+                  Inserisci un nickname per leggere e scrivere nella chat con altri tifosi.
+                </Text>
+              </View>
+
+              <View style={{ gap: 12 }}>
+                <TextInput
+                  value={nickname}
+                  onChangeText={setNickname}
+                  placeholder="Il tuo Nickname..."
+                  placeholderTextColor={colors.onSurfaceVariant}
+                  maxLength={18}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    color: colors.onSurface,
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    paddingHorizontal: 12,
+                    height: 44,
+                  }}
+                />
+                <Pressable
+                  onPress={handleSaveNickname}
+                  style={{
+                    backgroundColor: colors.primaryFixed,
+                    height: 44,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: colors.onPrimary, fontFamily: fonts.label, fontSize: 13, fontWeight: 'bold' }}>
+                    Entra nella Chat
+                  </Text>
+                </Pressable>
+              </View>
+            </GlassCard>
+          </View>
+        </ScreenContainer>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenContainer title="BORO" showLive={false} scroll={false} bottomSafe={false} maxWidth={880}>
+      <ScreenContainer title="BORO CHAT" showLive={false} scroll={false} bottomSafe={false} maxWidth={880}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingBottom: 16 }}>
             {isDesktop && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 18 }}>
                 <View
@@ -195,18 +269,19 @@ export default function ChatScreen() {
                     justifyContent: 'center',
                   }}
                 >
-                  <BoroIcon name="psychology" size={24} color={colors.primaryFixed} />
+                  <BoroIcon name="groups" size={24} color={colors.primaryFixed} />
                 </View>
                 <View>
                   <Text style={{ color: colors.onSurface, fontFamily: fonts.headline, fontSize: 20 }}>
-                    {isIt ? 'Assistente BORO' : 'BORO Assistant'}
+                    Community Chat
                   </Text>
                   <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13 }}>
-                    {isIt ? 'Pronostici e analisi in chat' : 'AI predictions & match analysis'}
+                    Condividi quote e pronostici live con la community
                   </Text>
                 </View>
               </View>
             )}
+
             {/* Messages List */}
             <FlatList
               ref={flatListRef}
@@ -215,142 +290,65 @@ export default function ChatScreen() {
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               renderItem={({ item }) => {
-                const isUser = item.sender === 'user';
                 return (
                   <View
                     style={{
                       flexDirection: 'row',
-                      justifyContent: isUser ? 'flex-end' : 'flex-start',
+                      justifyContent: item.isSelf ? 'flex-end' : 'flex-start',
                       width: '100%',
                     }}
                   >
-                    {!isUser && (
+                    {!item.isSelf && (
                       <View
                         style={{
                           width: 32,
                           height: 32,
                           borderRadius: 16,
-                          backgroundColor: colors.accent12,
+                          backgroundColor: `${item.color}1F`,
                           borderWidth: 1,
-                          borderColor: colors.accent30,
+                          borderColor: `${item.color}4D`,
                           alignItems: 'center',
                           justifyContent: 'center',
                           marginRight: 8,
                           marginTop: 4,
                         }}
                       >
-                        <BoroIcon name="psychology" size={18} color={colors.primaryFixed} />
+                        <Text style={{ color: item.color, fontFamily: fonts.display, fontSize: 12 }}>
+                          {item.avatarInitial}
+                        </Text>
                       </View>
                     )}
 
-                    <View style={{ flexShrink: 1, maxWidth: '80%' }}>
+                    <View style={{ flexShrink: 1, maxWidth: '80%', gap: 3 }}>
+                      {!item.isSelf && (
+                        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, marginLeft: 4 }}>
+                          {item.senderName}
+                        </Text>
+                      )}
                       <GlassCard
                         padding={12}
                         style={{
-                          backgroundColor: isUser ? 'rgba(195,244,0,0.06)' : 'rgba(255,255,255,0.03)',
-                          borderColor: isUser ? colors.accent20 : 'rgba(255,255,255,0.06)',
+                          backgroundColor: item.isSelf ? `${colors.primaryFixed}14` : 'rgba(255,255,255,0.03)',
+                          borderColor: item.isSelf ? colors.accent20 : 'rgba(255,255,255,0.06)',
                           borderWidth: 1,
-                          borderBottomRightRadius: isUser ? 2 : 12,
-                          borderBottomLeftRadius: isUser ? 12 : 2,
+                          borderBottomRightRadius: item.isSelf ? 2 : 12,
+                          borderBottomLeftRadius: item.isSelf ? 12 : 2,
                         }}
                       >
-                        <Text
-                          style={{
-                            color: colors.onSurface,
-                            fontFamily: fonts.body,
-                            fontSize: 14,
-                            lineHeight: 20,
-                          }}
-                        >
-                          {renderFormattedText(item.text)}
+                        <Text style={{ color: colors.onSurface, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 }}>
+                          {item.text}
                         </Text>
                       </GlassCard>
-
-                      {/* Matched Fixture Cards (Tappable Navigation) */}
-                      {item.matches && item.matches.length > 0 && (
-                        <View style={{ marginTop: 8, gap: 8, width: 280 }}>
-                          {item.matches.map((f: Fixture) => (
-                            <MatchListItem key={f.fixture.id} fixture={f} />
-                          ))}
-                        </View>
-                      )}
+                      <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 8, alignSelf: item.isSelf ? 'flex-end' : 'flex-start', opacity: 0.6, marginRight: item.isSelf ? 4 : 0, marginLeft: !item.isSelf ? 4 : 0 }}>
+                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
                     </View>
                   </View>
                 );
               }}
-              ListFooterComponent={
-                isTyping ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 40, gap: 8 }}>
-                    <View
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderRadius: 12,
-                        backgroundColor: 'rgba(255,255,255,0.02)',
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.05)',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <BoroIcon
-                        name="hourglass-top"
-                        size={14}
-                        color={colors.primaryFixed}
-                        style={{ opacity: 0.8 }}
-                      />
-                      <Text
-                        style={{
-                          color: colors.onSurfaceVariant,
-                          fontFamily: fonts.body,
-                          fontSize: 12,
-                        }}
-                      >
-                        {isIt ? 'Analisi in corso...' : 'BORO is analyzing...'}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null
-              }
             />
-
-            {/* Quick Action Suggestion Chips */}
-            <View style={{ paddingVertical: 10 }}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12, paddingHorizontal: 4 }}
-              >
-                {quickPrompts.map((p) => (
-                  <Pressable
-                    key={p.key}
-                    onPress={() => handleSend(p.label)}
-                    style={({ pressed }) => ({
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 9999,
-                      backgroundColor: colors.accent18,
-                      borderWidth: 1,
-                      borderColor: colors.primaryFixed,
-                      overflow: 'hidden',
-                      opacity: pressed ? 0.7 : 1,
-                    })}
-                  >
-                    <Text
-                      style={{
-                        color: colors.onSurface,
-                        fontFamily: fonts.bodyBold,
-                        fontSize: 12,
-                      }}
-                    >
-                      {p.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
 
             {/* Input Bar */}
             <GlassCard padding={6}>
@@ -358,8 +356,9 @@ export default function ChatScreen() {
                 <TextInput
                   value={inputText}
                   onChangeText={setInputText}
-                  placeholder={isIt ? 'Chiedi a BORO...' : 'Ask BORO...'}
+                  placeholder="Scrivi un messaggio nella community..."
                   placeholderTextColor={colors.onSurfaceVariant}
+                  maxLength={160}
                   style={{
                     flex: 1,
                     color: colors.onSurface,
@@ -368,10 +367,10 @@ export default function ChatScreen() {
                     paddingHorizontal: 12,
                     height: 40,
                   }}
-                  onSubmitEditing={() => handleSend(inputText)}
+                  onSubmitEditing={handleSend}
                 />
                 <Pressable
-                  onPress={() => handleSend(inputText)}
+                  onPress={handleSend}
                   style={({ pressed }) => ({
                     width: 36,
                     height: 36,
@@ -396,4 +395,3 @@ export default function ChatScreen() {
     </View>
   );
 }
-

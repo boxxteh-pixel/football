@@ -12,14 +12,22 @@ export interface AppSettings {
   liveNotifications: boolean;
   language: AppLocale;
   colorTheme: ColorTheme;
+  oledMode: boolean;
+  riskProfile: 'default' | 'conservative' | 'aggressive';
+  timezone: string;
+  newsFrequency: 'always' | 'daily' | 'off';
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   selectedLeagueIds: DEFAULT_LEAGUE_IDS,
   oddsFormat: 'decimal',
   liveNotifications: true,
-  language: 'en',
+  language: 'it', // Default to Italian
   colorTheme: 'green',
+  oledMode: false,
+  riskProfile: 'default',
+  timezone: 'Europe/Rome', // Default to Italian Timezone
+  newsFrequency: 'always',
 };
 
 export const readSettings = async (): Promise<AppSettings> => {

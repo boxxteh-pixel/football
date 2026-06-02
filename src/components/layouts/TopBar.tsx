@@ -82,7 +82,16 @@ export const TopBar: React.FC<TopBarProps> = ({
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {showBack ? (
-            <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Pressable
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/');
+                }
+              }}
+              hitSlop={12}
+            >
               <BoroIcon name="arrow-back" size={26} color={colors.primaryFixed} />
             </Pressable>
           ) : null}

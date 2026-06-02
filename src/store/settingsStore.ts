@@ -58,6 +58,10 @@ interface SettingsState {
   setLiveNotifications: (enabled: boolean) => Promise<void>;
   setLanguage: (language: AppSettings['language']) => Promise<void>;
   setColorTheme: (theme: ColorTheme) => Promise<void>;
+  setOledMode: (enabled: boolean) => Promise<void>;
+  setRiskProfile: (profile: AppSettings['riskProfile']) => Promise<void>;
+  setTimezone: (timezone: string) => Promise<void>;
+  setNewsFrequency: (frequency: AppSettings['newsFrequency']) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -135,5 +139,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ settings });
     // Note: colorTheme is kept local-only since it is a device appearance config.
     setNativeAppIcon(theme === 'purple' ? 'purple' : null).catch(() => {});
+  },
+  setOledMode: async (enabled) => {
+    const settings = await updateSettings({ oledMode: enabled });
+    set({ settings });
+  },
+  setRiskProfile: async (profile) => {
+    const settings = await updateSettings({ riskProfile: profile });
+    set({ settings });
+  },
+  setTimezone: async (timezone) => {
+    const settings = await updateSettings({ timezone });
+    set({ settings });
+  },
+  setNewsFrequency: async (frequency) => {
+    const settings = await updateSettings({ newsFrequency: frequency });
+    set({ settings });
   },
 }));

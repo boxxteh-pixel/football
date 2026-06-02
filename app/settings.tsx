@@ -174,6 +174,127 @@ export default function SettingsScreen() {
                 </Text>
               </Pressable>
             </View>
+
+            <View
+              style={{
+                height: 1,
+                backgroundColor: 'rgba(255,255,255,0.04)',
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+              }}
+            >
+              <View style={{ flex: 1, marginRight: 16 }}>
+                <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
+                  Notte Estrema (OLED)
+                </Text>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12, marginTop: 2 }}>
+                  Spegni completamente lo sfondo per la massima durata di batteria su schermi OLED.
+                </Text>
+              </View>
+              <Switch
+                value={settings.oledMode}
+                onValueChange={(v) => {
+                  haptics.light();
+                  useSettingsStore.getState().setOledMode(v);
+                }}
+                thumbColor={settings.oledMode ? colors.primaryFixed : '#666'}
+                trackColor={{ true: colors.accent40, false: 'rgba(255,255,255,0.1)' }}
+              />
+            </View>
+          </GlassCard>
+        </Section>
+
+        <Section title="CALIBRO DEL RISCHIO AI">
+          <GlassCard padding={4}>
+            {(['default', 'conservative', 'aggressive'] as const).map((profile, idx) => {
+              const active = settings.riskProfile === profile || (profile === 'default' && !settings.riskProfile);
+              const label = profile === 'default' ? 'Default (Bilanciato)' : profile === 'conservative' ? 'Prudente (Massima Sicurezza)' : 'Aggressivo (Value Odds)';
+              const sub = profile === 'default' ? 'I pronostici standard calibrati dall\'algoritmo.' : profile === 'conservative' ? 'Predilige partite ad altissima probabilità (>80%) ed ELITE.' : 'Cerca quote di valore e potenziali sbilanciamenti di mercato.';
+              return (
+                <React.Fragment key={profile}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)' }} />}
+                  <Pressable
+                    onPress={() => {
+                      haptics.light();
+                      useSettingsStore.getState().setRiskProfile(profile);
+                    }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: active ? colors.accent04 : 'transparent' }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: active ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>{label}</Text>
+                        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11, marginTop: 2 }}>{sub}</Text>
+                      </View>
+                      {active && <BoroIcon name="check" size={20} color={colors.primaryFixed} />}
+                    </View>
+                  </Pressable>
+                </React.Fragment>
+              );
+            })}
+          </GlassCard>
+        </Section>
+
+        <Section title="FUSO ORARIO">
+          <GlassCard padding={4}>
+            {['Europe/Rome', 'Europe/London', 'America/New_York'].map((tz, idx) => {
+              const active = settings.timezone === tz || (tz === 'Europe/Rome' && !settings.timezone);
+              const label = tz === 'Europe/Rome' ? 'Italia (Europe/Rome - default)' : tz === 'Europe/London' ? 'Regno Unito (GMT/BST)' : 'Stati Uniti Est (EST/EDT)';
+              return (
+                <React.Fragment key={tz}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)' }} />}
+                  <Pressable
+                    onPress={() => {
+                      haptics.light();
+                      useSettingsStore.getState().setTimezone(tz);
+                    }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: active ? colors.accent04 : 'transparent' }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={{ color: active ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>{label}</Text>
+                      {active && <BoroIcon name="check" size={20} color={colors.primaryFixed} />}
+                    </View>
+                  </Pressable>
+                </React.Fragment>
+              );
+            })}
+          </GlassCard>
+        </Section>
+
+        <Section title="FEED NOTIZIE AI">
+          <GlassCard padding={4}>
+            {(['always', 'daily', 'off'] as const).map((freq, idx) => {
+              const active = settings.newsFrequency === freq || (freq === 'always' && !settings.newsFrequency);
+              const label = freq === 'always' ? 'Sempre Attivo' : freq === 'daily' ? 'Solo Sommario Giornaliero' : 'Disattivato';
+              const sub = freq === 'always' ? 'Aggiornamenti in tempo reale su infortuni, squalifiche e news tattiche.' : freq === 'daily' ? 'Ricevi un unico report quotidiano al mattino.' : 'Nessuna notizia o notifica sul feed notizie.';
+              return (
+                <React.Fragment key={freq}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)' }} />}
+                  <Pressable
+                    onPress={() => {
+                      haptics.light();
+                      useSettingsStore.getState().setNewsFrequency(freq);
+                    }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: active ? colors.accent04 : 'transparent' }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: active ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>{label}</Text>
+                        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11, marginTop: 2 }}>{sub}</Text>
+                      </View>
+                      {active && <BoroIcon name="check" size={20} color={colors.primaryFixed} />}
+                    </View>
+                  </Pressable>
+                </React.Fragment>
+              );
+            })}
           </GlassCard>
         </Section>
 

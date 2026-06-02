@@ -1,0 +1,2932 @@
+﻿[
+    {
+        "id":  2,
+        "sportmonksId":  2,
+        "name":  "Champions League",
+        "shortName":  "Champions Leagu",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  5,
+        "sportmonksId":  5,
+        "name":  "Europa League",
+        "shortName":  "Europa League",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  8,
+        "sportmonksId":  8,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  9,
+        "sportmonksId":  9,
+        "name":  "Championship",
+        "shortName":  "Championship",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  12,
+        "sportmonksId":  12,
+        "name":  "League One",
+        "shortName":  "League One",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  14,
+        "sportmonksId":  14,
+        "name":  "League Two",
+        "shortName":  "League Two",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  17,
+        "sportmonksId":  17,
+        "name":  "Enterprise National League",
+        "shortName":  "Enterprise Nati",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  20,
+        "sportmonksId":  20,
+        "name":  "Enterprise National League North",
+        "shortName":  "Enterprise Nati",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  23,
+        "sportmonksId":  23,
+        "name":  "Community Shield",
+        "shortName":  "Community Shiel",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  24,
+        "sportmonksId":  24,
+        "name":  "FA Cup",
+        "shortName":  "FA Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  27,
+        "sportmonksId":  27,
+        "name":  "Carabao Cup",
+        "shortName":  "Carabao Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  30,
+        "sportmonksId":  30,
+        "name":  "Fa Trophy",
+        "shortName":  "Fa Trophy",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  32,
+        "sportmonksId":  32,
+        "name":  "Premier League Cup",
+        "shortName":  "Premier League ",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  35,
+        "sportmonksId":  35,
+        "name":  "Premier League U21",
+        "shortName":  "Premier League ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  38,
+        "sportmonksId":  38,
+        "name":  "Premier League International Cup",
+        "shortName":  "Premier League ",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  39,
+        "sportmonksId":  39,
+        "name":  "EFL Trophy",
+        "shortName":  "EFL Trophy",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  44,
+        "sportmonksId":  44,
+        "name":  "Wsl 2 Women",
+        "shortName":  "Wsl 2 Women",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  45,
+        "sportmonksId":  45,
+        "name":  "Women\u0027s Super League",
+        "shortName":  "Women\u0027s Super L",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  72,
+        "sportmonksId":  72,
+        "name":  "Eredivisie",
+        "shortName":  "Eredivisie",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  74,
+        "sportmonksId":  74,
+        "name":  "Eerste Divisie",
+        "shortName":  "Eerste Divisie",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  77,
+        "sportmonksId":  77,
+        "name":  "Tweede Divisie",
+        "shortName":  "Tweede Divisie",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  78,
+        "sportmonksId":  78,
+        "name":  "KNVB Beker",
+        "shortName":  "KNVB Beker",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  81,
+        "sportmonksId":  81,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  82,
+        "sportmonksId":  82,
+        "name":  "Bundesliga",
+        "shortName":  "Bundesliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  85,
+        "sportmonksId":  85,
+        "name":  "2. Bundesliga",
+        "shortName":  "2. Bundesliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  88,
+        "sportmonksId":  88,
+        "name":  "3. Liga",
+        "shortName":  "3. Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  91,
+        "sportmonksId":  91,
+        "name":  "Regionalliga: Nord",
+        "shortName":  "Regionalliga: N",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  94,
+        "sportmonksId":  94,
+        "name":  "Regionalliga: Bayern",
+        "shortName":  "Regionalliga: B",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  97,
+        "sportmonksId":  97,
+        "name":  "Regionalliga: Nordost",
+        "shortName":  "Regionalliga: N",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  103,
+        "sportmonksId":  103,
+        "name":  "Regionalliga: Südwest",
+        "shortName":  "Regionalliga: S",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  106,
+        "sportmonksId":  106,
+        "name":  "Regionalliga: West",
+        "shortName":  "Regionalliga: W",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  109,
+        "sportmonksId":  109,
+        "name":  "DFB Pokal",
+        "shortName":  "DFB Pokal",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  163,
+        "sportmonksId":  163,
+        "name":  "Bundesliga Play-offs",
+        "shortName":  "Bundesliga Play",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  166,
+        "sportmonksId":  166,
+        "name":  "2. Bundesliga Play-offs",
+        "shortName":  "2. Bundesliga P",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  169,
+        "sportmonksId":  169,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  172,
+        "sportmonksId":  172,
+        "name":  "Superliga",
+        "shortName":  "Superliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  175,
+        "sportmonksId":  175,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  181,
+        "sportmonksId":  181,
+        "name":  "Admiral Bundesliga",
+        "shortName":  "Admiral Bundesl",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  184,
+        "sportmonksId":  184,
+        "name":  "2. Liga",
+        "shortName":  "2. Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  190,
+        "sportmonksId":  190,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  199,
+        "sportmonksId":  199,
+        "name":  "Vysshaya Liga",
+        "shortName":  "Vysshaya Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  208,
+        "sportmonksId":  208,
+        "name":  "Pro League",
+        "shortName":  "Pro League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  211,
+        "sportmonksId":  211,
+        "name":  "Challenger Pro League",
+        "shortName":  "Challenger Pro ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  214,
+        "sportmonksId":  214,
+        "name":  "Belgian Cup",
+        "shortName":  "Belgian Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  220,
+        "sportmonksId":  220,
+        "name":  "Premier Liga",
+        "shortName":  "Premier Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  229,
+        "sportmonksId":  229,
+        "name":  "First League",
+        "shortName":  "First League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  247,
+        "sportmonksId":  247,
+        "name":  "2. HNL",
+        "shortName":  "2. HNL",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  253,
+        "sportmonksId":  253,
+        "name":  "1. Division",
+        "shortName":  "1. Division",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  262,
+        "sportmonksId":  262,
+        "name":  "Chance Liga",
+        "shortName":  "Chance Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  265,
+        "sportmonksId":  265,
+        "name":  "Chance Národní Liga",
+        "shortName":  "Chance Národní ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  271,
+        "sportmonksId":  271,
+        "name":  "Superliga",
+        "shortName":  "Superliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  274,
+        "sportmonksId":  274,
+        "name":  "First Division",
+        "shortName":  "First Division",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  286,
+        "sportmonksId":  286,
+        "name":  "Meistriliiga",
+        "shortName":  "Meistriliiga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  292,
+        "sportmonksId":  292,
+        "name":  "Veikkausliiga",
+        "shortName":  "Veikkausliiga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  295,
+        "sportmonksId":  295,
+        "name":  "Ykkösliiga",
+        "shortName":  "Ykkösliiga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  301,
+        "sportmonksId":  301,
+        "name":  "Ligue 1",
+        "shortName":  "Ligue 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  304,
+        "sportmonksId":  304,
+        "name":  "Ligue 2",
+        "shortName":  "Ligue 2",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  307,
+        "sportmonksId":  307,
+        "name":  "Coupe de France",
+        "shortName":  "Coupe de France",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  310,
+        "sportmonksId":  310,
+        "name":  "Coupe de la Ligue",
+        "shortName":  "Coupe de la Lig",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  313,
+        "sportmonksId":  313,
+        "name":  "National",
+        "shortName":  "National",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  319,
+        "sportmonksId":  319,
+        "name":  "Crystalbet Erovnuli Liga",
+        "shortName":  "Crystalbet Erov",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  325,
+        "sportmonksId":  325,
+        "name":  "Super League",
+        "shortName":  "Super League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  334,
+        "sportmonksId":  334,
+        "name":  "NB I",
+        "shortName":  "NB I",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  345,
+        "sportmonksId":  345,
+        "name":  "Besta deild",
+        "shortName":  "Besta deild",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  360,
+        "sportmonksId":  360,
+        "name":  "Premier Division",
+        "shortName":  "Premier Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  363,
+        "sportmonksId":  363,
+        "name":  "First Division",
+        "shortName":  "First Division",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  372,
+        "sportmonksId":  372,
+        "name":  "Ligat ha\u0027Al",
+        "shortName":  "Ligat ha\u0027Al",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  375,
+        "sportmonksId":  375,
+        "name":  "Liga Leumit",
+        "shortName":  "Liga Leumit",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  384,
+        "sportmonksId":  384,
+        "name":  "Serie A",
+        "shortName":  "Serie A",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  387,
+        "sportmonksId":  387,
+        "name":  "Serie B",
+        "shortName":  "Serie B",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  390,
+        "sportmonksId":  390,
+        "name":  "Coppa Italia",
+        "shortName":  "Coppa Italia",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  393,
+        "sportmonksId":  393,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  399,
+        "sportmonksId":  399,
+        "name":  "Virsliga",
+        "shortName":  "Virsliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  405,
+        "sportmonksId":  405,
+        "name":  "A Lyga",
+        "shortName":  "A Lyga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  420,
+        "sportmonksId":  420,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  432,
+        "sportmonksId":  432,
+        "name":  "First League",
+        "shortName":  "First League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  438,
+        "sportmonksId":  438,
+        "name":  "Premiership",
+        "shortName":  "Premiership",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  444,
+        "sportmonksId":  444,
+        "name":  "Eliteserien",
+        "shortName":  "Eliteserien",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  447,
+        "sportmonksId":  447,
+        "name":  "1. Division",
+        "shortName":  "1. Division",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  453,
+        "sportmonksId":  453,
+        "name":  "Ekstraklasa",
+        "shortName":  "Ekstraklasa",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  456,
+        "sportmonksId":  456,
+        "name":  "1. Liga",
+        "shortName":  "1. Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  459,
+        "sportmonksId":  459,
+        "name":  "Polish Cup",
+        "shortName":  "Polish Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  462,
+        "sportmonksId":  462,
+        "name":  "Liga Portugal",
+        "shortName":  "Liga Portugal",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  465,
+        "sportmonksId":  465,
+        "name":  "Liga Portugal 2",
+        "shortName":  "Liga Portugal 2",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  468,
+        "sportmonksId":  468,
+        "name":  "Taça De Portugal",
+        "shortName":  "Taça De Portuga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  471,
+        "sportmonksId":  471,
+        "name":  "Taça da Liga",
+        "shortName":  "Taça da Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  474,
+        "sportmonksId":  474,
+        "name":  "Superliga",
+        "shortName":  "Superliga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  486,
+        "sportmonksId":  486,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  489,
+        "sportmonksId":  489,
+        "name":  "FNL",
+        "shortName":  "FNL",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  492,
+        "sportmonksId":  492,
+        "name":  "Russian Cup",
+        "shortName":  "Russian Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  498,
+        "sportmonksId":  498,
+        "name":  "Youth League",
+        "shortName":  "Youth League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  501,
+        "sportmonksId":  501,
+        "name":  "Premiership",
+        "shortName":  "Premiership",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  504,
+        "sportmonksId":  504,
+        "name":  "Championship",
+        "shortName":  "Championship",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  507,
+        "sportmonksId":  507,
+        "name":  "Scottish Cup",
+        "shortName":  "Scottish Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  510,
+        "sportmonksId":  510,
+        "name":  "League Cup",
+        "shortName":  "League Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  513,
+        "sportmonksId":  513,
+        "name":  "Premiership Play-Offs",
+        "shortName":  "Premiership Pla",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  516,
+        "sportmonksId":  516,
+        "name":  "League One",
+        "shortName":  "League One",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  519,
+        "sportmonksId":  519,
+        "name":  "League Two",
+        "shortName":  "League Two",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  531,
+        "sportmonksId":  531,
+        "name":  "Super Liga",
+        "shortName":  "Super Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  534,
+        "sportmonksId":  534,
+        "name":  "Prva Liga",
+        "shortName":  "Prva Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  540,
+        "sportmonksId":  540,
+        "name":  "Niké Liga",
+        "shortName":  "Niké Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  555,
+        "sportmonksId":  555,
+        "name":  "1. SNL",
+        "shortName":  "1. SNL",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  564,
+        "sportmonksId":  564,
+        "name":  "La Liga",
+        "shortName":  "La Liga",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  567,
+        "sportmonksId":  567,
+        "name":  "La Liga 2",
+        "shortName":  "La Liga 2",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  570,
+        "sportmonksId":  570,
+        "name":  "Copa Del Rey",
+        "shortName":  "Copa Del Rey",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  573,
+        "sportmonksId":  573,
+        "name":  "Allsvenskan",
+        "shortName":  "Allsvenskan",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  576,
+        "sportmonksId":  576,
+        "name":  "Damallsvenskan",
+        "shortName":  "Damallsvenskan",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  579,
+        "sportmonksId":  579,
+        "name":  "Superettan",
+        "shortName":  "Superettan",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  585,
+        "sportmonksId":  585,
+        "name":  "Ettan: North",
+        "shortName":  "Ettan: North",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  588,
+        "sportmonksId":  588,
+        "name":  "Ettan: South",
+        "shortName":  "Ettan: South",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  591,
+        "sportmonksId":  591,
+        "name":  "Super League",
+        "shortName":  "Super League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  594,
+        "sportmonksId":  594,
+        "name":  "Challenge League",
+        "shortName":  "Challenge Leagu",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  600,
+        "sportmonksId":  600,
+        "name":  "Super Lig",
+        "shortName":  "Super Lig",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  603,
+        "sportmonksId":  603,
+        "name":  "1. Lig",
+        "shortName":  "1. Lig",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  606,
+        "sportmonksId":  606,
+        "name":  "Turkish Cup",
+        "shortName":  "Turkish Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  609,
+        "sportmonksId":  609,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  624,
+        "sportmonksId":  624,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  636,
+        "sportmonksId":  636,
+        "name":  "Liga Profesional de Fútbol",
+        "shortName":  "Liga Profesiona",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  639,
+        "sportmonksId":  639,
+        "name":  "Torneo Federal B - Pampeana Norte",
+        "shortName":  "Torneo Federal ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  642,
+        "sportmonksId":  642,
+        "name":  "Copa Argentina",
+        "shortName":  "Copa Argentina",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  645,
+        "sportmonksId":  645,
+        "name":  "Primera B Nacional",
+        "shortName":  "Primera B Nacio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  648,
+        "sportmonksId":  648,
+        "name":  "Serie A",
+        "shortName":  "Serie A",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  651,
+        "sportmonksId":  651,
+        "name":  "Serie B",
+        "shortName":  "Serie B",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  654,
+        "sportmonksId":  654,
+        "name":  "Copa do Brasil",
+        "shortName":  "Copa do Brasil",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  657,
+        "sportmonksId":  657,
+        "name":  "Serie C",
+        "shortName":  "Serie C",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  660,
+        "sportmonksId":  660,
+        "name":  "Serie D",
+        "shortName":  "Serie D",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  663,
+        "sportmonksId":  663,
+        "name":  "Primera Division",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  666,
+        "sportmonksId":  666,
+        "name":  "Primera B",
+        "shortName":  "Primera B",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  672,
+        "sportmonksId":  672,
+        "name":  "Liga BetPlay",
+        "shortName":  "Liga BetPlay",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  678,
+        "sportmonksId":  678,
+        "name":  "Primera B",
+        "shortName":  "Primera B",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  687,
+        "sportmonksId":  687,
+        "name":  "Primera Division",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  696,
+        "sportmonksId":  696,
+        "name":  "Liga Pro",
+        "shortName":  "Liga Pro",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  711,
+        "sportmonksId":  711,
+        "name":  "CAF World Cup Qualifiers",
+        "shortName":  "CAF World Cup Q",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  714,
+        "sportmonksId":  714,
+        "name":  "WC Qualification Asia",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  717,
+        "sportmonksId":  717,
+        "name":  "WC Qualification Concacaf",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  720,
+        "sportmonksId":  720,
+        "name":  "WC Qualification Europe",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  723,
+        "sportmonksId":  723,
+        "name":  "WC Qualification Oceania",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  726,
+        "sportmonksId":  726,
+        "name":  "WC Qualification South America",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  729,
+        "sportmonksId":  729,
+        "name":  "WC Qualification Intercontinental Playoffs",
+        "shortName":  "WC Qualificatio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  732,
+        "sportmonksId":  732,
+        "name":  "World Cup",
+        "shortName":  "World Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  743,
+        "sportmonksId":  743,
+        "name":  "Liga MX",
+        "shortName":  "Liga MX",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  746,
+        "sportmonksId":  746,
+        "name":  "Copa MX",
+        "shortName":  "Copa MX",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  749,
+        "sportmonksId":  749,
+        "name":  "Liga de Expansión MX",
+        "shortName":  "Liga de Expansi",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  755,
+        "sportmonksId":  755,
+        "name":  "Division 1",
+        "shortName":  "Division 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  764,
+        "sportmonksId":  764,
+        "name":  "Primera Division",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  767,
+        "sportmonksId":  767,
+        "name":  "Segunda Division",
+        "shortName":  "Segunda Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  770,
+        "sportmonksId":  770,
+        "name":  "Primera Division",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  779,
+        "sportmonksId":  779,
+        "name":  "Major League Soccer",
+        "shortName":  "Major League So",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  782,
+        "sportmonksId":  782,
+        "name":  "US Open Cup",
+        "shortName":  "US Open Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  788,
+        "sportmonksId":  788,
+        "name":  "NASL",
+        "shortName":  "NASL",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  791,
+        "sportmonksId":  791,
+        "name":  "USL Championship",
+        "shortName":  "USL Championshi",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  800,
+        "sportmonksId":  800,
+        "name":  "Primera Division",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  806,
+        "sportmonksId":  806,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  809,
+        "sportmonksId":  809,
+        "name":  "Ligue 1",
+        "shortName":  "Ligue 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  827,
+        "sportmonksId":  827,
+        "name":  "Ligue 1",
+        "shortName":  "Ligue 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  830,
+        "sportmonksId":  830,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  851,
+        "sportmonksId":  851,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  860,
+        "sportmonksId":  860,
+        "name":  "Botola Pro",
+        "shortName":  "Botola Pro",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  902,
+        "sportmonksId":  902,
+        "name":  "Persian Gulf Pro League",
+        "shortName":  "Persian Gulf Pr",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  911,
+        "sportmonksId":  911,
+        "name":  "Iraqi League",
+        "shortName":  "Iraqi League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  920,
+        "sportmonksId":  920,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  923,
+        "sportmonksId":  923,
+        "name":  "Zain Premier League",
+        "shortName":  "Zain Premier Le",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  935,
+        "sportmonksId":  935,
+        "name":  "Professional League",
+        "shortName":  "Professional Le",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  938,
+        "sportmonksId":  938,
+        "name":  "Stars League",
+        "shortName":  "Stars League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  944,
+        "sportmonksId":  944,
+        "name":  "Pro League",
+        "shortName":  "Pro League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  947,
+        "sportmonksId":  947,
+        "name":  "Division 1",
+        "shortName":  "Division 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  950,
+        "sportmonksId":  950,
+        "name":  "Kings Cup",
+        "shortName":  "Kings Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  956,
+        "sportmonksId":  956,
+        "name":  "Ligue 1",
+        "shortName":  "Ligue 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  959,
+        "sportmonksId":  959,
+        "name":  "UAE Pro League",
+        "shortName":  "UAE Pro League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  968,
+        "sportmonksId":  968,
+        "name":  "J1 League",
+        "shortName":  "J1 League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  971,
+        "sportmonksId":  971,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  983,
+        "sportmonksId":  983,
+        "name":  "Canadian Soccer League",
+        "shortName":  "Canadian Soccer",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  989,
+        "sportmonksId":  989,
+        "name":  "Super League",
+        "shortName":  "Super League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  992,
+        "sportmonksId":  992,
+        "name":  "League One",
+        "shortName":  "League One",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1007,
+        "sportmonksId":  1007,
+        "name":  "Indian Super League",
+        "shortName":  "Indian Super Le",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1016,
+        "sportmonksId":  1016,
+        "name":  "Indonesia Championship",
+        "shortName":  "Indonesia Champ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1019,
+        "sportmonksId":  1019,
+        "name":  "Liga 1",
+        "shortName":  "Liga 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1022,
+        "sportmonksId":  1022,
+        "name":  "J2-League",
+        "shortName":  "J2-League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1025,
+        "sportmonksId":  1025,
+        "name":  "J3-League",
+        "shortName":  "J3-League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1028,
+        "sportmonksId":  1028,
+        "name":  "Emperor Cup",
+        "shortName":  "Emperor Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1031,
+        "sportmonksId":  1031,
+        "name":  "J-League Cup",
+        "shortName":  "J-League Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1034,
+        "sportmonksId":  1034,
+        "name":  "K League 1",
+        "shortName":  "K League 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1049,
+        "sportmonksId":  1049,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1064,
+        "sportmonksId":  1064,
+        "name":  "Thai Premier League",
+        "shortName":  "Thai Premier Le",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1067,
+        "sportmonksId":  1067,
+        "name":  "Thai League Two",
+        "shortName":  "Thai League Two",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1073,
+        "sportmonksId":  1073,
+        "name":  "V-League",
+        "shortName":  "V-League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1082,
+        "sportmonksId":  1082,
+        "name":  "Friendly International",
+        "shortName":  "Friendly Intern",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1085,
+        "sportmonksId":  1085,
+        "name":  "AFC Champions League Elite",
+        "shortName":  "AFC Champions L",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1088,
+        "sportmonksId":  1088,
+        "name":  "AFC Champions League Two",
+        "shortName":  "AFC Champions L",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1092,
+        "sportmonksId":  1092,
+        "name":  "Enterprise National League South",
+        "shortName":  "Enterprise Nati",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1098,
+        "sportmonksId":  1098,
+        "name":  "Liga De Futbol Prof",
+        "shortName":  "Liga De Futbol ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1101,
+        "sportmonksId":  1101,
+        "name":  "Club Friendlies 1",
+        "shortName":  "Club Friendlies",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1103,
+        "sportmonksId":  1103,
+        "name":  "African Nations Championship",
+        "shortName":  "African Nations",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1104,
+        "sportmonksId":  1104,
+        "name":  "ASEAN Championship",
+        "shortName":  "ASEAN Champions",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1105,
+        "sportmonksId":  1105,
+        "name":  "AFC Asian Cup",
+        "shortName":  "AFC Asian Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1106,
+        "sportmonksId":  1106,
+        "name":  "Asian Cup Qualification",
+        "shortName":  "Asian Cup Quali",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1107,
+        "sportmonksId":  1107,
+        "name":  "CAF Champions League",
+        "shortName":  "CAF Champions L",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1108,
+        "sportmonksId":  1108,
+        "name":  "CAF Confederations Cup",
+        "shortName":  "CAF Confederati",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1111,
+        "sportmonksId":  1111,
+        "name":  "CONCACAF Champions Cup",
+        "shortName":  "CONCACAF Champi",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1112,
+        "sportmonksId":  1112,
+        "name":  "CONCACAF Gold Cup",
+        "shortName":  "CONCACAF Gold C",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1114,
+        "sportmonksId":  1114,
+        "name":  "Copa America",
+        "shortName":  "Copa America",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1116,
+        "sportmonksId":  1116,
+        "name":  "Copa Sudamericana",
+        "shortName":  "Copa Sudamerica",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1117,
+        "sportmonksId":  1117,
+        "name":  "Africa Cup of Nations",
+        "shortName":  "Africa Cup of N",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1118,
+        "sportmonksId":  1118,
+        "name":  "Africa Cup of Nations Qualifications",
+        "shortName":  "Africa Cup of N",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1119,
+        "sportmonksId":  1119,
+        "name":  "EAFF E-1 Football Championship",
+        "shortName":  "EAFF E-1 Footba",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1122,
+        "sportmonksId":  1122,
+        "name":  "Copa Libertadores",
+        "shortName":  "Copa Libertador",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1123,
+        "sportmonksId":  1123,
+        "name":  "OFC Champions League",
+        "shortName":  "OFC Champions L",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1124,
+        "sportmonksId":  1124,
+        "name":  "OFC Nations Cup",
+        "shortName":  "OFC Nations Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1125,
+        "sportmonksId":  1125,
+        "name":  "Olympic Games",
+        "shortName":  "Olympic Games",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1126,
+        "sportmonksId":  1126,
+        "name":  "Olympic Games Women",
+        "shortName":  "Olympic Games W",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1127,
+        "sportmonksId":  1127,
+        "name":  "SAFF Championship",
+        "shortName":  "SAFF Championsh",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1128,
+        "sportmonksId":  1128,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1176,
+        "sportmonksId":  1176,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1202,
+        "sportmonksId":  1202,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1203,
+        "sportmonksId":  1203,
+        "name":  "Serie C: Girone A",
+        "shortName":  "Serie C: Girone",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1204,
+        "sportmonksId":  1204,
+        "name":  "Serie C: Girone B",
+        "shortName":  "Serie C: Girone",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1205,
+        "sportmonksId":  1205,
+        "name":  "Serie C: Girone C",
+        "shortName":  "Serie C: Girone",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1224,
+        "sportmonksId":  1224,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1251,
+        "sportmonksId":  1251,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1291,
+        "sportmonksId":  1291,
+        "name":  "Baiano 1",
+        "shortName":  "Baiano 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1294,
+        "sportmonksId":  1294,
+        "name":  "Copa do Nordeste",
+        "shortName":  "Copa do Nordest",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1296,
+        "sportmonksId":  1296,
+        "name":  "Carioca Serie A",
+        "shortName":  "Carioca Serie A",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1300,
+        "sportmonksId":  1300,
+        "name":  "Cearense 1",
+        "shortName":  "Cearense 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1302,
+        "sportmonksId":  1302,
+        "name":  "Gaucho 1",
+        "shortName":  "Gaucho 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1307,
+        "sportmonksId":  1307,
+        "name":  "Mineiro 1",
+        "shortName":  "Mineiro 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1311,
+        "sportmonksId":  1311,
+        "name":  "Paranaense 1",
+        "shortName":  "Paranaense 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1313,
+        "sportmonksId":  1313,
+        "name":  "Paulista A1",
+        "shortName":  "Paulista A1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1316,
+        "sportmonksId":  1316,
+        "name":  "Pernambucano 1",
+        "shortName":  "Pernambucano 1",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1325,
+        "sportmonksId":  1325,
+        "name":  "Euro Qualification",
+        "shortName":  "Euro Qualificat",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1326,
+        "sportmonksId":  1326,
+        "name":  "European Championship",
+        "shortName":  "European Champi",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1327,
+        "sportmonksId":  1327,
+        "name":  "Euro U21",
+        "shortName":  "Euro U21",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1328,
+        "sportmonksId":  1328,
+        "name":  "UEFA Super Cup",
+        "shortName":  "UEFA Super Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1329,
+        "sportmonksId":  1329,
+        "name":  "UEFA Youth League",
+        "shortName":  "UEFA Youth Leag",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1355,
+        "sportmonksId":  1355,
+        "name":  "Euro U19",
+        "shortName":  "Euro U19",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1356,
+        "sportmonksId":  1356,
+        "name":  "A-League Men",
+        "shortName":  "A-League Men",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1362,
+        "sportmonksId":  1362,
+        "name":  "K League 2",
+        "shortName":  "K League 2",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1363,
+        "sportmonksId":  1363,
+        "name":  "Friendly International Women",
+        "shortName":  "Friendly Intern",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1364,
+        "sportmonksId":  1364,
+        "name":  "World Cup U20",
+        "shortName":  "World Cup U20",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1369,
+        "sportmonksId":  1369,
+        "name":  "World Cup Women",
+        "shortName":  "World Cup Women",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1371,
+        "sportmonksId":  1371,
+        "name":  "UEFA Europa League Play-offs",
+        "shortName":  "UEFA Europa Lea",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1379,
+        "sportmonksId":  1379,
+        "name":  "Cosafa Cup",
+        "shortName":  "Cosafa Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1389,
+        "sportmonksId":  1389,
+        "name":  "UEFA Women\u0027s EURO",
+        "shortName":  "UEFA Women\u0027s EU",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1403,
+        "sportmonksId":  1403,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1412,
+        "sportmonksId":  1412,
+        "name":  "Egypt Cup",
+        "shortName":  "Egypt Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1419,
+        "sportmonksId":  1419,
+        "name":  "UEFA Women\u0027s Champions League",
+        "shortName":  "UEFA Women\u0027s Ch",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1434,
+        "sportmonksId":  1434,
+        "name":  "Atlantic Cup",
+        "shortName":  "Atlantic Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1450,
+        "sportmonksId":  1450,
+        "name":  "Coppa Italia Serie C",
+        "shortName":  "Coppa Italia Se",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1452,
+        "sportmonksId":  1452,
+        "name":  "FIFA Intercontinental Cup",
+        "shortName":  "FIFA Interconti",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1479,
+        "sportmonksId":  1479,
+        "name":  "Concacaf League",
+        "shortName":  "Concacaf League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1502,
+        "sportmonksId":  1502,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1538,
+        "sportmonksId":  1538,
+        "name":  "UEFA Nations League",
+        "shortName":  "UEFA Nations Le",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1546,
+        "sportmonksId":  1546,
+        "name":  "Central American \u0026 Caribbean Games",
+        "shortName":  "Central America",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1555,
+        "sportmonksId":  1555,
+        "name":  "Asian Games",
+        "shortName":  "Asian Games",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1557,
+        "sportmonksId":  1557,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1568,
+        "sportmonksId":  1568,
+        "name":  "Primera Division Women",
+        "shortName":  "Primera Divisio",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1578,
+        "sportmonksId":  1578,
+        "name":  "Serie A Women",
+        "shortName":  "Serie A Women",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1583,
+        "sportmonksId":  1583,
+        "name":  "A-League Women",
+        "shortName":  "A-League Women",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1607,
+        "sportmonksId":  1607,
+        "name":  "USL League One",
+        "shortName":  "USL League One",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1631,
+        "sportmonksId":  1631,
+        "name":  "Brasileiro Women",
+        "shortName":  "Brasileiro Wome",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1658,
+        "sportmonksId":  1658,
+        "name":  "Copa de la Superliga",
+        "shortName":  "Copa de la Supe",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1659,
+        "sportmonksId":  1659,
+        "name":  "Superliga Play-offs",
+        "shortName":  "Superliga Play-",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1673,
+        "sportmonksId":  1673,
+        "name":  "Ligue 1 Play-offs",
+        "shortName":  "Ligue 1 Play-of",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1681,
+        "sportmonksId":  1681,
+        "name":  "Super League Play-offs",
+        "shortName":  "Super League Pl",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1682,
+        "sportmonksId":  1682,
+        "name":  "Parva Liga - Play-offs",
+        "shortName":  "Parva Liga - Pl",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1689,
+        "sportmonksId":  1689,
+        "name":  "Premier League",
+        "shortName":  "Premier League",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1690,
+        "sportmonksId":  1690,
+        "name":  "King\u0027s Cup",
+        "shortName":  "King\u0027s Cup",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  1691,
+        "sportmonksId":  1691,
+        "name":  "Premier League - Playoffs",
+        "shortName":  "Premier League ",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1714,
+        "sportmonksId":  1714,
+        "name":  "Pacific Games",
+        "shortName":  "Pacific Games",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1729,
+        "sportmonksId":  1729,
+        "name":  "Southeast Asian Games",
+        "shortName":  "Southeast Asian",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1740,
+        "sportmonksId":  1740,
+        "name":  "Google Pixel Frauen-Bundesliga",
+        "shortName":  "Google Pixel Fr",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  1741,
+        "sportmonksId":  1741,
+        "name":  "CONCACAF Nations League",
+        "shortName":  "CONCACAF Nation",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1742,
+        "sportmonksId":  1742,
+        "name":  "CONCACAF Nations League Qualification",
+        "shortName":  "CONCACAF Nation",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1784,
+        "sportmonksId":  1784,
+        "name":  "CONMEBOL Pre-Olympic Tournament",
+        "shortName":  "CONMEBOL Pre-Ol",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  1797,
+        "sportmonksId":  1797,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1798,
+        "sportmonksId":  1798,
+        "name":  "Supercopa do Brasil",
+        "shortName":  "Supercopa do Br",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1885,
+        "sportmonksId":  1885,
+        "name":  "Nwsl Challenge Cup Women",
+        "shortName":  "Nwsl Challenge ",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1989,
+        "sportmonksId":  1989,
+        "name":  "Qatar Prince Cup",
+        "shortName":  "Qatar Prince Cu",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  1990,
+        "sportmonksId":  1990,
+        "name":  "Super Cup",
+        "shortName":  "Super Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  2040,
+        "sportmonksId":  2040,
+        "name":  "Olympic Qualifying Concacaf",
+        "shortName":  "Olympic Qualify",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  2286,
+        "sportmonksId":  2286,
+        "name":  "Europa Conference League",
+        "shortName":  "Europa Conferen",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  2321,
+        "sportmonksId":  2321,
+        "name":  "CONCACAF Gold Cup Qualification",
+        "shortName":  "CONCACAF Gold C",
+        "country":  "International",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  true
+    },
+    {
+        "id":  2328,
+        "sportmonksId":  2328,
+        "name":  "NWSL",
+        "shortName":  "NWSL",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  2450,
+        "sportmonksId":  2450,
+        "name":  "Club Friendlies 2",
+        "shortName":  "Club Friendlies",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  2451,
+        "sportmonksId":  2451,
+        "name":  "Club Friendlies 3",
+        "shortName":  "Club Friendlies",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  2452,
+        "sportmonksId":  2452,
+        "name":  "Club Friendlies 4",
+        "shortName":  "Club Friendlies",
+        "country":  "World",
+        "emoji":  "ðŸ¤",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  2528,
+        "sportmonksId":  2528,
+        "name":  "League Cup",
+        "shortName":  "League Cup",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  2545,
+        "sportmonksId":  2545,
+        "name":  "MLS Next Pro",
+        "shortName":  "MLS Next Pro",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  2679,
+        "sportmonksId":  2679,
+        "name":  "African Nations Championship Qualification",
+        "shortName":  "African Nations",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  3232,
+        "sportmonksId":  3232,
+        "name":  "Olympic Qualifying: Oceania",
+        "shortName":  "Olympic Qualify",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  3320,
+        "sportmonksId":  3320,
+        "name":  "All Africa Games",
+        "shortName":  "All Africa Game",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    },
+    {
+        "id":  3360,
+        "sportmonksId":  3360,
+        "name":  "Olympics Intercontinental Play-offs",
+        "shortName":  "Olympics Interc",
+        "country":  "World",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  false
+    },
+    {
+        "id":  3412,
+        "sportmonksId":  3412,
+        "name":  "FIFA Club World Cup",
+        "shortName":  "FIFA Club World",
+        "country":  "World",
+        "emoji":  "ðŸ†",
+        "isCup":  true,
+        "isInternational":  false
+    },
+    {
+        "id":  3431,
+        "sportmonksId":  3431,
+        "name":  "EAFF Football Championship Qualification",
+        "shortName":  "EAFF Football C",
+        "country":  "International",
+        "emoji":  "âš½",
+        "isCup":  false,
+        "isInternational":  true
+    }
+]

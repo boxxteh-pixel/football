@@ -134,10 +134,41 @@ export const colors = greenPalette;
 /** Reactive hook — returns the current theme palette. */
 export function useColors(): BoroColors {
   const theme = useSettingsStore((s) => s.settings.colorTheme);
-  return theme === 'purple' ? purplePalette : greenPalette;
+  const oledMode = useSettingsStore((s) => s.settings.oledMode);
+  
+  const activePalette = theme === 'purple' ? purplePalette : greenPalette;
+  
+  if (oledMode) {
+    return {
+      ...activePalette,
+      background: '#000000',
+      surface: '#000000',
+      surfaceDim: '#000000',
+      surfaceContainer: '#0a0a0a',
+      surfaceContainerLow: '#070707',
+      surfaceContainerLowest: '#000000',
+    };
+  }
+  
+  return activePalette;
 }
 
 /** Get palette by theme name (for non-hook contexts). */
 export function getColorsByTheme(theme: ColorTheme): BoroColors {
+  const oledMode = useSettingsStore.getState().settings.oledMode;
+  const activePalette = theme === 'purple' ? purplePalette : greenPalette;
+  
+  if (oledMode) {
+    return {
+      ...activePalette,
+      background: '#000000',
+      surface: '#000000',
+      surfaceDim: '#000000',
+      surfaceContainer: '#0a0a0a',
+      surfaceContainerLow: '#070707',
+      surfaceContainerLowest: '#000000',
+    };
+  }
+  
   return theme === 'purple' ? purplePalette : greenPalette;
 }

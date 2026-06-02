@@ -51,6 +51,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'workspace-premium': Lucide.Trophy,
   'square': Lucide.Square,
   'swap-horiz': Lucide.RefreshCw,
+  'share': Lucide.Share2,
   'change-history': Lucide.AlertCircle,
   'favorite': Lucide.Heart,
   'favorite-border': Lucide.Heart,
