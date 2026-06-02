@@ -120,8 +120,8 @@ export default function CommunityChatScreen() {
   useEffect(() => {
     if (!hasSetNickname) return;
 
-    // Use PieSocket stable public broadcast channel for reliable real-time messages between all users
-    const wsUrl = 'wss://demo.piesocket.com/v3/boro_chat_room_v2?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV&notify_self=1';
+    // Use the user's dedicated PieSocket BORO cluster for global chat broadcasting
+    const wsUrl = 'wss://free.blr2.piesocket.com/v3/boro_global_chat?api_key=2tTwAggvcqEi0T6JumM94kqR71NIrySWQeWvTNUk&notify_self=1';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
