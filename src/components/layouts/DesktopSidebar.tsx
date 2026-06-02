@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import { Image, Platform, Pressable, Text, View } from 'react-native';
-import { router, usePathname } from 'expo-router';
-import { BoroIcon } from '@/components/ui/BoroIcon';
-import { useColors } from '@/theme/colors';
-import { fonts } from '@/theme/typography';
-import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useFavoritesStore } from '@/store/favoritesStore';
-import { useRateLimit } from '@/hooks/useRateLimit';
-import { useT } from '@/theme/i18n';
+import React, { useEffect } from "react";
+import { Image, Platform, Pressable, Text, View } from "react-native";
+import { router, usePathname } from "expo-router";
+import { BoroIcon } from "@/components/ui/BoroIcon";
+import { useColors } from "@/theme/colors";
+import { fonts } from "@/theme/typography";
+import { useAuthStore } from "@/store/authStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
+import { useRateLimit } from "@/hooks/useRateLimit";
+import { useT } from "@/theme/i18n";
 
 interface NavItem {
   labelKey: string;
@@ -20,156 +20,155 @@ interface NavItem {
 }
 
 const MAIN_NAV: NavItem[] = [
-  { labelKey: 'tabs.predictor', fallback: 'Predictor', icon: 'analytics', route: '/', exact: true },
-  { labelKey: 'tabs.results', fallback: 'Results', icon: 'history', route: '/live' },
-  { labelKey: 'tabs.chat', fallback: 'Chat', icon: 'chat', route: '/chat' },
+  {
+    labelKey: "tabs.predictor",
+    fallback: "Predictor",
+    icon: "analytics",
+    route: "/",
+    exact: true,
+  },
+  {
+    labelKey: "tabs.results",
+    fallback: "Results",
+    icon: "history",
+    route: "/live",
+  },
+  { labelKey: "tabs.chat", fallback: "Chat", icon: "chat", route: "/chat" },
 ];
 
 const EXPLORE_NAV: NavItem[] = [
-  { labelKey: 'insights.title', fallback: 'Discovery', icon: 'auto-awesome', route: '/insights' },
-  { labelKey: 'favorites.title', fallback: 'Favorites', icon: 'favorite', route: '/favorites' },
+  {
+    labelKey: "insights.title",
+    fallback: "Discovery",
+    icon: "auto-awesome",
+    route: "/insights",
+  },
+  {
+    labelKey: "favorites.title",
+    fallback: "Favorites",
+    icon: "favorite",
+    route: "/favorites",
+  },
 ];
 
 function isActive(pathname: string, item: NavItem): boolean {
-  if (item.exact) return pathname === '/' || pathname === '/index';
-  return pathname === item.route || pathname.startsWith(item.route + '/');
+  if (item.exact) return pathname === "/" || pathname === "/index";
+  return pathname === item.route || pathname.startsWith(item.route + "/");
+}
+
+function navDomId(route: string): string {
+  return route === "/"
+    ? "home"
+    : route.replace(/^\/+/, "").replace(/\//g, "-") || "home";
 }
 
 /**
- * Inject web-only CSS for hover states, transitions, and pseudo-elements.
- * Uses nativeID (which becomes `id` in the DOM) to target sidebar elements,
- * completely bypassing NativeWind's className processing.
+ * Inject web-only CSS for hover states and transitions.
+ * Row ids and label ids intentionally use different prefixes so desktop-only
+ * effects never hit the Text node itself (fixes broken PC sidebar alignment).
  */
-function useInjectSidebarCSS(primaryColor: string, accentRGB: string, accent30: string) {
+function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
 
-    const STYLE_ID = 'boro-sidebar-css';
+    const STYLE_ID = "boro-sidebar-css";
     let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
     if (!style) {
-      style = document.createElement('style');
+      style = document.createElement("style");
       style.id = STYLE_ID;
       document.head.appendChild(style);
     }
 
     style.textContent = `
-      /* --- Sidebar container --- */
       #boro-sidebar {
-        backdrop-filter: blur(32px) saturate(200%) brightness(1.02);
-        -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(1.02);
-        transition: background-color 0.3s ease;
+        backdrop-filter: blur(28px) saturate(180%) brightness(1.02);
+        -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.02);
+        transition: background-color 0.24s ease;
       }
 
-      /* --- Section labels --- */
       .boro-section-label {
         text-transform: uppercase;
         letter-spacing: 1.2px;
         user-select: none;
       }
 
-      /* --- Nav row items --- */
-      [id^="sidebar-nav-"] {
+      [id^="sidebar-row-"] {
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-        position: relative;
+        isolation: isolate;
+        transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease !important;
       }
 
-      [id^="sidebar-nav-"]:hover {
-        transform: translateX(4px);
-        background-color: rgba(255, 255, 255, 0.05) !important;
+      [id^="sidebar-row-"]:hover {
+        transform: translateX(2px);
+        background-color: rgba(255, 255, 255, 0.045) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
       }
 
-      /* Active item styling */
-      [id^="sidebar-nav-"].boro-active {
-        background: linear-gradient(135deg, rgba(${accentRGB}, 0.14) 0%, rgba(${accentRGB}, 0.04) 100%) !important;
-        border-color: rgba(${accentRGB}, 0.25) !important;
-        box-shadow: 0 2px 16px rgba(${accentRGB}, 0.06), inset 0 0 0 1px rgba(${accentRGB}, 0.08);
-      }
-
-      /* Active neon left bar */
-      [id^="sidebar-nav-"]::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 20%;
-        height: 60%;
-        width: 3px;
-        border-radius: 0 4px 4px 0;
-        background-color: transparent;
-        transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-
-      [id^="sidebar-nav-"].boro-active::before {
-        background-color: ${primaryColor} !important;
-        box-shadow: 0 0 12px ${primaryColor}, 0 0 4px ${primaryColor};
-      }
-
-      /* SVG icon transitions */
-      [id^="sidebar-nav-"] svg {
-        transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.2s ease;
+      [id^="sidebar-row-"] svg,
+      #sidebar-action-settings svg,
+      #sidebar-logout-btn svg {
+        display: block;
         flex-shrink: 0;
+        transition: transform 0.16s ease, stroke 0.16s ease;
       }
 
-      [id^="sidebar-nav-"]:hover svg {
-        transform: scale(1.08);
-        stroke: #ffffff !important;
-      }
-
-      [id^="sidebar-nav-"].boro-active svg {
+      [id^="sidebar-row-"]:hover svg,
+      #sidebar-action-settings:hover svg {
+        transform: scale(1.04);
         stroke: ${primaryColor} !important;
       }
 
-      /* Label text transitions */
-      [id^="sidebar-nav-"] [id$="-label"] {
-        transition: color 0.2s ease;
+      [id^="sidebar-label-"] {
+        transition: color 0.16s ease;
       }
 
-      [id^="sidebar-nav-"]:hover [id$="-label"] {
+      [id^="sidebar-row-"]:hover [id^="sidebar-label-"],
+      #sidebar-action-settings:hover [id^="sidebar-label-"] {
         color: #ffffff !important;
       }
 
-      /* Brand hover */
       #sidebar-brand {
         cursor: pointer;
-        transition: opacity 0.25s ease;
+        transition: opacity 0.2s ease;
       }
       #sidebar-brand:hover {
-        opacity: 0.85;
+        opacity: 0.88;
       }
       #sidebar-brand:hover img {
-        transform: rotate(6deg) scale(1.06);
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform: rotate(4deg) scale(1.04);
+        transition: transform 0.28s ease;
       }
 
-      /* API meter */
       #sidebar-api-meter {
-        transition: all 0.3s ease;
+        transition: all 0.24s ease;
       }
       #sidebar-api-meter:hover {
-        border-color: rgba(${accentRGB}, 0.2) !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        border-color: rgba(${accentRGB}, 0.18) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.24);
       }
 
-      /* Account box */
       #sidebar-account {
         cursor: default;
-        transition: all 0.3s ease;
+        transition: all 0.24s ease;
       }
       #sidebar-account:hover {
         background-color: rgba(255, 255, 255, 0.04) !important;
         border-color: rgba(255, 255, 255, 0.1) !important;
       }
 
-      /* Divider line */
       .boro-sidebar-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
       }
 
-      /* Logout button */
+      #sidebar-action-settings,
       #sidebar-logout-btn {
         cursor: pointer;
-        transition: all 0.2s ease !important;
+        transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease !important;
+      }
+      #sidebar-action-settings:hover {
+        background-color: rgba(255, 255, 255, 0.045) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
       }
       #sidebar-logout-btn:hover {
         background-color: rgba(239, 68, 68, 0.08) !important;
@@ -178,11 +177,8 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string, accent30: 
       #sidebar-logout-btn:hover svg {
         stroke: #ef4444 !important;
       }
-      #sidebar-logout-btn:hover [id="sidebar-logout-label"] {
-        color: #ef4444 !important;
-      }
     `;
-  }, [primaryColor, accentRGB, accent30]);
+  }, [primaryColor, accentRGB]);
 }
 
 /**
@@ -198,22 +194,22 @@ export const DesktopSidebar: React.FC = () => {
   const logOut = useAuthStore((s) => s.logOut);
   const rl = useRateLimit();
 
-  const userName = session?.user.name ?? 'Guest';
-  const initial = userName[0]?.toUpperCase() ?? 'B';
-  const apiRemaining = rl.remaining != null ? rl.compact : '\u221e';
+  const userName = session?.user.name ?? "Guest";
+  const initial = userName[0]?.toUpperCase() ?? "B";
+  const apiRemaining = rl.remaining != null ? rl.compact : "\u221e";
   const apiProgress = rl.remainingPct != null ? rl.remainingPct / 100 : 1;
   const apiLow = rl.remainingPct != null && rl.remainingPct < 15;
 
   const logoSource =
-    colorTheme === 'purple'
-      ? require('../../../assets/images/logo2.png')
-      : require('../../../assets/images/logo.png');
+    colorTheme === "purple"
+      ? require("../../../assets/images/logo2.png")
+      : require("../../../assets/images/logo.png");
 
-  const isPurple = colorTheme === 'purple';
-  const accentRGB = isPurple ? '167, 139, 250' : '195, 244, 0';
+  const isPurple = colorTheme === "purple";
+  const accentRGB = isPurple ? "167, 139, 250" : "195, 244, 0";
 
-  // Inject web CSS for hover/active effects (bypasses NativeWind entirely)
-  useInjectSidebarCSS(colors.primaryFixed, accentRGB, colors.accent30);
+  // Inject web CSS for hover effects (bypasses NativeWind entirely)
+  useInjectSidebarCSS(colors.primaryFixed, accentRGB);
 
   const handleLogout = async () => {
     await logOut();
@@ -221,51 +217,28 @@ export const DesktopSidebar: React.FC = () => {
       useSettingsStore.getState().hydrate(),
       useFavoritesStore.getState().hydrate(),
     ]);
-    router.replace('/(auth)/intro');
+    router.replace("/(auth)/intro");
   };
-
-  // On web, after render, add the boro-active class to active nav items.
-  // We do this via DOM because NativeWind strips className.
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    // Clear all boro-active classes first
-    document.querySelectorAll('[id^="sidebar-nav-"]').forEach((el) => {
-      el.classList.remove('boro-active');
-    });
-    // Set boro-active on matching items
-    [...MAIN_NAV, ...EXPLORE_NAV].forEach((item) => {
-      if (isActive(pathname, item)) {
-        const el = document.getElementById(`sidebar-nav-${item.route.replace(/\//g, '-') || 'home'}`);
-        if (el) el.classList.add('boro-active');
-      }
-    });
-    // Profile
-    if (pathname === '/profile' || pathname.startsWith('/profile/')) {
-      const el = document.getElementById('sidebar-nav--profile');
-      if (el) el.classList.add('boro-active');
-    }
-    // Settings
-    if (pathname.startsWith('/settings')) {
-      const el = document.getElementById('sidebar-nav-settings');
-      if (el) el.classList.add('boro-active');
-    }
-  }, [pathname]);
 
   return (
     <View
       nativeID="boro-sidebar"
       style={{
         width: 272,
-        height: '100%',
-        backgroundColor: 'rgba(22, 21, 20, 0.55)',
+        height: "100%",
+        backgroundColor: "rgba(22, 21, 20, 0.55)",
         borderRightWidth: 1,
-        borderRightColor: 'rgba(255,255,255,0.06)',
+        borderRightColor: "rgba(255,255,255,0.06)",
         paddingTop: 24,
         paddingBottom: 16,
         paddingHorizontal: 16,
-        justifyContent: 'space-between',
-        ...(Platform.OS === 'web'
-          ? ({ backdropFilter: 'blur(32px) saturate(200%) brightness(1.02)', WebkitBackdropFilter: 'blur(32px) saturate(200%) brightness(1.02)' } as any)
+        justifyContent: "space-between",
+        ...(Platform.OS === "web"
+          ? ({
+              backdropFilter: "blur(32px) saturate(200%) brightness(1.02)",
+              WebkitBackdropFilter:
+                "blur(32px) saturate(200%) brightness(1.02)",
+            } as any)
           : {}),
       }}
     >
@@ -274,13 +247,45 @@ export const DesktopSidebar: React.FC = () => {
         {/* Brand */}
         <Pressable
           nativeID="sidebar-brand"
-          onPress={() => router.push('/')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 20 }}
+          onPress={() => router.push("/")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            marginBottom: 20,
+          }}
         >
-          <Image source={logoSource} style={{ width: 34, height: 34 }} resizeMode="contain" />
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-            <Text style={{ color: colors.onSurface, fontFamily: fonts.display, fontSize: 26, letterSpacing: -0.5 }}>BORO</Text>
-            <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, opacity: 0.9, letterSpacing: 0.5 }}>AI</Text>
+          <Image
+            source={logoSource}
+            style={{ width: 34, height: 34 }}
+            resizeMode="contain"
+          />
+          <View
+            style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}
+          >
+            <Text
+              style={{
+                color: colors.onSurface,
+                fontFamily: fonts.display,
+                fontSize: 26,
+                letterSpacing: -0.5,
+              }}
+            >
+              BORO
+            </Text>
+            <Text
+              style={{
+                color: colors.primaryFixed,
+                fontFamily: fonts.label,
+                fontSize: 11,
+                opacity: 0.9,
+                letterSpacing: 0.5,
+              }}
+            >
+              AI
+            </Text>
           </View>
         </Pressable>
 
@@ -292,7 +297,7 @@ export const DesktopSidebar: React.FC = () => {
             return (
               <NavRow
                 key={item.route}
-                nativeID={`sidebar-nav-${item.route.replace(/\//g, '-') || 'home'}`}
+                nativeID={`sidebar-row-${navDomId(item.route)}`}
                 icon={item.icon}
                 label={t(item.labelKey) || item.fallback}
                 active={active}
@@ -304,7 +309,10 @@ export const DesktopSidebar: React.FC = () => {
 
         {/* Divider */}
         <View style={{ marginVertical: 10 }}>
-          <View nativeID="boro-sidebar-divider-1" style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <View
+            nativeID="boro-sidebar-divider-1"
+            style={{ height: 1, backgroundColor: "rgba(255,255,255,0.06)" }}
+          />
         </View>
 
         {/* Section: Explore */}
@@ -315,7 +323,7 @@ export const DesktopSidebar: React.FC = () => {
             return (
               <NavRow
                 key={item.route}
-                nativeID={`sidebar-nav-${item.route.replace(/\//g, '-') || 'home'}`}
+                nativeID={`sidebar-row-${navDomId(item.route)}`}
                 icon={item.icon}
                 label={t(item.labelKey) || item.fallback}
                 active={active}
@@ -334,29 +342,62 @@ export const DesktopSidebar: React.FC = () => {
           style={{
             padding: 14,
             borderRadius: 14,
-            backgroundColor: 'rgba(255,255,255,0.025)',
+            backgroundColor: "rgba(255,255,255,0.025)",
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.06)',
+            borderColor: "rgba(255,255,255,0.06)",
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <BoroIcon name="analytics" size={13} color={colors.onSurfaceVariant} />
-              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 10, letterSpacing: 0.8 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <BoroIcon
+                name="analytics"
+                size={13}
+                color={colors.onSurfaceVariant}
+              />
+              <Text
+                style={{
+                  color: colors.onSurfaceVariant,
+                  fontFamily: fonts.label,
+                  fontSize: 10,
+                  letterSpacing: 0.8,
+                }}
+              >
                 API CREDITS
               </Text>
             </View>
-            <Text style={{ color: apiLow ? '#ef4444' : colors.primaryFixed, fontFamily: fonts.stats, fontSize: 13 }}>
+            <Text
+              style={{
+                color: apiLow ? "#ef4444" : colors.primaryFixed,
+                fontFamily: fonts.stats,
+                fontSize: 13,
+              }}
+            >
               {apiRemaining}
             </Text>
           </View>
-          <View style={{ height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+          <View
+            style={{
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: "rgba(255,255,255,0.06)",
+              overflow: "hidden",
+            }}
+          >
             <View
               style={{
                 width: `${apiProgress * 100}%`,
-                height: '100%',
+                height: "100%",
                 borderRadius: 3,
-                backgroundColor: apiLow ? '#ef4444' : colors.primaryFixed,
+                backgroundColor: apiLow ? "#ef4444" : colors.primaryFixed,
               }}
             />
           </View>
@@ -364,7 +405,9 @@ export const DesktopSidebar: React.FC = () => {
 
         {/* Divider */}
         <View style={{ marginVertical: 2 }}>
-          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <View
+            style={{ height: 1, backgroundColor: "rgba(255,255,255,0.06)" }}
+          />
         </View>
 
         {/* Account card */}
@@ -375,10 +418,10 @@ export const DesktopSidebar: React.FC = () => {
             paddingHorizontal: 14,
             borderRadius: 14,
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.06)',
-            backgroundColor: 'rgba(255,255,255,0.02)',
-            flexDirection: 'row',
-            alignItems: 'center',
+            borderColor: "rgba(255,255,255,0.06)",
+            backgroundColor: "rgba(255,255,255,0.02)",
+            flexDirection: "row",
+            alignItems: "center",
             gap: 12,
           }}
         >
@@ -390,51 +433,88 @@ export const DesktopSidebar: React.FC = () => {
               borderWidth: 1.5,
               borderColor: colors.accent30,
               backgroundColor: colors.accent08,
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Text style={{ color: colors.primaryFixed, fontFamily: fonts.display, fontSize: 17 }}>{initial}</Text>
+            <Text
+              style={{
+                color: colors.primaryFixed,
+                fontFamily: fonts.display,
+                fontSize: 17,
+              }}
+            >
+              {initial}
+            </Text>
           </View>
           <View style={{ flex: 1, gap: 1 }}>
-            <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13 }} numberOfLines={1}>
+            <Text
+              style={{
+                color: colors.onSurface,
+                fontFamily: fonts.bodyBold,
+                fontSize: 13,
+              }}
+              numberOfLines={1}
+            >
               {userName}
             </Text>
-            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11, opacity: 0.7 }} numberOfLines={1}>
+            <Text
+              style={{
+                color: colors.onSurfaceVariant,
+                fontFamily: fonts.body,
+                fontSize: 11,
+                opacity: 0.7,
+              }}
+              numberOfLines={1}
+            >
               Free Plan
             </Text>
           </View>
         </View>
 
         {/* Settings + Logout row */}
-        <View style={{ flexDirection: 'row', gap: 6 }}>
+        <View style={{ flexDirection: "row", gap: 6 }}>
           <Pressable
-            nativeID="sidebar-nav-settings"
-            onPress={() => router.push('/settings')}
+            nativeID="sidebar-action-settings"
+            onPress={() => router.push("/settings")}
             style={({ pressed }: any) => ({
               flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               gap: 8,
               paddingVertical: 10,
               borderRadius: 10,
               borderWidth: 1,
-              backgroundColor: pathname.startsWith('/settings') ? colors.accent15 : 'rgba(255,255,255,0.02)',
-              borderColor: pathname.startsWith('/settings') ? colors.accent30 : 'rgba(255,255,255,0.06)',
+              backgroundColor: pathname.startsWith("/settings")
+                ? colors.accent15
+                : "rgba(255,255,255,0.02)",
+              borderColor: pathname.startsWith("/settings")
+                ? colors.accent30
+                : "rgba(255,255,255,0.06)",
               opacity: pressed ? 0.7 : 1,
             })}
           >
-            <BoroIcon name="settings" size={17} color={pathname.startsWith('/settings') ? colors.primaryFixed : colors.onSurfaceVariant} />
+            <BoroIcon
+              name="settings"
+              size={17}
+              color={
+                pathname.startsWith("/settings")
+                  ? colors.primaryFixed
+                  : colors.onSurfaceVariant
+              }
+            />
             <Text
-              nativeID="sidebar-nav-settings-label"
+              nativeID="sidebar-label-settings"
               style={{
-                color: pathname.startsWith('/settings') ? colors.primaryFixed : colors.onSurfaceVariant,
+                color: pathname.startsWith("/settings")
+                  ? colors.primaryFixed
+                  : colors.onSurfaceVariant,
                 fontFamily: fonts.body,
                 fontSize: 12,
               }}
             >
-              {t('profile.settings') || 'Settings'}
+              {t("profile.settings") || "Settings"}
             </Text>
           </Pressable>
 
@@ -442,16 +522,16 @@ export const DesktopSidebar: React.FC = () => {
             nativeID="sidebar-logout-btn"
             onPress={handleLogout}
             style={({ pressed }: any) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               gap: 6,
               paddingVertical: 10,
               paddingHorizontal: 16,
               borderRadius: 10,
               borderWidth: 1,
-              backgroundColor: 'rgba(255,255,255,0.02)',
-              borderColor: 'rgba(255,255,255,0.06)',
+              backgroundColor: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.06)",
               opacity: pressed ? 0.7 : 1,
             })}
           >
@@ -506,29 +586,56 @@ const NavRow: React.FC<NavRowProps> = ({
       nativeID={nativeID}
       onPress={onPress}
       style={({ pressed, hovered }: any) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        minHeight: 42,
         paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 10,
+        paddingVertical: 9,
+        borderRadius: 12,
         borderWidth: 1,
+        overflow: "hidden",
+        position: "relative",
         backgroundColor: active
-          ? colors.accent15
+          ? colors.accent08
           : hovered || pressed
             ? colors.white05
-            : 'transparent',
-        borderColor: active ? colors.accent30 : 'transparent',
+            : "transparent",
+        borderColor: active ? colors.accent20 : "transparent",
       })}
     >
-      <BoroIcon name={icon} size={20} color={active ? colors.primaryFixed : colors.onSurfaceVariant} />
-      <Text
-        nativeID={`${nativeID}-label`}
+      <View
+        pointerEvents="none"
         style={{
-          color: active ? colors.primaryFixed : colors.onSurface,
+          position: "absolute",
+          left: 0,
+          top: 8,
+          bottom: 8,
+          width: 3,
+          borderTopRightRadius: 4,
+          borderBottomRightRadius: 4,
+          backgroundColor: active ? colors.primaryFixed : "transparent",
+          opacity: active ? 1 : 0,
+        }}
+      />
+      <View
+        pointerEvents="none"
+        style={{ width: 24, alignItems: "center", justifyContent: "center" }}
+      >
+        <BoroIcon
+          name={icon}
+          size={19}
+          color={active ? colors.primaryFixed : colors.onSurfaceVariant}
+        />
+      </View>
+      <Text
+        nativeID={`sidebar-label-${nativeID.replace("sidebar-row-", "")}`}
+        style={{
+          color: active ? colors.onSurface : colors.onSurfaceVariant,
           fontFamily: active ? fonts.bodyBold : fonts.body,
           fontSize: 14,
           letterSpacing: 0.1,
+          flexShrink: 1,
         }}
         numberOfLines={1}
       >
