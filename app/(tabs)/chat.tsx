@@ -55,6 +55,7 @@ export default function CommunityChatScreen() {
   const [inputText, setInputText] = useState('');
   const [nickname, setNickname] = useState('');
   const [hasSetNickname, setHasSetNickname] = useState(false);
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   
   // WebSocket reference
@@ -157,25 +158,14 @@ export default function CommunityChatScreen() {
     };
 
     ws.onclose = () => {
-      // Only trigger disconnect message and reconnect loop if connection dropped unexpectedly (not during cleanup)
+      // Only trigger reconnect loop if connection dropped unexpectedly (not during cleanup)
       if (wsRef.current === ws) {
-        const sysMsg: ChatMessage = {
-          id: `sys-${Math.random()}`,
-          senderName: 'SYSTEM',
-          text: '🔴 Disconnesso dalla chat live. Riconnessione in corso...',
-          timestamp: new Date().toISOString(),
-          avatarInitial: 'ℹ️',
-          color: '#ef4444',
-          isSelf: false,
-          isSystem: true
-        };
-        setMessages(prev => [...prev.slice(-MAX_MESSAGES), sysMsg]);
+        console.log('WebSocket disconnected silently, reconnecting in background...');
         
-        // Auto-reconnect in 5 seconds
+        // Auto-reconnect silently in 5 seconds
         setTimeout(() => {
           if (wsRef.current === ws && hasSetNickname) {
-            setHasSetNickname(false);
-            setTimeout(() => setHasSetNickname(true), 50);
+            setReconnectTrigger(prev => prev + 1);
           }
         }, 5000);
       }
@@ -186,7 +176,7 @@ export default function CommunityChatScreen() {
       wsRef.current = null;
       ws.close();
     };
-  }, [hasSetNickname, currentUserName]);
+  }, [hasSetNickname, currentUserName, reconnectTrigger]);
 
   const handleSaveNickname = async () => {
     if (!nickname.trim()) return;
