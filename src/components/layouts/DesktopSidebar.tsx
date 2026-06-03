@@ -143,7 +143,17 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
       }
 
       .boro-sidebar-row:hover [id^="sidebar-label-"],
-      #sidebar-action-settings:hover [id^="sidebar-label-"] {
+      #sidebar-action-settings:hover [id^="sidebar-label-"],
+      #sidebar-logout-btn:hover [id^="sidebar-label-"],
+      #sidebar-logout-btn:hover span,
+      #sidebar-logout-btn:hover div,
+      #sidebar-logout-btn:hover p,
+      #sidebar-action-settings:hover span,
+      #sidebar-action-settings:hover div,
+      #sidebar-action-settings:hover p,
+      .boro-sidebar-row:hover span,
+      .boro-sidebar-row:hover div,
+      .boro-sidebar-row:hover p {
         color: #ffffff !important;
       }
 
