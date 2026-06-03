@@ -37,7 +37,7 @@ export const devigProportional = (decimalOdds: number[]): number[] => {
  * Solves for z by fixed-point iteration. Falls back to proportional on edge
  * cases. Best used on the 1X2 (3-way) and BTTS/O-U (2-way) markets.
  */
-export const devigShin = (decimalOdds: number[], iterations = 60): number[] => {
+export const devigShin = (decimalOdds: number[], iterations = 100): number[] => {
   const pi = decimalOdds.map(impliedFromDecimal);
   const booksum = pi.reduce((s, p) => s + p, 0);
   if (booksum <= 0) return decimalOdds.map(() => 0);

@@ -567,6 +567,11 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
       "0-0": 0.08, "1-0": 0.15, "0-1": 0.10, "1-1": 0.20, "2-1": 0.18, "1-2": 0.12, "2-0": 0.08, "0-2": 0.05, "2-2": 0.04
     };
   }
+  for (const score in PRIOR_SCORES) {
+    if (!(score in scoreMap)) {
+      scoreMap[score] = 0;
+    }
+  }
   const priorSum = Object.values(PRIOR_SCORES).reduce((s, v) => s + v, 0);
   const scoreKeys = Object.keys(scoreMap);
   if (scoreKeys.length > 0) {
