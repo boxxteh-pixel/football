@@ -97,10 +97,17 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
       }
 
       [id^="sidebar-row-"] {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
         cursor: pointer;
         isolation: isolate;
         transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         border: 1px solid transparent !important;
+      }
+
+      [id^="sidebar-row-"] > div:nth-child(2) {
+        margin-right: 12px !important;
       }
 
       [id^="sidebar-row-"]:hover {
@@ -186,10 +193,17 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
 
       #sidebar-action-settings,
       #sidebar-logout-btn {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
         cursor: pointer;
         background-color: rgba(255, 255, 255, 0.02) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      #sidebar-action-settings svg {
+        margin-right: 8px !important;
       }
       #sidebar-action-settings:hover {
         background-color: rgba(${accentRGB}, 0.06) !important;
