@@ -569,6 +569,8 @@ export const DesktopSidebar: React.FC = () => {
               fontFamily: fonts.body,
               fontSize: 13,
               paddingLeft: 4,
+              paddingTop: 1.5,
+              lineHeight: 18,
             }}
           >
             {t("profile.settings") || "Settings"}
@@ -603,6 +605,8 @@ export const DesktopSidebar: React.FC = () => {
               fontFamily: fonts.body,
               fontSize: 13,
               paddingLeft: 4,
+              paddingTop: 1.5,
+              lineHeight: 18,
             }}
           >
             Logout
@@ -712,6 +716,8 @@ const NavRow: React.FC<NavRowProps> = ({
           fontSize: 14,
           letterSpacing: 0.1,
           flexShrink: 1,
+          paddingTop: 1.5, // Correct vertical centering offset for custom fonts on web
+          lineHeight: 18,
         }}
         numberOfLines={1}
       >
