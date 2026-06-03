@@ -56,6 +56,93 @@ const LEAGUE_AVG_AWAY_GOALS = 1.15;
 const MIN_LAMBDA = 0.35;
 const MAX_LAMBDA = 3.6;
 
+// Form-derived scoring weight (blended into attack/defense strengths)
+const FORM_GOAL_WEIGHT = 0.15;
+
+// ─────────────── League Profile Database ───────────────
+// Each league has empirical parameters from multi-season data:
+//   strength:    relative league quality (UEFA coefficient scale, 1.0 = average European)
+//   goalEnv:     league-specific goals-per-game multiplier vs global average
+//   homeAdv:     league-specific home advantage in expected goals
+//   drawRate:    historical draw frequency (used for Dixon-Coles rho)
+interface LeagueProfile {
+  strength: number;   // 0.5 (weak) – 1.2 (elite)
+  goalEnv: number;    // 0.85 (defensive) – 1.15 (attacking)
+  homeAdv: number;    // home advantage in goals
+  drawRate: number;   // typical draw rate 0.20–0.30
+}
+
+const LEAGUE_PROFILES: Record<number, LeagueProfile> = {
+  // Top 5 European leagues
+  39:  { strength: 1.15, goalEnv: 1.08, homeAdv: 0.33, drawRate: 0.22 }, // Premier League
+  135: { strength: 1.10, goalEnv: 0.92, homeAdv: 0.35, drawRate: 0.27 }, // Serie A
+  140: { strength: 1.12, goalEnv: 0.95, homeAdv: 0.34, drawRate: 0.25 }, // La Liga
+  78:  { strength: 1.08, goalEnv: 1.10, homeAdv: 0.30, drawRate: 0.23 }, // Bundesliga
+  61:  { strength: 1.05, goalEnv: 0.96, homeAdv: 0.32, drawRate: 0.24 }, // Ligue 1
+  // Strong European leagues
+  94:  { strength: 0.95, goalEnv: 0.98, homeAdv: 0.31, drawRate: 0.24 }, // Liga Portugal
+  88:  { strength: 0.90, goalEnv: 1.12, homeAdv: 0.28, drawRate: 0.21 }, // Eredivisie
+  144: { strength: 0.88, goalEnv: 1.00, homeAdv: 0.30, drawRate: 0.24 }, // Belgian Pro League
+  203: { strength: 0.85, goalEnv: 1.04, homeAdv: 0.32, drawRate: 0.23 }, // Super Lig (TR)
+  179: { strength: 0.82, goalEnv: 1.02, homeAdv: 0.30, drawRate: 0.24 }, // Scottish Premiership
+  // Second tiers
+  40:  { strength: 0.80, goalEnv: 1.04, homeAdv: 0.32, drawRate: 0.24 }, // Championship (EN)
+  136: { strength: 0.78, goalEnv: 0.95, homeAdv: 0.33, drawRate: 0.26 }, // Serie B
+  141: { strength: 0.78, goalEnv: 0.96, homeAdv: 0.33, drawRate: 0.26 }, // La Liga 2
+  62:  { strength: 0.75, goalEnv: 0.98, homeAdv: 0.31, drawRate: 0.25 }, // Ligue 2
+  79:  { strength: 0.76, goalEnv: 1.06, homeAdv: 0.29, drawRate: 0.24 }, // 2. Bundesliga
+  // Nordic
+  113: { strength: 0.68, goalEnv: 1.10, homeAdv: 0.28, drawRate: 0.22 }, // Allsvenskan (SE)
+  103: { strength: 0.65, goalEnv: 1.08, homeAdv: 0.27, drawRate: 0.23 }, // Eliteserien (NO)
+  119: { strength: 0.70, goalEnv: 1.02, homeAdv: 0.29, drawRate: 0.24 }, // Superliga (DK)
+  // Eastern Europe & others
+  218: { strength: 0.72, goalEnv: 1.02, homeAdv: 0.30, drawRate: 0.24 }, // Austrian Bundesliga
+  207: { strength: 0.75, goalEnv: 1.00, homeAdv: 0.28, drawRate: 0.25 }, // Swiss Super League
+  197: { strength: 0.65, goalEnv: 0.96, homeAdv: 0.32, drawRate: 0.26 }, // Greek Super League
+  106: { strength: 0.68, goalEnv: 1.00, homeAdv: 0.30, drawRate: 0.25 }, // Ekstraklasa (PL)
+  235: { strength: 0.70, goalEnv: 0.94, homeAdv: 0.35, drawRate: 0.26 }, // Russian PL
+  333: { strength: 0.62, goalEnv: 0.98, homeAdv: 0.34, drawRate: 0.25 }, // Ukrainian PL
+  // South America
+  128: { strength: 0.82, goalEnv: 0.92, homeAdv: 0.40, drawRate: 0.26 }, // Argentina LPF
+  71:  { strength: 0.85, goalEnv: 0.96, homeAdv: 0.42, drawRate: 0.24 }, // Brazil Serie A
+  72:  { strength: 0.68, goalEnv: 0.94, homeAdv: 0.38, drawRate: 0.25 }, // Brazil Serie B
+  // North America & Asia
+  253: { strength: 0.65, goalEnv: 1.06, homeAdv: 0.26, drawRate: 0.22 }, // MLS
+  262: { strength: 0.72, goalEnv: 0.98, homeAdv: 0.35, drawRate: 0.25 }, // Liga MX
+  98:  { strength: 0.70, goalEnv: 1.04, homeAdv: 0.30, drawRate: 0.23 }, // J1 League
+  292: { strength: 0.65, goalEnv: 1.00, homeAdv: 0.28, drawRate: 0.24 }, // K League 1
+  307: { strength: 0.60, goalEnv: 1.08, homeAdv: 0.30, drawRate: 0.22 }, // Saudi Pro League
+  169: { strength: 0.55, goalEnv: 1.02, homeAdv: 0.32, drawRate: 0.24 }, // Chinese Super League
+  233: { strength: 0.55, goalEnv: 0.90, homeAdv: 0.36, drawRate: 0.27 }, // Egypt Premier
+};
+
+const DEFAULT_LEAGUE_PROFILE: LeagueProfile = {
+  strength: 0.75, goalEnv: 1.00, homeAdv: HOME_ADVANTAGE_GOALS, drawRate: 0.25,
+};
+
+const INTERNATIONAL_PROFILE: LeagueProfile = {
+  strength: 0.90, goalEnv: 0.92, homeAdv: 0.15, drawRate: 0.24,
+};
+
+const getLeagueProfile = (leagueId: number | undefined, isInternational?: boolean): LeagueProfile => {
+  if (isInternational) return INTERNATIONAL_PROFILE;
+  return LEAGUE_PROFILES[leagueId ?? 0] ?? DEFAULT_LEAGUE_PROFILE;
+};
+
+/**
+ * Dynamic Dixon-Coles rho as a function of draw rate, goal environment, and league strength.
+ * ρ ≈ -0.13 · drawRate / goalEnv · strength
+ * More defensive + more draws → stronger negative rho (more 0-0/1-0 correction).
+ * More attacking → weaker rho (goals are more independent).
+ */
+const computeDynamicRho = (profile: LeagueProfile): number => {
+  const baseRho = -0.13 * (profile.drawRate / 0.25) * (1.0 / profile.goalEnv) * Math.sqrt(profile.strength);
+  return Math.max(-0.15, Math.min(-0.02, baseRho));
+};
+
+// Safe entropy term: avoids 0·log(0) = NaN
+const safeEntropy = (p: number): number => (p > 0 ? p * Math.log(p) : 0);
+
 const seededRandom = (seed: number) => {
   let t = (seed + 0x6d2b79f5) >>> 0;
   return () => {
@@ -241,25 +328,43 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const homeXgaConceded = parseAvg(homeStats?.goals?.against?.average?.home) || LEAGUE_AVG_AWAY_GOALS;
   const awayXgaConceded = parseAvg(awayStats?.goals?.against?.average?.away) || LEAGUE_AVG_HOME_GOALS;
 
-  // Attack strengths and defense weaknesses incorporating ELO-derived priors and Bayesian goals shrinkage
-  const homeAttackStrength = (1.0 - w_xG) * (homeElo / BASE_ELO_VALUE) + w_xG * (homeXgObserved / LEAGUE_AVG_HOME_GOALS);
-  const awayDefenseWeakness = (1.0 - w_xG) * (BASE_ELO_VALUE / awayElo) + w_xG * (awayXgaConceded / LEAGUE_AVG_HOME_GOALS);
+  // Form-derived scoring rates (time-decayed actual goals)
+  const homeFormGoalRate = Number.isFinite(homeForm.avgGoalsFor) ? homeForm.avgGoalsFor / LEAGUE_AVG_HOME_GOALS : 1.0;
+  const awayFormGoalRate = Number.isFinite(awayForm.avgGoalsFor) ? awayForm.avgGoalsFor / LEAGUE_AVG_AWAY_GOALS : 1.0;
+  const homeFormConcRate = Number.isFinite(homeForm.avgGoalsAgainst) ? homeForm.avgGoalsAgainst / LEAGUE_AVG_AWAY_GOALS : 1.0;
+  const awayFormConcRate = Number.isFinite(awayForm.avgGoalsAgainst) ? awayForm.avgGoalsAgainst / LEAGUE_AVG_HOME_GOALS : 1.0;
 
-  const awayAttackStrength = (1.0 - w_xG) * (awayElo / BASE_ELO_VALUE) + w_xG * (awayXgObserved / LEAGUE_AVG_AWAY_GOALS);
-  const homeDefenseWeakness = (1.0 - w_xG) * (BASE_ELO_VALUE / homeElo) + w_xG * (homeXgaConceded / LEAGUE_AVG_AWAY_GOALS);
+  // Attack strengths and defense weaknesses: ELO prior + xG + form-derived scoring
+  const xgWeight = w_xG * (1.0 - FORM_GOAL_WEIGHT);
+  const formWeight = w_xG * FORM_GOAL_WEIGHT;
+  const priorWeight = 1.0 - w_xG;
 
-  // ─────────────── 3. League Strength & Dynamic Home Advantage ───────────────
+  const homeAttackStrength = priorWeight * (homeElo / BASE_ELO_VALUE) + xgWeight * (homeXgObserved / LEAGUE_AVG_HOME_GOALS) + formWeight * homeFormGoalRate;
+  const awayDefenseWeakness = priorWeight * (BASE_ELO_VALUE / awayElo) + xgWeight * (awayXgaConceded / LEAGUE_AVG_HOME_GOALS) + formWeight * awayFormConcRate;
+
+  const awayAttackStrength = priorWeight * (awayElo / BASE_ELO_VALUE) + xgWeight * (awayXgObserved / LEAGUE_AVG_AWAY_GOALS) + formWeight * awayFormGoalRate;
+  const homeDefenseWeakness = priorWeight * (BASE_ELO_VALUE / homeElo) + xgWeight * (homeXgaConceded / LEAGUE_AVG_AWAY_GOALS) + formWeight * homeFormConcRate;
+
+  // ─────────────── 3. League Strength, Goal Environment & Dynamic Home Advantage ───────────────
   const league = getLeagueById(fixture.league.id);
-  const leagueHomeAdv = league?.isInternational ? HOME_ADVANTAGE_GOALS * 0.5 : HOME_ADVANTAGE_GOALS;
+  const leagueProfile = getLeagueProfile(fixture.league.id, league?.isInternational);
 
-  let lambdaHome = LEAGUE_AVG_HOME_GOALS * homeAttackStrength * awayDefenseWeakness * homeDegradation.attDegradation * awayDegradation.defDegradation * homeTacticalMod;
-  let lambdaAway = LEAGUE_AVG_AWAY_GOALS * awayAttackStrength * homeDefenseWeakness * awayDegradation.attDegradation * homeDegradation.defDegradation * awayTacticalMod;
+  // League goal environment adjusts the base lambdas
+  const leagueGoalEnv = leagueProfile.goalEnv;
+  // League-specific home advantage (replaces flat 0.30)
+  const leagueHomeAdv = leagueProfile.homeAdv;
+  // League strength coefficient: scales confidence in model outputs
+  const leagueStrength = leagueProfile.strength;
+
+  let lambdaHome = (LEAGUE_AVG_HOME_GOALS * leagueGoalEnv) * homeAttackStrength * awayDefenseWeakness * homeDegradation.attDegradation * awayDegradation.defDegradation * homeTacticalMod;
+  let lambdaAway = (LEAGUE_AVG_AWAY_GOALS * leagueGoalEnv) * awayAttackStrength * homeDefenseWeakness * awayDegradation.attDegradation * homeDegradation.defDegradation * awayTacticalMod;
 
   lambdaHome = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, lambdaHome + leagueHomeAdv));
   lambdaAway = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, lambdaAway));
 
-  // Dixon-Coles goal distributions
-  const poisson = computeMatchProbabilities(lambdaHome, lambdaAway);
+  // Dynamic Dixon-Coles rho = f(drawRate, goalEnvironment, leagueStrength)
+  const rhoLeague = computeDynamicRho(leagueProfile);
+  const poisson = computeMatchProbabilities(lambdaHome, lambdaAway, rhoLeague);
 
   // Light secondary ELO and H2H parameters
   let h2hHomeAdj = 0;
@@ -278,10 +383,20 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
       });
   }
 
+  // ─── Learning store bias integration ───
+  // Adjust Poisson vs ELO blend weights based on historical performance feedback
+  const learningState = useLearningStore.getState();
+  const basePoissonW = 0.60 + (learningState.poissonBias ?? 0);
+  const baseEloW = 0.40 + (learningState.eloBias ?? 0);
+  // Renormalize so they still sum to 1.0
+  const blendTotal = basePoissonW + baseEloW;
+  const poissonW = blendTotal > 0 ? basePoissonW / blendTotal : 0.60;
+  const eloW = blendTotal > 0 ? baseEloW / blendTotal : 0.40;
+
   let [statHome, statDraw, statAway] = norm3(
-    poisson.homeWin * 0.60 + eloProb.home * 0.40 + h2hHomeAdj,
-    poisson.draw * 0.60 + eloProb.draw * 0.40,
-    poisson.awayWin * 0.60 + eloProb.away * 0.40 + h2hAwayAdj,
+    poisson.homeWin * poissonW + eloProb.home * eloW + h2hHomeAdj,
+    poisson.draw * poissonW + eloProb.draw * eloW,
+    poisson.awayWin * poissonW + eloProb.away * eloW + h2hAwayAdj,
   );
 
   // ─────────────── 4. Bookmaker Devigging & Overround Scaling ───────────────
@@ -367,6 +482,18 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     const tot = Object.values(scoreMap).reduce((s, v) => s + v, 0);
     if (tot > 0) Object.keys(scoreMap).forEach((k) => { scoreMap[k] = (scoreMap[k] / tot) * 100; });
   }
+  // Tail suppression: reduce weight of unrealistic high-scoring lines (≥6 total goals)
+  Object.keys(scoreMap).forEach((k) => {
+    const parts = k.split('-');
+    if (parts.length === 2) {
+      const totalG = parseInt(parts[0]) + parseInt(parts[1]);
+      if (totalG >= 6) scoreMap[k] *= 0.40; // suppress by 60%
+    }
+  });
+  // Re-normalize after suppression
+  const csTotal = Object.values(scoreMap).reduce((s, v) => s + v, 0);
+  if (csTotal > 0) Object.keys(scoreMap).forEach((k) => { scoreMap[k] = (scoreMap[k] / csTotal) * 100; });
+
   const correctScoresList = Object.entries(scoreMap)
     .map(([score, probability]) => ({ score, probability }))
     .sort((a, b) => b.probability - a.probability);
@@ -378,41 +505,87 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   };
 
   // ─────────────── 7. Information-Theoretic Confidence ───────────────
-  // outcome Shannon Entropy
-  const h_prob = (homeWinPct / 100) * Math.log(homeWinPct / 100 || 1) +
-                 (drawPct / 100) * Math.log(drawPct / 100 || 1) +
-                 (awayWinPct / 100) * Math.log(awayWinPct / 100 || 1);
+  // Outcome Shannon Entropy (safe: avoids 0·log(0))
+  const pH = homeWinPct / 100;
+  const pD = drawPct / 100;
+  const pA = awayWinPct / 100;
+  const h_prob = safeEntropy(pH) + safeEntropy(pD) + safeEntropy(pA);
   const normalizedEntropy = -h_prob / Math.log(3);
 
   // KL Divergence vs. bookmaker odds
   let klDivergence = 0.0;
   if (hasMarket) {
-    const pmh = marketProbHome;
-    const pmd = marketProbDraw;
-    const pma = marketProbAway;
-    klDivergence = (homeWinPct / 100) * Math.log((homeWinPct / 100) / pmh || 1) +
-                   (drawPct / 100) * Math.log((drawPct / 100) / pmd || 1) +
-                   (awayWinPct / 100) * Math.log((awayWinPct / 100) / pma || 1);
+    const pmh = Math.max(0.001, marketProbHome);
+    const pmd = Math.max(0.001, marketProbDraw);
+    const pma = Math.max(0.001, marketProbAway);
+    klDivergence = (pH > 0 ? pH * Math.log(pH / pmh) : 0) +
+                   (pD > 0 ? pD * Math.log(pD / pmd) : 0) +
+                   (pA > 0 ? pA * Math.log(pA / pma) : 0);
   }
 
-  // Combined score
+  // ─── Model Agreement Signal (4 sources: ELO, Poisson, Market, xG) ───
+  const argmax = (h: number, d: number, a: number): 'H' | 'D' | 'A' =>
+    h >= d && h >= a ? 'H' : a >= d ? 'A' : 'D';
+  const eloArgmax = argmax(eloProb.home, eloProb.draw, eloProb.away);
+  const poissonArgmax = argmax(poisson.homeWin, poisson.draw, poisson.awayWin);
+  const marketArgmax = hasMarket ? argmax(marketProbHome, marketProbDraw, marketProbAway) : null;
+
+  // xG-based directional signal: which team does xG favour?
+  const xgArgmax: 'H' | 'D' | 'A' | null = (() => {
+    const hxg = insights?.xg?.home ?? null;
+    const axg = insights?.xg?.away ?? null;
+    if (hxg == null || axg == null) return null;
+    const diff = hxg - axg;
+    if (Math.abs(diff) < 0.15) return 'D'; // xG too close → draw signal
+    return diff > 0 ? 'H' : 'A';
+  })();
+
+  // Count how many of the available signals agree with the statistical argmax
+  const statArgmax = argmax(statHome, statDraw, statAway);
+  const signals = [eloArgmax, poissonArgmax, marketArgmax, xgArgmax].filter((s): s is 'H' | 'D' | 'A' => s != null);
+  const agreeCount = signals.filter(s => s === statArgmax).length;
+  const totalSignals = signals.length;
+
+  let agreementBonus = 0;
+  if (totalSignals >= 3 && agreeCount === totalSignals) {
+    agreementBonus = 0.10; // all available signals agree → strong confidence
+  } else if (totalSignals >= 3 && agreeCount >= totalSignals - 1) {
+    agreementBonus = 0.05; // n-1 agree → moderate boost
+  } else if (totalSignals >= 2 && agreeCount >= 2) {
+    agreementBonus = 0.03; // 2 agree → small boost
+  } else {
+    agreementBonus = -0.05; // significant disagreement → penalize
+  }
+
+  // League strength modifies confidence: weaker leagues → less predictable
+  const leagueConfidenceMod = 0.85 + 0.15 * leagueStrength; // 0.925 for avg, 1.03 for elite
+
+  // Combined confidence score
   const samplePenalty = Math.exp(-0.4 * N_matches);
-  const confidenceScore = Math.max(0, Math.min(100, (1.0 - normalizedEntropy - 0.22 * klDivergence - 0.12 * samplePenalty) * 100));
+  const confidenceScore = Math.max(0, Math.min(100,
+    (1.0 - normalizedEntropy - 0.22 * klDivergence - 0.12 * samplePenalty + agreementBonus) * 100 * leagueConfidenceMod
+  ));
   const confidence = confidenceTierFromScore(confidenceScore);
 
-  // ─────────────── 8. Beta Probability Calibration ───────────────
-  const calibrateBeta = (p: number, market: string): number => {
+  // ─────────────── 8. Probability Calibration ───────────────
+  // Use calibrationStore (data-driven) when we have enough historical data.
+  // Fall back to a neutral logistic transform (identity-like) when we don't.
+  const calibrationStore = useCalibrationStore.getState();
+  const calibrationSamples = calibrationStore.groups.ALL.reduce((s, b) => s + b.n, 0);
+  const HAS_CALIBRATION_DATA = calibrationSamples >= 30; // need ≥30 settled bets for stable calibration
+
+  const calibrateProb = (p: number, market: string): number => {
     if (p <= 0 || p >= 100) return p;
+    if (HAS_CALIBRATION_DATA) {
+      // Data-driven calibration from historical prediction outcomes
+      return calibrationStore.calibrate(p, market);
+    }
+    // Logistic fallback: slight sharpening for favorites, slight flattening for underdogs
+    // This is intentionally near-identity — better to be uncalibrated than wrongly calibrated
     const val = p / 100;
-    // Beta parameters fitted from historical European football database
-    let a = 1.04;
-    let b = 1.04;
-    let c = 0.00;
-    if (market === 'WIN') { a = 1.08; b = 1.03; c = -0.05; }
-    else if (market === 'DRAW') { a = 0.94; b = 0.98; c = 0.06; }
-    else if (market === 'OVER_2_5' || market === 'BTTS') { a = 1.02; b = 1.02; c = 0.01; }
-    const logit = a * Math.log(val) - b * Math.log(1.0 - val) + c;
-    return Math.max(0.05, Math.min(0.99, 1.0 / (1.0 + Math.exp(-logit)))) * 100;
+    const logit = 1.02 * Math.log(val / (1.0 - val)); // near-identity logistic
+    const calibrated = 1.0 / (1.0 + Math.exp(-logit));
+    return Math.max(1, Math.min(99, calibrated * 100));
   };
 
   const candidates: Array<{ market: PredictionResult['topPick']['market']; selection: string; probability: number }> = [
@@ -430,7 +603,7 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     ? recommendedCandidates.sort((a, b) => b.probability - a.probability)[0]
     : candidates.sort((a, b) => b.probability - a.probability)[0];
 
-  const calibratedTopProb = clampPercent(calibrateBeta(bestCandidate.probability, bestCandidate.market));
+  const calibratedTopProb = clampPercent(calibrateProb(bestCandidate.probability, bestCandidate.market));
   const topPick = { ...bestCandidate, probability: calibratedTopProb, odds: Number(formatOdds(calibratedTopProb)) };
 
   // Value bets vs the market
@@ -526,7 +699,7 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
   const book = insights?.bookmaker;
 
   if (!pred?.fulltimeResult && !book?.fulltimeResult) {
-    return quickPredict(fixture);
+    return quickPredict(fixture, insights);
   }
 
   const signals: Array<{ h: number; d: number; a: number; w: number }> = [];
@@ -645,16 +818,76 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
   };
 };
 
-export const quickPredict = (fixture: Fixture): PredictionResult => {
-  const seed = (fixture.fixture.id || 1) * 7919 + (fixture.teams.home.id || 1) * 31 + (fixture.teams.away.id || 1);
-  const rng = seededRandom(seed);
-  const homeStrength = 0.75 + rng() * 0.9;
-  const awayStrength = 0.7 + rng() * 0.85;
+export const quickPredict = (fixture: Fixture, insights?: MatchInsights | null): PredictionResult => {
+  const book = insights?.bookmaker;
+  const goals = insights?.goals;
+  const league = getLeagueById(fixture.league.id);
+  const profile = getLeagueProfile(fixture.league.id, league?.isInternational);
 
-  const lambdaHome = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, LEAGUE_AVG_HOME_GOALS * homeStrength + HOME_ADVANTAGE_GOALS));
-  const lambdaAway = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, LEAGUE_AVG_AWAY_GOALS * awayStrength));
+  // ─── Strategy 1: Use market odds if available (best quick source) ───
+  if (book?.fulltimeResult) {
+    const [mh, md, ma] = norm3(
+      book.fulltimeResult.home, book.fulltimeResult.draw, book.fulltimeResult.away
+    );
+    const homeWinPct = clampPercent(mh * 100);
+    const drawPct = clampPercent(md * 100);
+    const awayWinPct = clampPercent(ma * 100);
 
-  const poisson = computeMatchProbabilities(lambdaHome, lambdaAway);
+    // Use goal model if available, else estimate from odds-implied probabilities
+    const lambdaHome = goals?.lambdaHome ?? Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, LEAGUE_AVG_HOME_GOALS * profile.goalEnv + profile.homeAdv));
+    const lambdaAway = goals?.lambdaAway ?? Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA, LEAGUE_AVG_AWAY_GOALS * profile.goalEnv));
+    const poisson = computeMatchProbabilities(lambdaHome, lambdaAway, computeDynamicRho(profile));
+
+    const bttsPct = book.btts ? clampPercent(book.btts.yes * 100) : clampPercent(poisson.btts * 100);
+    const over25Pct = book.overUnder25 ? clampPercent(book.overUnder25.over * 100) : clampPercent(poisson.over25 * 100);
+    const under25Pct = clampPercent(100 - over25Pct);
+
+    const top = [
+      { market: 'WIN' as const, selection: `${fixture.teams.home.name} to Win`, probability: homeWinPct },
+      { market: 'WIN' as const, selection: `${fixture.teams.away.name} to Win`, probability: awayWinPct },
+      { market: 'DRAW' as const, selection: 'Draw', probability: drawPct },
+      { market: 'OVER_2_5' as const, selection: 'Over 2.5 Goals', probability: over25Pct },
+      { market: 'UNDER_2_5' as const, selection: 'Under 2.5 Goals', probability: under25Pct },
+      { market: 'BTTS' as const, selection: 'Both Teams to Score', probability: bttsPct },
+    ].sort((a, b) => b.probability - a.probability)[0];
+
+    const correctScoresList = poisson.scores
+      .map((s) => ({ score: `${s.home}-${s.away}`, probability: s.prob * 100 }))
+      .sort((a, b) => b.probability - a.probability);
+    const predictedScore = getConsistentPredictedScore(top.market, top.selection, fixture.teams.home.name, correctScoresList);
+
+    return {
+      fixtureId: fixture.fixture.id,
+      homeWinPct, drawPct, awayWinPct, predictedScore,
+      bttsPct, over25Pct, under25Pct,
+      confidence: 'MEDIUM',
+      topPick: { ...top, odds: Number(formatOdds(top.probability)) },
+      reasoning: ['Quick odds-based estimate — open match details for full AI analysis.'],
+      metrics: {
+        homeElo: BASE_ELO_VALUE, awayElo: BASE_ELO_VALUE,
+        homeForm: 0.5, awayForm: 0.5,
+        homeXg: Number(lambdaHome.toFixed(2)), awayXg: Number(lambdaAway.toFixed(2)),
+        homeAdvantage: profile.homeAdv,
+      },
+      computedAt: Date.now(),
+      correctScores: correctScoresList.slice(0, 10),
+      bestOdds: book.bestOdds,
+      marketOverround: book.overround ?? null,
+      source: 'HYBRID',
+      dataSignals: 1,
+    };
+  }
+
+  // ─── Strategy 2: Use league goal environment (no market data) ───
+  const lambdaHome = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA,
+    LEAGUE_AVG_HOME_GOALS * profile.goalEnv + profile.homeAdv
+  ));
+  const lambdaAway = Math.max(MIN_LAMBDA, Math.min(MAX_LAMBDA,
+    LEAGUE_AVG_AWAY_GOALS * profile.goalEnv
+  ));
+
+  const rho = computeDynamicRho(profile);
+  const poisson = computeMatchProbabilities(lambdaHome, lambdaAway, rho);
   const homeWinPct = clampPercent(poisson.homeWin * 100);
   const drawPct = clampPercent(poisson.draw * 100);
   const awayWinPct = clampPercent(poisson.awayWin * 100);
@@ -679,24 +912,16 @@ export const quickPredict = (fixture: Fixture): PredictionResult => {
 
   return {
     fixtureId: fixture.fixture.id,
-    homeWinPct,
-    drawPct,
-    awayWinPct,
-    predictedScore,
-    bttsPct,
-    over25Pct,
-    under25Pct,
-    confidence: 'MEDIUM',
+    homeWinPct, drawPct, awayWinPct, predictedScore,
+    bttsPct, over25Pct, under25Pct,
+    confidence: 'LOW',
     topPick: { ...top, odds: Number(formatOdds(top.probability)) },
-    reasoning: ['Quick estimate — open match details for full AI analysis.'],
+    reasoning: ['League-environment estimate — open match details for full AI analysis.'],
     metrics: {
-      homeElo: BASE_ELO_VALUE + Math.round((homeStrength - 1) * 200),
-      awayElo: BASE_ELO_VALUE + Math.round((awayStrength - 1) * 200),
-      homeForm: 0.5,
-      awayForm: 0.5,
-      homeXg: Number(lambdaHome.toFixed(2)),
-      awayXg: Number(lambdaAway.toFixed(2)),
-      homeAdvantage: HOME_ADVANTAGE_GOALS,
+      homeElo: BASE_ELO_VALUE, awayElo: BASE_ELO_VALUE,
+      homeForm: 0.5, awayForm: 0.5,
+      homeXg: Number(lambdaHome.toFixed(2)), awayXg: Number(lambdaAway.toFixed(2)),
+      homeAdvantage: profile.homeAdv,
     },
     computedAt: Date.now(),
     correctScores: correctScoresList.slice(0, 10),

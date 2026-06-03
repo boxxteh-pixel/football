@@ -20,15 +20,15 @@ const poisson = (k: number, lambda: number): number => {
   return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
 };
 
-const MAX_GOALS = 6;
-const RHO = -0.06; // Dixon-Coles correlation parameter for low-scoring matches
+const MAX_GOALS = 8;
+const DEFAULT_RHO = -0.06; // Dixon-Coles correlation parameter for low-scoring matches
 
-const getDixonColesAdjustment = (i: number, j: number, lambdaHome: number, lambdaAway: number): number => {
+const getDixonColesAdjustment = (i: number, j: number, lambdaHome: number, lambdaAway: number, rho: number): number => {
   if (lambdaHome <= 0 || lambdaAway <= 0) return 1;
-  if (i === 0 && j === 0) return 1 - RHO * lambdaHome * lambdaAway;
-  if (i === 1 && j === 0) return 1 + RHO * lambdaAway;
-  if (i === 0 && j === 1) return 1 + RHO * lambdaHome;
-  if (i === 1 && j === 1) return 1 - RHO;
+  if (i === 0 && j === 0) return 1 - rho * lambdaHome * lambdaAway;
+  if (i === 1 && j === 0) return 1 + rho * lambdaAway;
+  if (i === 0 && j === 1) return 1 + rho * lambdaHome;
+  if (i === 1 && j === 1) return 1 - rho;
   return 1;
 };
 
@@ -46,6 +46,7 @@ export interface MatchProbabilities {
 export const computeMatchProbabilities = (
   lambdaHome: number,
   lambdaAway: number,
+  rho: number = DEFAULT_RHO,
 ): MatchProbabilities => {
   let homeWin = 0;
   let draw = 0;
@@ -62,7 +63,7 @@ export const computeMatchProbabilities = (
   for (let i = 0; i <= MAX_GOALS; i++) {
     for (let j = 0; j <= MAX_GOALS; j++) {
       const baseProb = poisson(i, lambdaHome) * poisson(j, lambdaAway);
-      const adj = getDixonColesAdjustment(i, j, lambdaHome, lambdaAway);
+      const adj = getDixonColesAdjustment(i, j, lambdaHome, lambdaAway, rho);
       const p = Math.max(0, baseProb * adj);
       totalProb += p;
       rawScores.push({ home: i, away: j, prob: p });
