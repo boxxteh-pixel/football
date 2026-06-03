@@ -61,7 +61,7 @@ export const computeMatchProbabilities = (
   let totalProb = 0;
   const rawScores: Array<{ home: number; away: number; prob: number }> = [];
 
-  const maxGoals = Math.max(8, Math.ceil(lambdaHome + lambdaAway + 5));
+  const maxGoals = Math.max(10, Math.ceil(Math.max(lambdaHome, lambdaAway) + 7));
 
   // Compute raw adjusted probabilities
   for (let i = 0; i <= maxGoals; i++) {

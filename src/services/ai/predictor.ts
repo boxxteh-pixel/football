@@ -551,16 +551,22 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const csTotal = Object.values(scoreMap).reduce((s, v) => s + v, 0);
   if (csTotal > 0) Object.keys(scoreMap).forEach((k) => { scoreMap[k] = (scoreMap[k] / csTotal) * 100; });
 
-  // Correct scores distribution smoothing: blend with a prior of realistic scores
-  const PRIOR_SCORES: Record<string, number> = {
-    "0-0": 0.18,
-    "1-0": 0.22,
-    "0-1": 0.15,
-    "1-1": 0.22,
-    "2-1": 0.12,
-    "1-2": 0.07,
-    "2-2": 0.04
-  };
+  // Correct scores distribution smoothing: blend with a dynamic prior of realistic scores based on expected total goals
+  const expectedTotal = lambdaHome + lambdaAway;
+  let PRIOR_SCORES: Record<string, number>;
+  if (expectedTotal > 3.2) {
+    PRIOR_SCORES = {
+      "2-1": 0.15, "1-2": 0.10, "2-2": 0.18, "3-1": 0.15, "1-3": 0.08, "3-2": 0.12, "2-3": 0.08, "3-3": 0.06, "4-1": 0.05, "1-4": 0.03
+    };
+  } else if (expectedTotal < 2.2) {
+    PRIOR_SCORES = {
+      "0-0": 0.24, "1-0": 0.26, "0-1": 0.18, "1-1": 0.22, "2-0": 0.06, "0-2": 0.04
+    };
+  } else {
+    PRIOR_SCORES = {
+      "0-0": 0.08, "1-0": 0.15, "0-1": 0.10, "1-1": 0.20, "2-1": 0.18, "1-2": 0.12, "2-0": 0.08, "0-2": 0.05, "2-2": 0.04
+    };
+  }
   const priorSum = Object.values(PRIOR_SCORES).reduce((s, v) => s + v, 0);
   const scoreKeys = Object.keys(scoreMap);
   if (scoreKeys.length > 0) {

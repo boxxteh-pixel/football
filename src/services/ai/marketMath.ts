@@ -147,7 +147,7 @@ export interface GoalsModel {
 }
 
 export const goalsModel = (lambdaHome: number, lambdaAway: number, rho = -0.06): GoalsModel => {
-  const MAX = Math.max(8, Math.ceil(lambdaHome + lambdaAway + 5));
+  const MAX = Math.max(10, Math.ceil(Math.max(lambdaHome, lambdaAway) + 7));
   const ph = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaHome));
   const pa = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaAway));
 
