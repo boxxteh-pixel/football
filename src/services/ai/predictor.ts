@@ -29,6 +29,7 @@ import type {
 import { BASE_ELO_VALUE, computeEloFromHistory, eloWinProbability } from './elo';
 import { buildFormSnapshot } from './form';
 import { computeMatchProbabilities } from './poisson';
+import { devigShin } from './marketMath';
 import { clampPercent, formatOdds } from '@/utils/format';
 import { getLeagueById } from '@/constants/leagues';
 import { useLearningStore } from '@/store/learningStore';
@@ -127,6 +128,51 @@ const INTERNATIONAL_PROFILE: LeagueProfile = {
 const getLeagueProfile = (leagueId: number | undefined, isInternational?: boolean): LeagueProfile => {
   if (isInternational) return INTERNATIONAL_PROFILE;
   return LEAGUE_PROFILES[leagueId ?? 0] ?? DEFAULT_LEAGUE_PROFILE;
+};
+
+const computeDynamicLeagueProfile = (
+  leagueId: number | undefined,
+  history: Fixture[],
+  defaultProfile: LeagueProfile
+): LeagueProfile => {
+  if (!leagueId || !history || history.length === 0) return defaultProfile;
+
+  // Filter history to matches in the same league
+  const leagueMatches = history.filter(
+    (f) => f.league?.id === leagueId && f.goals?.home != null && f.goals?.away != null
+  );
+
+  if (leagueMatches.length < 8) return defaultProfile;
+
+  let totalHomeGoals = 0;
+  let totalAwayGoals = 0;
+  let draws = 0;
+  let matchCount = 0;
+
+  leagueMatches.forEach((f) => {
+    const hg = f.goals.home!;
+    const ag = f.goals.away!;
+    totalHomeGoals += hg;
+    totalAwayGoals += ag;
+    if (hg === ag) draws++;
+    matchCount++;
+  });
+
+  const avgHome = totalHomeGoals / matchCount;
+  const avgAway = totalAwayGoals / matchCount;
+  const drawRate = draws / matchCount;
+
+  // Normalizing against base expected goals (1.50 home, 1.15 away -> 2.65 total)
+  const observedAvgTotal = avgHome + avgAway;
+  const goalEnv = Math.max(0.70, Math.min(1.40, observedAvgTotal / 2.65));
+  const homeAdv = Math.max(0.05, Math.min(0.65, avgHome - avgAway));
+
+  return {
+    strength: defaultProfile.strength,
+    goalEnv: 0.70 * defaultProfile.goalEnv + 0.30 * goalEnv,
+    homeAdv: 0.70 * defaultProfile.homeAdv + 0.30 * homeAdv,
+    drawRate: 0.70 * defaultProfile.drawRate + 0.30 * drawRate,
+  };
 };
 
 /**
@@ -347,7 +393,8 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
 
   // ─────────────── 3. League Strength, Goal Environment & Dynamic Home Advantage ───────────────
   const league = getLeagueById(fixture.league.id);
-  const leagueProfile = getLeagueProfile(fixture.league.id, league?.isInternational);
+  const staticProfile = getLeagueProfile(fixture.league.id, league?.isInternational);
+  const leagueProfile = computeDynamicLeagueProfile(fixture.league.id, combinedHistory, staticProfile);
 
   // League goal environment adjusts the base lambdas
   const leagueGoalEnv = leagueProfile.goalEnv;
@@ -411,10 +458,17 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
     const rawOverround = book.overround;
     // Lower overround indicates higher liquidity (sharpness) -> higher weight
     overroundWeight = 0.42 * Math.exp(-3.5 * (rawOverround - 1.0));
-    const [mh, md, ma] = norm3(book.fulltimeResult?.home ?? 0, book.fulltimeResult?.draw ?? 0, book.fulltimeResult?.away ?? 0);
-    marketProbHome = mh;
-    marketProbDraw = md;
-    marketProbAway = ma;
+    if (book.bestOdds?.home && book.bestOdds?.draw && book.bestOdds?.away) {
+      const [mh, md, ma] = devigShin([book.bestOdds.home, book.bestOdds.draw, book.bestOdds.away]);
+      marketProbHome = mh;
+      marketProbDraw = md;
+      marketProbAway = ma;
+    } else {
+      const [mh, md, ma] = norm3(book.fulltimeResult?.home ?? 0, book.fulltimeResult?.draw ?? 0, book.fulltimeResult?.away ?? 0);
+      marketProbHome = mh;
+      marketProbDraw = md;
+      marketProbAway = ma;
+    }
   }
 
   // ─────────────── 5. Odds Drift Signal Integration ───────────────
@@ -494,6 +548,16 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const csTotal = Object.values(scoreMap).reduce((s, v) => s + v, 0);
   if (csTotal > 0) Object.keys(scoreMap).forEach((k) => { scoreMap[k] = (scoreMap[k] / csTotal) * 100; });
 
+  // Correct scores distribution smoothing: blend with a small uniform prior over top outcomes
+  const scoreKeys = Object.keys(scoreMap);
+  const numScores = scoreKeys.length;
+  if (numScores > 0) {
+    const smoothingFactor = 0.05; // 5% uniform prior blend
+    scoreKeys.forEach((k) => {
+      scoreMap[k] = scoreMap[k] * (1.0 - smoothingFactor) + (100.0 / numScores) * smoothingFactor;
+    });
+  }
+
   const correctScoresList = Object.entries(scoreMap)
     .map(([score, probability]) => ({ score, probability }))
     .sort((a, b) => b.probability - a.probability);
@@ -545,17 +609,8 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const signals = [eloArgmax, poissonArgmax, marketArgmax, xgArgmax].filter((s): s is 'H' | 'D' | 'A' => s != null);
   const agreeCount = signals.filter(s => s === statArgmax).length;
   const totalSignals = signals.length;
-
-  let agreementBonus = 0;
-  if (totalSignals >= 3 && agreeCount === totalSignals) {
-    agreementBonus = 0.10; // all available signals agree → strong confidence
-  } else if (totalSignals >= 3 && agreeCount >= totalSignals - 1) {
-    agreementBonus = 0.05; // n-1 agree → moderate boost
-  } else if (totalSignals >= 2 && agreeCount >= 2) {
-    agreementBonus = 0.03; // 2 agree → small boost
-  } else {
-    agreementBonus = -0.05; // significant disagreement → penalize
-  }
+  const agreementRatio = totalSignals > 0 ? agreeCount / totalSignals : 0.5;
+  const agreementBonus = totalSignals >= 2 ? (agreementRatio - 0.5) * 0.24 : 0.0;
 
   // League strength modifies confidence: weaker leagues → less predictable
   const leagueConfidenceMod = 0.85 + 0.15 * leagueStrength; // 0.925 for avg, 1.03 for elite

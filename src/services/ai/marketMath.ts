@@ -123,14 +123,19 @@ export const blendDistributions = (
  * the bookmaker line and the provider model it materially improves goals
  * accuracy (the user's weakest market).
  */
-const factorial = (n: number): number => {
-  let r = 1;
-  for (let i = 2; i <= n; i++) r *= i;
-  return r;
+const LOG_FACTORIALS: number[] = [0];
+const getLogFactorial = (n: number): number => {
+  if (n <= 1) return 0;
+  while (LOG_FACTORIALS.length <= n) {
+    const i = LOG_FACTORIALS.length;
+    LOG_FACTORIALS.push(LOG_FACTORIALS[i - 1] + Math.log(i));
+  }
+  return LOG_FACTORIALS[n];
 };
+
 const poissonPmf = (k: number, lambda: number): number => {
   if (lambda <= 0) return k === 0 ? 1 : 0;
-  return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+  return Math.exp(k * Math.log(lambda) - lambda - getLogFactorial(k));
 };
 
 export interface GoalsModel {
@@ -142,7 +147,7 @@ export interface GoalsModel {
 }
 
 export const goalsModel = (lambdaHome: number, lambdaAway: number, rho = -0.06): GoalsModel => {
-  const MAX = 8;
+  const MAX = Math.max(8, Math.ceil(lambdaHome + lambdaAway + 5));
   const ph = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaHome));
   const pa = Array.from({ length: MAX + 1 }, (_, i) => poissonPmf(i, lambdaAway));
 

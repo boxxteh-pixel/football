@@ -8,19 +8,21 @@
  * Incorporates a Dixon-Coles model adjustment to correct for underestimation of low-scoring draws.
  */
 
-const factorial = (n: number): number => {
-  if (n <= 1) return 1;
-  let result = 1;
-  for (let i = 2; i <= n; i++) result *= i;
-  return result;
+const LOG_FACTORIALS: number[] = [0];
+const getLogFactorial = (n: number): number => {
+  if (n <= 1) return 0;
+  while (LOG_FACTORIALS.length <= n) {
+    const i = LOG_FACTORIALS.length;
+    LOG_FACTORIALS.push(LOG_FACTORIALS[i - 1] + Math.log(i));
+  }
+  return LOG_FACTORIALS[n];
 };
 
 const poisson = (k: number, lambda: number): number => {
   if (lambda <= 0) return k === 0 ? 1 : 0;
-  return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+  return Math.exp(k * Math.log(lambda) - lambda - getLogFactorial(k));
 };
 
-const MAX_GOALS = 8;
 const DEFAULT_RHO = -0.06; // Dixon-Coles correlation parameter for low-scoring matches
 
 const getDixonColesAdjustment = (i: number, j: number, lambdaHome: number, lambdaAway: number, rho: number): number => {
@@ -59,9 +61,11 @@ export const computeMatchProbabilities = (
   let totalProb = 0;
   const rawScores: Array<{ home: number; away: number; prob: number }> = [];
 
+  const maxGoals = Math.max(8, Math.ceil(lambdaHome + lambdaAway + 5));
+
   // Compute raw adjusted probabilities
-  for (let i = 0; i <= MAX_GOALS; i++) {
-    for (let j = 0; j <= MAX_GOALS; j++) {
+  for (let i = 0; i <= maxGoals; i++) {
+    for (let j = 0; j <= maxGoals; j++) {
       const baseProb = poisson(i, lambdaHome) * poisson(j, lambdaAway);
       const adj = getDixonColesAdjustment(i, j, lambdaHome, lambdaAway, rho);
       const p = Math.max(0, baseProb * adj);
