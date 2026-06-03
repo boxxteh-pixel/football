@@ -49,12 +49,11 @@ export const useResults = (date: string | null, days = 4) => {
         ? fetchResultsOnDate(date, selectedLeagueIds)
         : fetchRecentResults(todayIsoDate(), selectedLeagueIds, days),
     enabled: hasApiKey() && selectedLeagueIds.length > 0,
-    staleTime: 15 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
-    placeholderData: (prev) => prev,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    staleTime: 0, // Disable cache hold to fetch live updates immediately
+    gcTime: 0,    // Force fresh queries
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const { rows, summary } = useMemo(() => {
