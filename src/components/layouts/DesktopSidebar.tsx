@@ -527,9 +527,10 @@ export const DesktopSidebar: React.FC = () => {
             width: "100%",
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
+            minHeight: 46,
             paddingVertical: 12,
-            paddingHorizontal: 14,
+            paddingHorizontal: 16,
+            marginVertical: 4,
             borderRadius: 14,
             borderWidth: 1,
             backgroundColor: pathname.startsWith("/settings")
@@ -541,7 +542,7 @@ export const DesktopSidebar: React.FC = () => {
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <View style={{ width: 24, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 24, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
             <BoroIcon
               name="settings"
               size={18}
@@ -560,6 +561,7 @@ export const DesktopSidebar: React.FC = () => {
                 : colors.onSurfaceVariant,
               fontFamily: fonts.body,
               fontSize: 13,
+              paddingLeft: 4,
             }}
           >
             {t("profile.settings") || "Settings"}
@@ -574,9 +576,10 @@ export const DesktopSidebar: React.FC = () => {
             width: "100%",
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
+            minHeight: 46,
             paddingVertical: 12,
-            paddingHorizontal: 14,
+            paddingHorizontal: 16,
+            marginVertical: 4,
             borderRadius: 14,
             borderWidth: 1,
             backgroundColor: "rgba(255,255,255,0.02)",
@@ -584,7 +587,7 @@ export const DesktopSidebar: React.FC = () => {
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <View style={{ width: 24, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 24, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
             <BoroIcon name="logout" size={17} color={colors.onSurfaceVariant} />
           </View>
           <Text
@@ -592,6 +595,7 @@ export const DesktopSidebar: React.FC = () => {
               color: colors.onSurfaceVariant,
               fontFamily: fonts.body,
               fontSize: 13,
+              paddingLeft: 4,
             }}
           >
             Logout
@@ -648,10 +652,10 @@ const NavRow: React.FC<NavRowProps> = ({
       style={({ pressed, hovered }: any) => ({
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
-        minHeight: 42,
-        paddingHorizontal: 14,
-        paddingVertical: 9,
+        minHeight: 46,
+        paddingHorizontal: 16,
+        paddingVertical: 11,
+        marginVertical: 4,
         borderRadius: 12,
         borderWidth: 1,
         overflow: "hidden",
@@ -669,9 +673,9 @@ const NavRow: React.FC<NavRowProps> = ({
         style={{
           position: "absolute",
           left: 0,
-          top: 8,
-          bottom: 8,
-          width: 3,
+          top: 10,
+          bottom: 10,
+          width: 3.5,
           borderTopRightRadius: 4,
           borderBottomRightRadius: 4,
           backgroundColor: active ? colors.primaryFixed : "transparent",
@@ -680,7 +684,12 @@ const NavRow: React.FC<NavRowProps> = ({
       />
       <View
         pointerEvents="none"
-        style={{ width: 24, alignItems: "center", justifyContent: "center" }}
+        style={{
+          width: 24,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 16, // Explicit right margin space for icon-text separation
+        }}
       >
         <BoroIcon
           name={icon}
