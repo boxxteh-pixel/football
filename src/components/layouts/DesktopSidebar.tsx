@@ -94,6 +94,8 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         user-select: none;
         font-weight: 700;
         opacity: 0.45;
+        margin-top: 14px !important;
+        margin-bottom: 6px !important;
       }
 
       [id^="sidebar-row-"] {
@@ -104,10 +106,11 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         isolation: isolate;
         transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         border: 1px solid transparent !important;
+        margin-vertical: 4px !important;
       }
 
       [id^="sidebar-row-"] > div:nth-child(2) {
-        margin-right: 12px !important;
+        margin-right: 16px !important;
       }
 
       [id^="sidebar-row-"]:hover {
@@ -139,6 +142,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
 
       [id^="sidebar-label-"] {
         transition: color 0.2s ease;
+        padding-left: 4px !important;
       }
 
       [id^="sidebar-row-"]:hover [id^="sidebar-label-"],
@@ -149,6 +153,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
       #sidebar-brand {
         cursor: pointer;
         transition: opacity 0.2s ease;
+        margin-bottom: 24px !important;
       }
       #sidebar-brand:hover {
         opacity: 0.92;
@@ -166,6 +171,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         backdrop-filter: blur(12px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         transition: all 0.25s ease;
+        margin-bottom: 6px !important;
       }
       #sidebar-api-meter:hover {
         border-color: rgba(${accentRGB}, 0.22) !important;
@@ -179,6 +185,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         backdrop-filter: blur(12px);
         transition: all 0.25s ease;
+        margin-bottom: 6px !important;
       }
       #sidebar-account:hover {
         background-color: rgba(255, 255, 255, 0.04) !important;
@@ -189,6 +196,8 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
       .boro-sidebar-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+        margin-top: 12px !important;
+        margin-bottom: 12px !important;
       }
 
       #sidebar-action-settings,
@@ -201,6 +210,8 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         background-color: rgba(255, 255, 255, 0.02) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
       }
       #sidebar-action-settings:hover {
         background-color: rgba(${accentRGB}, 0.06) !important;
