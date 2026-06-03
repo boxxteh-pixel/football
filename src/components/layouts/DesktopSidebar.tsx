@@ -81,27 +81,39 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
 
     style.textContent = `
       #boro-sidebar {
-        backdrop-filter: blur(28px) saturate(180%) brightness(1.02);
-        -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.02);
+        backdrop-filter: blur(48px) saturate(220%) brightness(0.95) !important;
+        -webkit-backdrop-filter: blur(48px) saturate(220%) brightness(0.95) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: 6px 0 32px rgba(0, 0, 0, 0.5);
         transition: background-color 0.24s ease;
       }
 
       .boro-section-label {
         text-transform: uppercase;
-        letter-spacing: 1.2px;
+        letter-spacing: 1.5px;
         user-select: none;
+        font-weight: 700;
+        opacity: 0.45;
       }
 
       [id^="sidebar-row-"] {
         cursor: pointer;
         isolation: isolate;
-        transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease !important;
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        border: 1px solid transparent !important;
       }
 
       [id^="sidebar-row-"]:hover {
-        transform: translateX(2px);
-        background-color: rgba(255, 255, 255, 0.045) !important;
+        transform: translateX(4px);
+        background-color: rgba(255, 255, 255, 0.05) !important;
         border-color: rgba(255, 255, 255, 0.08) !important;
+      }
+
+      /* Glowing neon active styling */
+      [id^="sidebar-row-"].active {
+        background-color: rgba(${accentRGB}, 0.08) !important;
+        border-color: rgba(${accentRGB}, 0.22) !important;
+        box-shadow: 0 4px 16px rgba(${accentRGB}, 0.08);
       }
 
       [id^="sidebar-row-"] svg,
@@ -109,17 +121,17 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
       #sidebar-logout-btn svg {
         display: block;
         flex-shrink: 0;
-        transition: transform 0.16s ease, stroke 0.16s ease;
+        transition: transform 0.2s ease, stroke 0.2s ease;
       }
 
       [id^="sidebar-row-"]:hover svg,
       #sidebar-action-settings:hover svg {
-        transform: scale(1.04);
+        transform: scale(1.06);
         stroke: ${primaryColor} !important;
       }
 
       [id^="sidebar-label-"] {
-        transition: color 0.16s ease;
+        transition: color 0.2s ease;
       }
 
       [id^="sidebar-row-"]:hover [id^="sidebar-label-"],
@@ -132,47 +144,60 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         transition: opacity 0.2s ease;
       }
       #sidebar-brand:hover {
-        opacity: 0.88;
+        opacity: 0.92;
+      }
+      #sidebar-brand img {
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
       #sidebar-brand:hover img {
-        transform: rotate(4deg) scale(1.04);
-        transition: transform 0.28s ease;
+        transform: rotate(6deg) scale(1.08);
       }
 
       #sidebar-api-meter {
-        transition: all 0.24s ease;
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        transition: all 0.25s ease;
       }
       #sidebar-api-meter:hover {
-        border-color: rgba(${accentRGB}, 0.18) !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.24);
+        border-color: rgba(${accentRGB}, 0.22) !important;
+        background-color: rgba(255, 255, 255, 0.035) !important;
+        box-shadow: 0 4px 24px rgba(${accentRGB}, 0.08);
       }
 
       #sidebar-account {
         cursor: default;
-        transition: all 0.24s ease;
+        background-color: rgba(255, 255, 255, 0.015) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(12px);
+        transition: all 0.25s ease;
       }
       #sidebar-account:hover {
         background-color: rgba(255, 255, 255, 0.04) !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.09) !important;
+        transform: translateY(-1px);
       }
 
       .boro-sidebar-divider {
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
       }
 
       #sidebar-action-settings,
       #sidebar-logout-btn {
         cursor: pointer;
-        transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease !important;
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
       }
       #sidebar-action-settings:hover {
-        background-color: rgba(255, 255, 255, 0.045) !important;
-        border-color: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(${accentRGB}, 0.06) !important;
+        border-color: rgba(${accentRGB}, 0.2) !important;
       }
       #sidebar-logout-btn:hover {
         background-color: rgba(239, 68, 68, 0.08) !important;
-        border-color: rgba(239, 68, 68, 0.2) !important;
+        border-color: rgba(239, 68, 68, 0.25) !important;
       }
       #sidebar-logout-btn:hover svg {
         stroke: #ef4444 !important;
@@ -584,6 +609,7 @@ const NavRow: React.FC<NavRowProps> = ({
   return (
     <Pressable
       nativeID={nativeID}
+      className={active ? "active" : ""}
       onPress={onPress}
       style={({ pressed, hovered }: any) => ({
         flexDirection: "row",
