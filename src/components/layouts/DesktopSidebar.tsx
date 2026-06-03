@@ -196,14 +196,11 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         cursor: pointer;
         background-color: rgba(255, 255, 255, 0.02) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      }
-      #sidebar-action-settings svg {
-        margin-right: 8px !important;
       }
       #sidebar-action-settings:hover {
         background-color: rgba(${accentRGB}, 0.06) !important;
@@ -511,72 +508,84 @@ export const DesktopSidebar: React.FC = () => {
           </View>
         </View>
 
-        {/* Settings + Logout row */}
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          <Pressable
-            nativeID="sidebar-action-settings"
-            onPress={() => router.push("/settings")}
-            style={({ pressed }: any) => ({
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              paddingVertical: 10,
-              borderRadius: 10,
-              borderWidth: 1,
-              backgroundColor: pathname.startsWith("/settings")
-                ? colors.accent15
-                : "rgba(255,255,255,0.02)",
-              borderColor: pathname.startsWith("/settings")
-                ? colors.accent30
-                : "rgba(255,255,255,0.06)",
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
+        {/* Settings button as full-width card */}
+        <Pressable
+          nativeID="sidebar-action-settings"
+          onPress={() => router.push("/settings")}
+          style={({ pressed }: any) => ({
+            width: "100%",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            borderRadius: 14,
+            borderWidth: 1,
+            backgroundColor: pathname.startsWith("/settings")
+              ? colors.accent08
+              : "rgba(255,255,255,0.02)",
+            borderColor: pathname.startsWith("/settings")
+              ? colors.accent20
+              : "rgba(255,255,255,0.06)",
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <View style={{ width: 24, alignItems: "center", justifyContent: "center" }}>
             <BoroIcon
               name="settings"
-              size={17}
+              size={18}
               color={
                 pathname.startsWith("/settings")
                   ? colors.primaryFixed
                   : colors.onSurfaceVariant
               }
             />
-            <Text
-              nativeID="sidebar-label-settings"
-              style={{
-                color: pathname.startsWith("/settings")
-                  ? colors.primaryFixed
-                  : colors.onSurfaceVariant,
-                fontFamily: fonts.body,
-                fontSize: 12,
-              }}
-            >
-              {t("profile.settings") || "Settings"}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            nativeID="sidebar-logout-btn"
-            onPress={handleLogout}
-            style={({ pressed }: any) => ({
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              borderRadius: 10,
-              borderWidth: 1,
-              backgroundColor: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.06)",
-              opacity: pressed ? 0.7 : 1,
-            })}
+          </View>
+          <Text
+            nativeID="sidebar-label-settings"
+            style={{
+              color: pathname.startsWith("/settings")
+                ? colors.primaryFixed
+                : colors.onSurfaceVariant,
+              fontFamily: fonts.body,
+              fontSize: 13,
+            }}
           >
-            <BoroIcon name="logout" size={16} color={colors.onSurfaceVariant} />
-          </Pressable>
-        </View>
+            {t("profile.settings") || "Settings"}
+          </Text>
+        </Pressable>
+
+        {/* Logout button as full-width card */}
+        <Pressable
+          nativeID="sidebar-logout-btn"
+          onPress={handleLogout}
+          style={({ pressed }: any) => ({
+            width: "100%",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            borderRadius: 14,
+            borderWidth: 1,
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderColor: "rgba(255,255,255,0.06)",
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <View style={{ width: 24, alignItems: "center", justifyContent: "center" }}>
+            <BoroIcon name="logout" size={17} color={colors.onSurfaceVariant} />
+          </View>
+          <Text
+            style={{
+              color: colors.onSurfaceVariant,
+              fontFamily: fonts.body,
+              fontSize: 13,
+            }}
+          >
+            Logout
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
