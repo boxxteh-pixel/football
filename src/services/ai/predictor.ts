@@ -142,12 +142,12 @@ const computeDynamicLeagueProfile = (
     (f) => f.league?.id === leagueId && f.goals?.home != null && f.goals?.away != null
   );
 
-  if (leagueMatches.length < 8) return defaultProfile;
+  const matchCount = leagueMatches.length;
+  if (matchCount === 0) return defaultProfile;
 
   let totalHomeGoals = 0;
   let totalAwayGoals = 0;
   let draws = 0;
-  let matchCount = 0;
 
   leagueMatches.forEach((f) => {
     const hg = f.goals.home!;
@@ -155,7 +155,6 @@ const computeDynamicLeagueProfile = (
     totalHomeGoals += hg;
     totalAwayGoals += ag;
     if (hg === ag) draws++;
-    matchCount++;
   });
 
   const avgHome = totalHomeGoals / matchCount;
@@ -165,13 +164,17 @@ const computeDynamicLeagueProfile = (
   // Normalizing against base expected goals (1.50 home, 1.15 away -> 2.65 total)
   const observedAvgTotal = avgHome + avgAway;
   const goalEnv = Math.max(0.70, Math.min(1.40, observedAvgTotal / 2.65));
-  const homeAdv = Math.max(0.05, Math.min(0.65, avgHome - avgAway));
+  // Divide by 2 to control team-strength/schedule/random noise bias
+  const homeAdv = Math.max(0.05, Math.min(0.65, (avgHome - avgAway) / 2.0));
+
+  // Bayesian shrinkage blend weight
+  const blendWeight = matchCount / (matchCount + 50.0);
 
   return {
     strength: defaultProfile.strength,
-    goalEnv: 0.70 * defaultProfile.goalEnv + 0.30 * goalEnv,
-    homeAdv: 0.70 * defaultProfile.homeAdv + 0.30 * homeAdv,
-    drawRate: 0.70 * defaultProfile.drawRate + 0.30 * drawRate,
+    goalEnv: (1.0 - blendWeight) * defaultProfile.goalEnv + blendWeight * goalEnv,
+    homeAdv: (1.0 - blendWeight) * defaultProfile.homeAdv + blendWeight * homeAdv,
+    drawRate: (1.0 - blendWeight) * defaultProfile.drawRate + blendWeight * drawRate,
   };
 };
 
@@ -548,13 +551,23 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const csTotal = Object.values(scoreMap).reduce((s, v) => s + v, 0);
   if (csTotal > 0) Object.keys(scoreMap).forEach((k) => { scoreMap[k] = (scoreMap[k] / csTotal) * 100; });
 
-  // Correct scores distribution smoothing: blend with a small uniform prior over top outcomes
+  // Correct scores distribution smoothing: blend with a prior of realistic scores
+  const PRIOR_SCORES: Record<string, number> = {
+    "0-0": 0.18,
+    "1-0": 0.22,
+    "0-1": 0.15,
+    "1-1": 0.22,
+    "2-1": 0.12,
+    "1-2": 0.07,
+    "2-2": 0.04
+  };
+  const priorSum = Object.values(PRIOR_SCORES).reduce((s, v) => s + v, 0);
   const scoreKeys = Object.keys(scoreMap);
-  const numScores = scoreKeys.length;
-  if (numScores > 0) {
-    const smoothingFactor = 0.05; // 5% uniform prior blend
+  if (scoreKeys.length > 0) {
+    const smoothingFactor = 0.05; // 5% prior blend
     scoreKeys.forEach((k) => {
-      scoreMap[k] = scoreMap[k] * (1.0 - smoothingFactor) + (100.0 / numScores) * smoothingFactor;
+      const priorVal = PRIOR_SCORES[k] ? (PRIOR_SCORES[k] / priorSum) * 100 : 0;
+      scoreMap[k] = scoreMap[k] * (1.0 - smoothingFactor) + priorVal * smoothingFactor;
     });
   }
 
@@ -609,8 +622,8 @@ export const predictFixture = (inputs: PredictorInputs): PredictionResult => {
   const signals = [eloArgmax, poissonArgmax, marketArgmax, xgArgmax].filter((s): s is 'H' | 'D' | 'A' => s != null);
   const agreeCount = signals.filter(s => s === statArgmax).length;
   const totalSignals = signals.length;
-  const agreementRatio = totalSignals > 0 ? agreeCount / totalSignals : 0.5;
-  const agreementBonus = totalSignals >= 2 ? (agreementRatio - 0.5) * 0.24 : 0.0;
+  const agreementRatio = totalSignals > 1 ? (agreeCount - 1) / (totalSignals - 1) : 0.5;
+  const agreementBonus = (agreementRatio - 0.5) * 0.24 * (totalSignals / 4.0);
 
   // League strength modifies confidence: weaker leagues → less predictable
   const leagueConfidenceMod = 0.85 + 0.15 * leagueStrength; // 0.925 for avg, 1.03 for elite
