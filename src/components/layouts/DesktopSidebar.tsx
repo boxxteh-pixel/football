@@ -98,7 +98,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         margin-bottom: 6px !important;
       }
 
-      [id^="sidebar-row-"] {
+      .boro-sidebar-row {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
@@ -106,27 +106,24 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         isolation: isolate;
         transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         border: 1px solid transparent !important;
-        margin-vertical: 4px !important;
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
       }
 
-      [id^="sidebar-row-"] > div:nth-child(2) {
-        margin-right: 16px !important;
-      }
-
-      [id^="sidebar-row-"]:hover {
+      .boro-sidebar-row:hover {
         transform: translateX(4px);
         background-color: rgba(255, 255, 255, 0.05) !important;
         border-color: rgba(255, 255, 255, 0.08) !important;
       }
 
       /* Glowing neon active styling */
-      [id^="sidebar-row-"].active {
+      .boro-sidebar-row.active {
         background-color: rgba(${accentRGB}, 0.08) !important;
         border-color: rgba(${accentRGB}, 0.22) !important;
         box-shadow: 0 4px 16px rgba(${accentRGB}, 0.08);
       }
 
-      [id^="sidebar-row-"] svg,
+      .boro-sidebar-row svg,
       #sidebar-action-settings svg,
       #sidebar-logout-btn svg {
         display: block;
@@ -134,7 +131,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         transition: transform 0.2s ease, stroke 0.2s ease;
       }
 
-      [id^="sidebar-row-"]:hover svg,
+      .boro-sidebar-row:hover svg,
       #sidebar-action-settings:hover svg {
         transform: scale(1.06);
         stroke: ${primaryColor} !important;
@@ -145,7 +142,7 @@ function useInjectSidebarCSS(primaryColor: string, accentRGB: string) {
         padding-left: 4px !important;
       }
 
-      [id^="sidebar-row-"]:hover [id^="sidebar-label-"],
+      .boro-sidebar-row:hover [id^="sidebar-label-"],
       #sidebar-action-settings:hover [id^="sidebar-label-"] {
         color: #ffffff !important;
       }
@@ -647,7 +644,7 @@ const NavRow: React.FC<NavRowProps> = ({
   return (
     <Pressable
       nativeID={nativeID}
-      className={active ? "active" : ""}
+      className={`boro-sidebar-row ${active ? "active" : ""}`}
       onPress={onPress}
       style={({ pressed, hovered }: any) => ({
         flexDirection: "row",
