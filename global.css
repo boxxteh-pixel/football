@@ -91,3 +91,29 @@
     }
   }
 }
+
+/* ───────────────────────────────────────────────────────────────
+   Community Chat — desktop/web polish (additive & non-conflicting).
+   Targets the web-only flair classes injected by the chat screen.
+   Only adds depth + hover interactivity; never overrides the existing
+   animated gradients, so the current look stays fully intact.
+   ─────────────────────────────────────────────────────────────── */
+
+/* AI bot reply bubble — soft depth so it lifts off the background. */
+.boro-rainbow-border {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Prediction match cards — smooth lift + glow on hover (desktop only). */
+.boro-match-card-border {
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.25s ease;
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .boro-match-card-border:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+}
