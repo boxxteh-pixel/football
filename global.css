@@ -117,3 +117,24 @@
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   }
 }
+
+/* ───────────────────────────────────────────────────────────────
+   Desktop interaction polish — clearer affordances + native-app feel.
+   ─────────────────────────────────────────────────────────────── */
+
+@media (hover: hover) and (pointer: fine) {
+  [role="button"],
+  [role="link"],
+  a {
+    cursor: pointer;
+  }
+}
+
+/* Treat images as part of the UI: no accidental drag/selection on desktop. */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
