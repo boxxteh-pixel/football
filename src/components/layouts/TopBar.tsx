@@ -81,7 +81,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           width: '100%',
           maxWidth: isDesktop ? contentMaxWidth + 72 : undefined,
           alignSelf: 'center',
-          boxSizing: 'border-box',
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

@@ -920,7 +920,6 @@ export default function CommunityChatScreen() {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenContainer
           title="BORO chat"
-          wordmarkSub="chat"
           showLive={false}
           scroll={false}
         >
@@ -979,7 +978,7 @@ export default function CommunityChatScreen() {
                     paddingHorizontal: 12,
                     height: 44,
                     outlineStyle: "none",
-                  }}
+                  } as any}
                 />
                 <Pressable
                   onPress={handleSaveNickname}
@@ -1015,7 +1014,6 @@ export default function CommunityChatScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenContainer
         title="BORO chat"
-        wordmarkSub="chat"
         showLive={false}
         scroll={false}
         bottomSafe={false}
@@ -1162,7 +1160,7 @@ export default function CommunityChatScreen() {
                   height: 40,
                   outlineStyle: "none",
                   outlineWidth: 0,
-                }}
+                } as any}
                 onSubmitEditing={handleSend}
               />
               <Pressable

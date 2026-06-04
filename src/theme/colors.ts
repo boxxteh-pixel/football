@@ -141,12 +141,12 @@ export function useColors(): BoroColors {
   if (oledMode) {
     return {
       ...activePalette,
-      background: '#000000',
-      surface: '#000000',
-      surfaceDim: '#000000',
-      surfaceContainer: '#0a0a0a',
-      surfaceContainerLow: '#070707',
-      surfaceContainerLowest: '#000000',
+      background: '#000000' as any,
+      surface: '#000000' as any,
+      surfaceDim: '#000000' as any,
+      surfaceContainer: '#0a0a0a' as any,
+      surfaceContainerLow: '#070707' as any,
+      surfaceContainerLowest: '#000000' as any,
     };
   }
   
@@ -161,12 +161,12 @@ export function getColorsByTheme(theme: ColorTheme): BoroColors {
   if (oledMode) {
     return {
       ...activePalette,
-      background: '#000000',
-      surface: '#000000',
-      surfaceDim: '#000000',
-      surfaceContainer: '#0a0a0a',
-      surfaceContainerLow: '#070707',
-      surfaceContainerLowest: '#000000',
+      background: '#000000' as any,
+      surface: '#000000' as any,
+      surfaceDim: '#000000' as any,
+      surfaceContainer: '#0a0a0a' as any,
+      surfaceContainerLow: '#070707' as any,
+      surfaceContainerLowest: '#000000' as any,
     };
   }
   

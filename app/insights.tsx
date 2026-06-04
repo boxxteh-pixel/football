@@ -371,7 +371,7 @@ export default function InsightsScreen() {
               
               <Pressable
                 onPress={() => {
-                  haptics.notificationSuccess();
+                  haptics.success();
                   setShowShareModal(false);
                   alert("Link copiato negli appunti!");
                 }}
