@@ -17,6 +17,22 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Premium typography rendering across the whole site (web/PC). */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  /* Remove the default blue tap/click flash — we use our own focus styling. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Invisible scrollbars everywhere (premium, chrome-less look) */
   ::-webkit-scrollbar {
     width: 0px;
@@ -34,6 +50,27 @@
     -ms-overflow-style: none; /* IE/Edge */
   }
 
+  /* On-brand text selection (neon-green wash). */
+  ::selection {
+    background: rgba(195, 244, 0, 0.26);
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background: rgba(195, 244, 0, 0.26);
+    color: #ffffff;
+  }
+
+  /* Accessible, on-brand focus ring for keyboard / desktop navigation.
+     Mouse/touch interactions stay clean (no ring) thanks to :focus-visible. */
+  :focus-visible {
+    outline: 2px solid rgba(195, 244, 0, 0.7);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
   /* Prevent any light-theme screen background leak in React Native Web */
   div[style*="background-color: rgb(242, 242, 242)"],
   div[style*="background-color: rgb(255, 255, 255)"],
@@ -41,4 +78,63 @@
   div[style*="background-color: #ffffff"] {
     background-color: #1a1918 !important;
   }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Community Chat — desktop/web polish (additive & non-conflicting).
+   Targets the web-only flair classes injected by the chat screen.
+   Only adds depth + hover interactivity; never overrides the existing
+   animated gradients, so the current look stays fully intact.
+   ─────────────────────────────────────────────────────────────── */
+
+/* AI bot reply bubble — soft depth so it lifts off the background. */
+.boro-rainbow-border {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Prediction match cards — smooth lift + glow on hover (desktop only). */
+.boro-match-card-border {
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.25s ease;
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .boro-match-card-border:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Desktop interaction polish — clearer affordances + native-app feel.
+   ─────────────────────────────────────────────────────────────── */
+
+@media (hover: hover) and (pointer: fine) {
+  [role="button"],
+  [role="link"],
+  a {
+    cursor: pointer;
+  }
+}
+
+/* Treat images as part of the UI: no accidental drag/selection on desktop. */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
