@@ -17,6 +17,22 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Premium typography rendering across the whole site (web/PC). */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  /* Remove the default blue tap/click flash — we use our own focus styling. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Invisible scrollbars everywhere (premium, chrome-less look) */
   ::-webkit-scrollbar {
     width: 0px;
@@ -34,11 +50,44 @@
     -ms-overflow-style: none; /* IE/Edge */
   }
 
+  /* On-brand text selection (neon-green wash). */
+  ::selection {
+    background: rgba(195, 244, 0, 0.26);
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background: rgba(195, 244, 0, 0.26);
+    color: #ffffff;
+  }
+
+  /* Accessible, on-brand focus ring for keyboard / desktop navigation.
+     Mouse/touch interactions stay clean (no ring) thanks to :focus-visible. */
+  :focus-visible {
+    outline: 2px solid rgba(195, 244, 0, 0.7);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
   /* Prevent any light-theme screen background leak in React Native Web */
   div[style*="background-color: rgb(242, 242, 242)"],
   div[style*="background-color: rgb(255, 255, 255)"],
   div[style*="background-color: rgba(255,255,255,1)"],
   div[style*="background-color: #ffffff"] {
     background-color: #1a1918 !important;
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
