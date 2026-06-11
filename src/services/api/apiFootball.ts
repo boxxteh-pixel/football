@@ -1,4 +1,4 @@
-import { config, hasApiKey } from '@/constants/config';
+import { config, hasApiKey, isCricketMode } from '@/constants/config';
 import type { Fixture, FixtureEvent, FixtureStatistic, H2HRecord } from '@/types/match';
 import { isLive, isScheduled } from '@/types/match';
 import type { League, StandingRow } from '@/types/league';
@@ -92,6 +92,11 @@ export const fetchUpcomingFixtures = async (
   if (!hasApiKey()) {
     return { date: fromDate, fixtures: getMockFixtures(fromDate) };
   }
+  
+  const cricket = isCricketMode();
+  // Cricket needs up to 10 matches over a wide range (e.g. 90 days)
+  const actualLookahead = cricket ? 90 : lookaheadDays;
+
   try {
     // Fetch a window starting ONE day before (UTC) through the lookahead, so
     // late-night local kickoffs that live in the previous UTC date bucket are
@@ -100,13 +105,23 @@ export const fetchUpcomingFixtures = async (
     startBound.setUTCDate(startBound.getUTCDate() - 1);
     const fromIso = startBound.toISOString().split('T')[0];
     const end = new Date(fromDate + 'T00:00:00Z');
-    end.setUTCDate(end.getUTCDate() + lookaheadDays);
+    end.setUTCDate(end.getUTCDate() + actualLookahead);
     const toIso = end.toISOString().split('T')[0];
 
     let all = await fetchSportmonksFixturesBetween(fromIso, toIso, leagueIds);
     if (all.length === 0) {
       console.log(`[apiFootball] No tracked fixtures between ${fromIso} and ${toIso}. Querying unfiltered fallback...`);
       all = await fetchSportmonksFixturesBetweenAll(fromIso, toIso);
+    }
+
+    if (cricket) {
+      const now = Date.now();
+      // Keep only live/upcoming/finished matches today and onwards, sort ascending, slice to 10
+      const upcomingCricket = all
+        .filter((f) => f.fixture.timestamp * 1000 >= now - 4 * 3600 * 1000)
+        .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp)
+        .slice(0, 10);
+      return { date: fromDate, fixtures: upcomingCricket };
     }
 
     // Primary: live + upcoming matches in the rolling window relative to now.
