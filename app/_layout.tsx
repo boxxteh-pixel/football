@@ -1,6 +1,6 @@
 import '../global.css';
-import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -30,6 +30,12 @@ import { useLearningStore } from '@/store/learningStore';
 import { useBetSlipStore } from '@/store/betSlipStore';
 import { useCalibrationStore } from '@/store/calibrationStore';
 import { withTimeout } from '@/utils/async';
+import { ONBOARDING_KEY } from './onboarding';
+// Notification listener (native only)
+let Notifications: any = null;
+if (Platform.OS !== 'web') {
+  try { Notifications = require('expo-notifications'); } catch { /* noop */ }
+}
 
 // On Web, react-native-vector-icons needs its CSS stylesheet injected dynamically.
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -172,9 +178,29 @@ export default function RootLayout() {
         ]);
       } finally {
         setStoresReady(true);
+        // Check onboarding
+        try {
+          const done = await AsyncStorage.getItem(ONBOARDING_KEY);
+          if (done !== 'true') {
+            // Delay to let splash hide first
+            setTimeout(() => router.replace('/onboarding' as any), 1600);
+          }
+        } catch { /* noop */ }
       }
     })();
   }, [hydrateAuth, hydrateSettings, hydrateFavorites, hydrateLearning, hydrateBetSlip, hydrateCalibration]);
+
+  // Notification tap listener
+  useEffect(() => {
+    if (!Notifications) return;
+    const sub = Notifications.addNotificationResponseReceivedListener((response: any) => {
+      const fixtureId = response.notification.request.content.data?.fixtureId;
+      if (fixtureId) {
+        setTimeout(() => router.push(`/match/${fixtureId}`), 300);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (fontError) {
@@ -240,6 +266,8 @@ export default function RootLayout() {
       <Stack.Screen name="picks" options={{ animation: showSidebar ? 'none' : 'slide_from_right' }} />
       <Stack.Screen name="favorites" options={{ animation: showSidebar ? 'none' : 'slide_from_right' }} />
       <Stack.Screen name="settings" options={{ animation: showSidebar ? 'none' : 'slide_from_bottom' }} />
+      <Stack.Screen name="onboarding" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="search" options={{ animation: 'fade', presentation: 'modal' }} />
     </Stack>
   );
 

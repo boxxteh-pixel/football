@@ -7,6 +7,7 @@ import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { DEFAULT_LEAGUES } from '@/constants/leagues';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useLearningStore } from '@/store/learningStore';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRateLimit } from '@/hooks/useRateLimit';
 import { config, hasApiKey } from '@/constants/config';
@@ -518,6 +519,8 @@ export default function SettingsScreen() {
           </GlassCard>
         </Section>
 
+        {/* ── AI Model Accuracy ── */}
+        <AIAccuracySection />
 
         <Section title={t('settings.about')}>
           <GlassCard padding={16} style={{ gap: 4 }}>
@@ -543,6 +546,136 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
         {title}
       </Text>
       {children}
+    </View>
+  );
+};
+
+const AIAccuracySection: React.FC = () => {
+  const colors = useColors();
+  const haptics = useHaptics();
+  const learning = useLearningStore((s) => s);
+  const [resetting, setResetting] = useState(false);
+
+  const total = learning.totalPredictionsAnalyzed;
+  const correct = learning.correctPredictionsCount;
+  const rate = total > 0 ? Math.round((correct / total) * 100) : null;
+
+  const biases = [
+    { label: 'ELO', value: learning.eloBias, icon: 'leaderboard' },
+    { label: 'Poisson', value: learning.poissonBias, icon: 'scatter-plot' },
+    { label: 'Form', value: learning.formBias, icon: 'trending-up' },
+  ] as const;
+
+  const handleReset = async () => {
+    haptics.light();
+    setResetting(true);
+    await learning.resetLearning();
+    setResetting(false);
+  };
+
+  // Ring chart approximation using View borders
+  const ringSize = 100;
+  const pct = rate ?? 0;
+  const ringColor = pct >= 65 ? colors.primaryFixed : pct >= 50 ? '#EAB308' : '#EF4444';
+
+  return (
+    <View style={{ gap: 10 }}>
+      <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1 }}>
+        MODELLO AI
+      </Text>
+      <GlassCard padding={16} style={{ gap: 16 }}>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <BoroIcon name="psychology" size={18} color={colors.primaryFixed} />
+          <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 15 }}>
+            Accuratezza Predizioni
+          </Text>
+        </View>
+
+        {total === 0 ? (
+          <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, lineHeight: 20 }}>
+            Nessuna predizione registrata. Il modello impara automaticamente dai risultati delle partite finite.
+          </Text>
+        ) : (
+          <View style={{ gap: 14 }}>
+            {/* Win rate */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+              {/* Big percentage */}
+              <View style={{
+                width: 80, height: 80, borderRadius: 40,
+                borderWidth: 4, borderColor: ringColor,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: `${ringColor}15`,
+              }}>
+                <Text style={{ color: ringColor, fontFamily: fonts.display, fontSize: 22 }}>
+                  {rate}%
+                </Text>
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 15 }}>
+                  {correct} / {total} corrette
+                </Text>
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }}>
+                  Predizioni analizzate
+                </Text>
+                <View style={{
+                  alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3,
+                  borderRadius: 6, backgroundColor: `${ringColor}22`,
+                }}>
+                  <Text style={{ color: ringColor, fontFamily: fonts.label, fontSize: 10 }}>
+                    {pct >= 65 ? '✅ OTTIMO' : pct >= 50 ? '⚡ BUONO' : '📊 IN APPRENDIMENTO'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Bias indicators */}
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 10, letterSpacing: 1 }}>
+                BIAS COMPONENTI
+              </Text>
+              {biases.map((b) => {
+                const bias = b.value;
+                const barPct = Math.min(100, Math.abs(bias) / 0.15 * 50 + 50);
+                const bColor = bias > 0.02 ? colors.primaryFixed : bias < -0.02 ? '#EF4444' : colors.onSurfaceVariant;
+                return (
+                  <View key={b.label} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11 }}>{b.label}</Text>
+                      <Text style={{ color: bColor, fontFamily: fonts.stats, fontSize: 11 }}>
+                        {bias > 0 ? '+' : ''}{(bias * 100).toFixed(1)}%
+                      </Text>
+                    </View>
+                    <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <View style={{ width: `${barPct}%`, height: '100%', backgroundColor: bColor, opacity: 0.7 }} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Reset button */}
+        {total > 0 && (
+          <Pressable
+            onPress={handleReset}
+            disabled={resetting}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              gap: 8, paddingVertical: 10, borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              opacity: resetting ? 0.5 : pressed ? 0.7 : 1,
+            })}
+          >
+            <BoroIcon name="restart-alt" size={16} color={colors.onSurfaceVariant} />
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.bodyBold, fontSize: 13 }}>
+              Reset modello
+            </Text>
+          </Pressable>
+        )}
+      </GlassCard>
     </View>
   );
 };
