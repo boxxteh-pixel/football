@@ -160,6 +160,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSport: async (sport) => {
     const settings = await updateSettings({ sport });
     set({ settings });
-    // Invalidate clients / force refetch or update headers if needed
+    // Invalidate the cache completely so we don't display stale fixtures from the other sport
+    try {
+      const { invalidateCache } = require('@/services/api/smClient');
+      invalidateCache();
+    } catch (err) {
+      console.warn('Failed to invalidate cache:', err);
+    }
+    // Force immediate update of default leagues constants
+    try {
+      const { updateTrackedLeagues } = require('@/constants/leagues');
+      updateTrackedLeagues(sport);
+    } catch (err) {
+      console.warn('Failed to update tracked leagues:', err);
+    }
   },
 }));
