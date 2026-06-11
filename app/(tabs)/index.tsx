@@ -1,5 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, ScrollView, Platform, Pressable } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import {
+  RefreshControl,
+  Text,
+  View,
+  ScrollView,
+  Platform,
+  Pressable,
+} from 'react-native';
 import { BoroIcon } from '@/components/ui/BoroIcon';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
@@ -14,7 +21,7 @@ import { NeonButton } from '@/components/ui/NeonButton';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ResponsiveGrid } from '@/components/layouts/ResponsiveGrid';
 import { useResponsive } from '@/hooks/useResponsive';
-import { useColors} from '@/theme/colors';
+import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useTodayFixtures, useLiveFixtures } from '@/hooks/useFixtures';
 import { useTodayPredictions } from '@/hooks/useTodayPredictions';
@@ -26,12 +33,112 @@ import type { Fixture } from '@/types/match';
 import { isLive, isScheduled } from '@/types/match';
 import { useT } from '@/theme/i18n';
 import { useIsFocused } from '@react-navigation/native';
+import type { PredictionResult } from '@/types/prediction';
+
+type MarketFilter = 'all' | 'value' | 'goals' | 'btts' | 'drift';
+
+// ─── Sport Switcher pill rendered in TopBar's rightSlot ───────────────────────
+const SportSwitcher: React.FC = () => {
+  const colors = useColors();
+  const sport = useSettingsStore((s) => s.settings.sport);
+  const activeSport = sport ?? 'football';
+
+  const handlePress = useCallback((s: 'football' | 'cricket') => {
+    if (s !== activeSport) {
+      useSettingsStore.getState().setSport(s);
+    }
+  }, [activeSport]);
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.glassBorderActive,
+        backgroundColor: 'rgba(0,0,0,0.25)',
+      }}
+    >
+      {(['football', 'cricket'] as const).map((s) => {
+        const active = activeSport === s;
+        const emoji = s === 'football' ? '⚽' : '🏏';
+        return (
+          <Pressable
+            key={s}
+            onPress={() => handlePress(s)}
+            style={({ pressed }) => ({
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              backgroundColor: active ? colors.accent15 : 'transparent',
+              transform: [{ scale: pressed ? 0.94 : 1 }],
+            })}
+          >
+            <Text style={{ fontSize: 16 }}>{emoji}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
+// ─── Market filter chips ───────────────────────────────────────────────────────
+const MARKET_FILTERS: Array<{ id: MarketFilter; label: string; icon: string }> = [
+  { id: 'all',   label: 'Tutti',      icon: 'apps' },
+  { id: 'value', label: 'Value Bets', icon: 'trending-up' },
+  { id: 'goals', label: 'Over Gol',   icon: 'sports-soccer' },
+  { id: 'btts',  label: 'BTTS',       icon: 'handshake' },
+  { id: 'drift', label: 'Odds Drift', icon: 'moving' },
+];
+
+function applyMarketFilter(
+  list: Fixture[],
+  filter: MarketFilter,
+  predictionMap: Map<number, PredictionResult>,
+): Fixture[] {
+  if (filter === 'all') return list;
+
+  return list.filter((f) => {
+    const pred = predictionMap.get(f.fixture.id);
+    if (!pred) return false;
+
+    switch (filter) {
+      case 'value':
+        return (pred.valueBets?.length ?? 0) > 0;
+
+      case 'goals': {
+        const m = pred.topPick.market;
+        return m === 'OVER_2_5' || m === 'UNDER_2_5';
+      }
+
+      case 'btts':
+        return pred.topPick.market === 'BTTS';
+
+      case 'drift': {
+        // Odds drift: detected when the model overround efficiency score is low
+        // (sharp market moved against opening) OR when valueBets exist with
+        // very high edge (market moved significantly from opening).
+        // We approximate this by: has market overround data AND has at least
+        // one value bet with edge >= 5% (meaning odds moved meaningfully vs model).
+        const hasSharpMove =
+          pred.marketOverround != null && pred.marketOverround < 1.06;
+        const hasBigEdge =
+          (pred.valueBets?.some((vb) => vb.edge >= 0.05)) ?? false;
+        return hasSharpMove || hasBigEdge;
+      }
+
+      default:
+        return true;
+    }
+  });
+}
 
 export default function PredictorTab() {
   const colors = useColors();
   const { gridColumns } = useResponsive();
   const [search, setSearch] = useState('');
   const [activeLeague, setActiveLeague] = useState<number | null>(null);
+  const [activeMarket, setActiveMarket] = useState<MarketFilter>('all');
   const selectedLeagueIds = useSettingsStore((s) => s.settings.selectedLeagueIds);
   const isFocused = useIsFocused();
   const t = useT();
@@ -46,7 +153,7 @@ export default function PredictorTab() {
 
   // Home shows ONLY live + not-yet-started matches. Merge the dedicated live
   // feed (freshest scores/minute) with scheduled fixtures from the day's slate.
-  const fixtures = useMemo<Fixture[]>(() => {
+  const baseFixtures = useMemo<Fixture[]>(() => {
     const byId = new Map<number, Fixture>();
 
     // Live matches first (from the live feed), filtered to selected/active league.
@@ -83,6 +190,12 @@ export default function PredictorTab() {
       return a.fixture.timestamp - b.fixture.timestamp;
     });
   }, [data, liveData, selectedLeagueIds, search, activeLeague]);
+
+  // Apply market filter on top of the base list
+  const fixtures = useMemo<Fixture[]>(
+    () => applyMarketFilter(baseFixtures, activeMarket, predictionMap),
+    [baseFixtures, activeMarket, predictionMap],
+  );
 
   const liveCount = useMemo(() => fixtures.filter((f) => isLive(f.fixture.status.short)).length, [fixtures]);
 
@@ -128,13 +241,25 @@ export default function PredictorTab() {
 
   const bestPicks = useMemo(
     () =>
-      [...fixtures]
+      [...baseFixtures]
         .map((f) => ({ fixture: f, prob: predictionMap.get(f.fixture.id)?.topPick.probability ?? -1 }))
         .sort((a, b) => b.prob - a.prob)
         .slice(0, 5)
         .map((x) => x.fixture),
-    [fixtures, predictionMap],
+    [baseFixtures, predictionMap],
   );
+
+  // Count how many fixtures match each non-all filter (for badge display)
+  const filterCounts = useMemo<Record<MarketFilter, number>>(() => {
+    const base = baseFixtures;
+    return {
+      all:    base.length,
+      value:  applyMarketFilter(base, 'value', predictionMap).length,
+      goals:  applyMarketFilter(base, 'goals', predictionMap).length,
+      btts:   applyMarketFilter(base, 'btts',  predictionMap).length,
+      drift:  applyMarketFilter(base, 'drift', predictionMap).length,
+    };
+  }, [baseFixtures, predictionMap]);
 
   if (!hasApiKey()) {
     return (
@@ -148,6 +273,7 @@ export default function PredictorTab() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenContainer
         title="BORO"
+        rightSlot={<SportSwitcher />}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
@@ -157,6 +283,7 @@ export default function PredictorTab() {
         }
       >
         <View style={{ gap: 28 }}>
+          {/* ── Search + League chips ── */}
           <View style={{ gap: 14 }}>
             <SearchBar value={search} onChangeText={setSearch} placeholder={t('predictor.search')} />
             <ScrollView
@@ -177,6 +304,100 @@ export default function PredictorTab() {
             </ScrollView>
           </View>
 
+          {/* ── Market Filter chips ── */}
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <BoroIcon name="filter-list" size={15} color={colors.onSurfaceVariant} />
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                Filtra mercato
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ width: '100%' }}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {MARKET_FILTERS.map((mf) => {
+                const active = activeMarket === mf.id;
+                const count = filterCounts[mf.id];
+                const hasCount = mf.id !== 'all' && count > 0;
+                return (
+                  <Pressable
+                    key={mf.id}
+                    onPress={() => setActiveMarket(mf.id)}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      paddingHorizontal: 13,
+                      paddingVertical: 7,
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      borderColor: active ? colors.glassBorderActive : 'rgba(255,255,255,0.08)',
+                      backgroundColor: active ? colors.accent12 : 'rgba(255,255,255,0.04)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <BoroIcon
+                      name={mf.icon}
+                      size={13}
+                      color={active ? colors.primaryFixed : colors.onSurfaceVariant}
+                    />
+                    <Text style={{
+                      color: active ? colors.primaryFixed : colors.onSurfaceVariant,
+                      fontFamily: fonts.bodyBold,
+                      fontSize: 12,
+                    }}>
+                      {mf.label}
+                    </Text>
+                    {hasCount && (
+                      <View style={{
+                        minWidth: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: active ? colors.primaryFixed : colors.accent15,
+                        paddingHorizontal: 4,
+                      }}>
+                        <Text style={{
+                          color: active ? colors.onPrimary : colors.primaryFixed,
+                          fontFamily: fonts.label,
+                          fontSize: 10,
+                          fontWeight: 'bold',
+                        }}>
+                          {count}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Odds Drift info banner when active */}
+            {activeMarket === 'drift' && (
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: colors.accent08,
+                borderWidth: 1,
+                borderColor: colors.accent15,
+              }}>
+                <BoroIcon name="info-outline" size={15} color={colors.primaryFixed} />
+                <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12, flex: 1, lineHeight: 17 }}>
+                  Partite con mercato sharp (overround {'<'} 1.06) o value edge ≥ 5% rispetto all'apertura.
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* ── Best Picks carousel ── */}
           <View style={{ gap: 14 }}>
             <SectionHeader eyebrow={t('predictor.topConfidence')} title={t('predictor.bestPicks')} />
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 13, marginTop: -6 }}>
@@ -206,6 +427,7 @@ export default function PredictorTab() {
             )}
           </View>
 
+          {/* ── Live / Upcoming list ── */}
           <View style={{ gap: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <SectionHeader
@@ -237,15 +459,29 @@ export default function PredictorTab() {
                 </Pressable>
               )}
             </View>
+
+            {/* Market filter result label */}
+            {activeMarket !== 'all' && !isLoading && (
+              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12, marginTop: -6 }}>
+                {fixtures.length === 0
+                  ? 'Nessuna partita corrisponde al filtro selezionato.'
+                  : `${fixtures.length} partita${fixtures.length !== 1 ? 'e' : ''} con filtro "${MARKET_FILTERS.find(f => f.id === activeMarket)?.label}"`}
+              </Text>
+            )}
+
             {isLoading ? (
               <ListSkeleton />
             ) : error ? (
               <ErrorState error={error} onRetry={refetch} />
             ) : fixtures.length === 0 ? (
               <EmptyState
-                icon="event-busy"
-                title={t('predictor.noLiveUpcoming')}
-                subtitle={t('predictor.noLiveUpcomingSub')}
+                icon={activeMarket !== 'all' ? 'filter-list-off' : 'event-busy'}
+                title={activeMarket !== 'all' ? 'Nessun risultato' : t('predictor.noLiveUpcoming')}
+                subtitle={
+                  activeMarket !== 'all'
+                    ? `Nessuna partita soddisfa il filtro "${MARKET_FILTERS.find(f => f.id === activeMarket)?.label}". Prova un altro filtro.`
+                    : t('predictor.noLiveUpcomingSub')
+                }
               />
             ) : (
               <View style={{ gap: 24 }}>
@@ -259,22 +495,28 @@ export default function PredictorTab() {
                       <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
                     </View>
                     <ResponsiveGrid columns={gridColumns} gap={12}>
-                      {group.items.map((f) => (
-                        <MatchListItem
-                          key={f.fixture.id}
-                          fixture={f}
-                          prediction={predictionMap.get(f.fixture.id)}
-                          showCheckbox={isSelectionMode}
-                          checked={selectedFixtureIds.includes(f.fixture.id)}
-                          onCheckboxToggle={() => {
-                            setSelectedFixtureIds((prev) =>
-                              prev.includes(f.fixture.id)
-                                ? prev.filter((id) => id !== f.fixture.id)
-                                : [...prev, f.fixture.id]
-                            );
-                          }}
-                        />
-                      ))}
+                      {group.items.map((f) => {
+                        const pred = predictionMap.get(f.fixture.id);
+                        const hasDrift = activeMarket === 'drift'
+                          || (pred?.marketOverround != null && pred.marketOverround < 1.06)
+                          || ((pred?.valueBets?.some((vb) => vb.edge >= 0.05)) ?? false);
+                        return (
+                          <MatchListItem
+                            key={f.fixture.id}
+                            fixture={f}
+                            prediction={pred}
+                            showCheckbox={isSelectionMode}
+                            checked={selectedFixtureIds.includes(f.fixture.id)}
+                            onCheckboxToggle={() => {
+                              setSelectedFixtureIds((prev) =>
+                                prev.includes(f.fixture.id)
+                                  ? prev.filter((id) => id !== f.fixture.id)
+                                  : [...prev, f.fixture.id]
+                              );
+                            }}
+                          />
+                        );
+                      })}
                     </ResponsiveGrid>
                   </View>
                 ))}
@@ -282,6 +524,7 @@ export default function PredictorTab() {
             )}
           </View>
 
+          {/* ── Discovery / Insights CTA ── */}
           <View style={{ gap: 14 }}>
             <SectionHeader title={t('predictor.discovery')} />
             <GlassCard padding={20} activeBorder style={{ gap: 16 }}>
@@ -320,6 +563,7 @@ export default function PredictorTab() {
         </View>
       </ScreenContainer>
 
+      {/* ── Multi-select action bar ── */}
       {isSelectionMode && selectedFixtureIds.length > 0 && (
         <View
           style={{
