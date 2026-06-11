@@ -8,6 +8,7 @@
 export const config = {
   sportmonks: {
     key: process.env.EXPO_PUBLIC_SPORTMONKS_KEY || 'vIPRgqtcB3MivtuDSJ9Xv82CjkPfF8nUXFiF6AfV9Z7egDDCx8FMGcRbTPZm',
+    cricketKey: process.env.EXPO_PUBLIC_SPORTMONKS_CRICKET_KEY || 'NpTidbHGXPZR4QFiRxTQAnZlkB5yMpb3pSYgi3JvOHsGir30PMohpmeHZkpJ',
     baseUrl: 'https://api.sportmonks.com/v3/football',
   },
   sportsDb: {
@@ -34,7 +35,7 @@ export const getSportmonksKey = (): string => {
   try {
     const sport = useSettingsStore.getState().settings.sport;
     if (sport === 'cricket') {
-      return 'NpTidbHGXPZR4QFiRxTQAnZlkB5yMpb3pSYgi3JvOHsGir30PMohpmeHZkpJ';
+      return config.sportmonks.cricketKey;
     }
   } catch {}
   return config.sportmonks.key;
