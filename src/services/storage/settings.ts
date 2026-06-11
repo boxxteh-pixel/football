@@ -5,6 +5,7 @@ const SETTINGS_KEY = 'boro_settings';
 
 export type AppLocale = 'en' | 'it';
 export type ColorTheme = 'green' | 'purple';
+export type SportType = 'football' | 'cricket';
 
 export interface AppSettings {
   selectedLeagueIds: number[];
@@ -16,6 +17,7 @@ export interface AppSettings {
   riskProfile: 'default' | 'conservative' | 'aggressive';
   timezone: string;
   newsFrequency: 'always' | 'daily' | 'off';
+  sport: SportType;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   riskProfile: 'default',
   timezone: 'Europe/Rome', // Default to Italian Timezone
   newsFrequency: 'always',
+  sport: 'football',
 };
 
 export const readSettings = async (): Promise<AppSettings> => {

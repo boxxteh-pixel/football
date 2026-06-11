@@ -30,4 +30,34 @@ export const config = {
   },
 } as const;
 
-export const hasApiKey = (): boolean => config.sportmonks.key.length > 0;
+export const getSportmonksKey = (): string => {
+  try {
+    const sport = useSettingsStore.getState().settings.sport;
+    if (sport === 'cricket') {
+      return 'NpTidbHGXPZR4QFiRxTQAnZlkB5yMpb3pSYgi3JvOHsGir30PMohpmeHZkpJ';
+    }
+  } catch {}
+  return config.sportmonks.key;
+};
+
+export const getSportmonksBaseUrl = (): string => {
+  try {
+    const sport = useSettingsStore.getState().settings.sport;
+    if (sport === 'cricket') {
+      return 'https://cricket.sportmonks.com/api/v2.0';
+    }
+  } catch {}
+  return config.sportmonks.baseUrl;
+};
+
+export const hasApiKey = (): boolean => getSportmonksKey().length > 0;
+
+export const isCricketMode = (): boolean => {
+  try {
+    return useSettingsStore.getState().settings.sport === 'cricket';
+  } catch {
+    return false;
+  }
+};
+
+import { useSettingsStore } from '@/store/settingsStore';

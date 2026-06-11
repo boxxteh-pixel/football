@@ -62,6 +62,7 @@ interface SettingsState {
   setRiskProfile: (profile: AppSettings['riskProfile']) => Promise<void>;
   setTimezone: (timezone: string) => Promise<void>;
   setNewsFrequency: (frequency: AppSettings['newsFrequency']) => Promise<void>;
+  setSport: (sport: AppSettings['sport']) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -155,5 +156,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setNewsFrequency: async (frequency) => {
     const settings = await updateSettings({ newsFrequency: frequency });
     set({ settings });
+  },
+  setSport: async (sport) => {
+    const settings = await updateSettings({ sport });
+    set({ settings });
+    // Invalidate clients / force refetch or update headers if needed
   },
 }));

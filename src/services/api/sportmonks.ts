@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
-import { config } from '@/constants/config';
+import { config, getSportmonksKey, getSportmonksBaseUrl, isCricketMode } from '@/constants/config';
 import { LEAGUE_TO_SPORTMONKS, SPORTMONKS_TO_LEAGUE } from '@/constants/leagues';
 import { smGet, TTL } from './smClient';
 import { STATE_TO_STATUS } from './smTypes';
@@ -85,7 +85,8 @@ export const fetchSportmonksPredictions = async (
   apiFootballLeagueId?: number
 ): Promise<SportmonksPredictionParsed | null> => {
   try {
-    if (!config.sportmonks.key) {
+    const activeKey = getSportmonksKey();
+    if (!activeKey) {
       console.log('[Sportmonks] Missing token in environment, skipping.');
       return null;
     }
@@ -94,7 +95,7 @@ export const fetchSportmonksPredictions = async (
     const sportmonksLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
 
     const isLocalWeb = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.port === '8081' || window.location.port === '8082');
-    const baseUrl = (Platform.OS === 'web' && !isLocalWeb) ? '/api/sportmonks' : config.sportmonks.baseUrl;
+    const baseUrl = (Platform.OS === 'web' && !isLocalWeb) ? '/api/sportmonks' : getSportmonksBaseUrl();
     let url = `${baseUrl}/fixtures/date/${cleanDate}?include=participants;predictions.type`;
     if (sportmonksLeagueId) {
       url += `&filters=leagues:${sportmonksLeagueId}`;
@@ -103,7 +104,7 @@ export const fetchSportmonksPredictions = async (
     console.log(`[Sportmonks] Fetching fixtures for date ${cleanDate}...`);
     const response = await axios.get(url, {
       headers: {
-        'Authorization': config.sportmonks.key,
+        'Authorization': activeKey,
       },
       timeout: 10000,
     });
@@ -296,12 +297,112 @@ import type { TeamStatistics } from '@/types/team';
 const isLocalWebClient = Platform.OS === 'web' && typeof window !== 'undefined' && (window.location.port === '8081' || window.location.port === '8082');
 
 const sportmonksClient = axios.create({
-  baseURL: (Platform.OS === 'web' && !isLocalWebClient) ? '/api/sportmonks' : config.sportmonks.baseUrl,
-  headers: {
-    'Authorization': config.sportmonks.key,
-  },
   timeout: 15000,
 });
+
+sportmonksClient.interceptors.request.use((req) => {
+  const cricket = isCricketMode();
+  const activeBaseUrl = (Platform.OS === 'web' && !isLocalWebClient && !cricket) ? '/api/sportmonks' : getSportmonksBaseUrl();
+  req.baseURL = activeBaseUrl;
+  
+  if (!req.headers) req.headers = {} as any;
+  if (cricket) {
+    // Cricket API v2 uses api_token query parameter
+    if (!req.params) req.params = {};
+    req.params.api_token = getSportmonksKey();
+  } else if (!(Platform.OS === 'web' && !isLocalWebClient)) {
+    req.headers.Authorization = getSportmonksKey();
+  }
+  return req;
+});
+
+// ==========================================
+// CRICKET V2 FIXTURE MAPPER
+// ==========================================
+
+/**
+ * Maps a SportMonks Cricket API v2 fixture response object to our universal
+ * Fixture type. Cricket uses localteam/visitorteam, runs for scoring, and
+ * different status strings compared to the football v3 API.
+ */
+function mapCricketFixture(cf: any): Fixture {
+  const localTeam = cf.localteam || {};
+  const visitorTeam = cf.visitorteam || {};
+
+  // Runs array contains innings. Sum per team for total score.
+  const runs: any[] = cf.runs || [];
+  let homeRuns: number | null = null;
+  let awayRuns: number | null = null;
+  runs.forEach((r: any) => {
+    if (r.team_id === localTeam.id) {
+      homeRuns = (homeRuns ?? 0) + (r.score ?? 0);
+    } else if (r.team_id === visitorTeam.id) {
+      awayRuns = (awayRuns ?? 0) + (r.score ?? 0);
+    }
+  });
+
+  // Map cricket statuses
+  const rawStatus: string = (cf.status || 'NS').toUpperCase();
+  let mappedStatus: FixtureStatus = 'NS';
+  if (rawStatus === 'FINISHED' || rawStatus === 'FT') mappedStatus = 'FT';
+  else if (rawStatus === 'LIVE' || rawStatus.includes('INPLAY') || rawStatus === '1ST INNINGS' || rawStatus === '2ND INNINGS') mappedStatus = 'LIVE';
+  else if (rawStatus === 'NS' || rawStatus === 'NOT STARTED') mappedStatus = 'NS';
+  else if (rawStatus === 'CANCELLED' || rawStatus === 'CANC') mappedStatus = 'CANC';
+  else if (rawStatus === 'POSTPONED' || rawStatus === 'PST') mappedStatus = 'PST';
+  else if (rawStatus === 'ABANDONED' || rawStatus === 'ABD') mappedStatus = 'ABD';
+  else if (rawStatus === 'DELAYED' || rawStatus === 'INT' || rawStatus === 'INTERRUPTED') mappedStatus = 'INT';
+
+  const startingAt = cf.starting_at ? new Date(cf.starting_at).toISOString() : new Date().toISOString();
+  const timestamp = cf.starting_at ? Math.floor(new Date(cf.starting_at).getTime() / 1000) : Math.floor(Date.now() / 1000);
+
+  const homeWinner = homeRuns !== null && awayRuns !== null ? homeRuns > awayRuns : null;
+  const awayWinner = homeRuns !== null && awayRuns !== null ? awayRuns > homeRuns : null;
+
+  return {
+    fixture: {
+      id: cf.id,
+      referee: null,
+      timezone: 'UTC',
+      date: startingAt,
+      timestamp,
+      periods: { first: null, second: null },
+      venue: {
+        id: cf.venue_id || null,
+        name: cf.venue?.name || null,
+        city: cf.venue?.city || null,
+      },
+      status: {
+        long: cf.status || 'Not Started',
+        short: mappedStatus,
+        elapsed: null,
+      },
+    },
+    league: {
+      id: cf.league_id || 0,
+      name: cf.league?.name || 'Cricket',
+      country: cf.league?.country?.name || 'International',
+      logo: cf.league?.image_path || '',
+      season: cf.season_id || 0,
+      round: cf.round || '',
+    },
+    teams: {
+      home: { id: localTeam.id || 0, name: localTeam.name || 'Team A', logo: localTeam.image_path || '', winner: homeWinner },
+      away: { id: visitorTeam.id || 0, name: visitorTeam.name || 'Team B', logo: visitorTeam.image_path || '', winner: awayWinner },
+    },
+    goals: { home: homeRuns, away: awayRuns },
+    score: {
+      halftime: { home: null, away: null },
+      fulltime: { home: homeRuns, away: awayRuns },
+      extratime: { home: null, away: null },
+      penalty: { home: null, away: null },
+    },
+  };
+}
+
+/** Select the correct mapper based on current sport mode. */
+const mapFixtureAuto = (raw: any): Fixture => {
+  return isCricketMode() ? mapCricketFixture(raw) : mapSportmonksFixture(raw);
+};
 
 function mapTeam(p: any) {
   return {
@@ -631,8 +732,18 @@ export const fetchSportmonksFixturesByDate = async (
 ): Promise<Fixture[]> => {
   try {
     const cleanDate = date.split('T')[0];
-    const smLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
 
+    if (isCricketMode()) {
+      // Cricket API v2: /fixtures?filter[starts_between]=DATE,DATE&include=...
+      let url = `/fixtures?filter[starts_between]=${cleanDate},${cleanDate}&include=localteam,visitorteam,league,venue,runs`;
+      console.log(`[Sportmonks Cricket] Fetching fixtures for date ${cleanDate}...`);
+      const response = await sportmonksClient.get(url);
+      const data = response.data?.data;
+      if (!Array.isArray(data)) return [];
+      return data.map(mapCricketFixture);
+    }
+
+    const smLeagueId = apiFootballLeagueId ? LEAGUE_MAP[apiFootballLeagueId] : undefined;
     let url = `/fixtures/date/${cleanDate}?include=participants;league;venue;state;scores`;
     if (smLeagueId) {
       url += `&filters=leagues:${smLeagueId}`;
@@ -662,6 +773,12 @@ export const fetchSportmonksFixturesByDateMulti = async (
 ): Promise<Fixture[]> => {
   try {
     const cleanDate = date.split('T')[0];
+
+    // Cricket mode: fetch all fixtures for the date (no league filtering)
+    if (isCricketMode()) {
+      return fetchSportmonksFixturesByDate(cleanDate);
+    }
+
     const smLeagueIds = apiFootballLeagueIds
       .map((id) => LEAGUE_MAP[id])
       .filter((id): id is number => typeof id === 'number');
@@ -706,6 +823,23 @@ export const fetchSportmonksFixturesBetween = async (
   try {
     const from = fromDate.split('T')[0];
     const to = toDate.split('T')[0];
+
+    // Cricket mode: use filter[starts_between] on /fixtures
+    if (isCricketMode()) {
+      const collected: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore && page <= 10) {
+        const url = `/fixtures?filter[starts_between]=${from},${to}&include=localteam,visitorteam,league,venue,runs&page=${page}`;
+        const response = await sportmonksClient.get(url);
+        const data = response.data?.data;
+        if (Array.isArray(data) && data.length > 0) collected.push(...data);
+        hasMore = Boolean(response.data?.meta?.pagination?.links?.next);
+        page++;
+      }
+      return collected.map(mapCricketFixture);
+    }
+
     const smLeagueIds = apiFootballLeagueIds
       .map((id) => LEAGUE_MAP[id])
       .filter((id): id is number => typeof id === 'number');
@@ -746,6 +880,10 @@ export const fetchSportmonksFixturesBetweenAll = async (
     const from = fromDate.split('T')[0];
     const to = toDate.split('T')[0];
 
+    if (isCricketMode()) {
+      return fetchSportmonksFixturesBetween(from, to, []);
+    }
+
     const collected: any[] = [];
     const MAX_PAGES = 6;
     let page = 1;
@@ -771,6 +909,15 @@ export const fetchSportmonksLiveFixtures = async (
 ): Promise<Fixture[]> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching live fixtures...`);
+
+    if (isCricketMode()) {
+      // Cricket API v2: /livescores endpoint
+      const response = await sportmonksClient.get('/livescores?include=localteam,visitorteam,league,venue,runs');
+      const data = response.data?.data;
+      if (!Array.isArray(data)) return [];
+      return data.map(mapCricketFixture).filter((f) => f.fixture.status.short === 'LIVE');
+    }
+
     // Correct in-play endpoint is /livescores/inplay (/fixtures/live → 422).
     const response = await sportmonksClient.get('/livescores/inplay?include=participants;league;venue;state;scores;periods');
     const data = response.data?.data;
@@ -794,6 +941,14 @@ export const fetchSportmonksLiveFixtures = async (
 export const fetchSportmonksFixtureById = async (id: number): Promise<Fixture | null> => {
   try {
     console.log(`[Sportmonks Adapter] Fetching fixture by ID: ${id}...`);
+
+    if (isCricketMode()) {
+      const response = await sportmonksClient.get(`/fixtures/${id}?include=localteam,visitorteam,league,venue,runs`);
+      const data = response.data?.data;
+      if (!data) return null;
+      return mapCricketFixture(data);
+    }
+
     const response = await sportmonksClient.get(`/fixtures/${id}?include=participants;league;venue;state;scores;periods`);
     const data = response.data?.data;
     if (!data) return null;

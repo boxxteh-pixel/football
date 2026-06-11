@@ -32,6 +32,7 @@ import { computeMatchProbabilities } from './poisson';
 import { devigShin } from './marketMath';
 import { clampPercent, formatOdds } from '@/utils/format';
 import { getLeagueById } from '@/constants/leagues';
+import { isCricketMode } from '@/constants/config';
 import { useLearningStore } from '@/store/learningStore';
 import { useCalibrationStore } from '@/store/calibrationStore';
 import type { MatchInsights } from '../api/smInsights';
@@ -898,6 +899,43 @@ export const predictFromInsights = (fixture: Fixture, insights: MatchInsights | 
 };
 
 export const quickPredict = (fixture: Fixture, insights?: MatchInsights | null): PredictionResult => {
+  // ─── Cricket mode: simplified win/loss prediction (no draws, no BTTS) ───
+  if (isCricketMode()) {
+    const homeWinPct = 50;
+    const awayWinPct = 50;
+    const drawPct = 0;
+    const top = {
+      market: 'WIN' as const,
+      selection: `${fixture.teams.home.name} to Win`,
+      probability: homeWinPct,
+    };
+    return {
+      fixtureId: fixture.fixture.id,
+      homeWinPct,
+      drawPct,
+      awayWinPct,
+      predictedScore: { home: 0, away: 0 },
+      bttsPct: 0,
+      over25Pct: 0,
+      under25Pct: 0,
+      confidence: 'LOW',
+      topPick: { ...top, odds: Number(formatOdds(top.probability)) },
+      reasoning: ['Cricket match — basic win/loss estimate.'],
+      metrics: {
+        homeElo: BASE_ELO_VALUE,
+        awayElo: BASE_ELO_VALUE,
+        homeForm: 0.5,
+        awayForm: 0.5,
+        homeXg: 0,
+        awayXg: 0,
+        homeAdvantage: 0,
+      },
+      computedAt: Date.now(),
+      source: 'BORO_AI',
+      dataSignals: 0,
+    };
+  }
+
   const book = insights?.bookmaker;
   const goals = insights?.goals;
   const league = getLeagueById(fixture.league.id);

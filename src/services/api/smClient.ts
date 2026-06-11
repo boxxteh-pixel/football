@@ -17,7 +17,7 @@
  */
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Platform } from 'react-native';
-import { config } from '@/constants/config';
+import { config, getSportmonksKey, getSportmonksBaseUrl, isCricketMode } from '@/constants/config';
 
 const isWeb = Platform.OS === 'web';
 const isLocalWeb =
@@ -28,7 +28,6 @@ const isLocalWeb =
 // On deployed web we proxy through our own serverless function (token hidden).
 // On native and local-web dev we hit SportMonks directly with the env token.
 const useProxy = isWeb && !isLocalWeb;
-const BASE_URL = useProxy ? '/api/sportmonks' : config.sportmonks.baseUrl;
 
 interface RateLimitInfo {
   limit: number | null;
@@ -48,11 +47,26 @@ export const rateLimit: RateLimitInfo = {
 export const getRateLimit = (): RateLimitInfo => ({ ...rateLimit });
 
 const instance: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
   timeout: 20000,
-  headers: useProxy
-    ? { Accept: 'application/json' }
-    : { Authorization: config.sportmonks.key, Accept: 'application/json' },
+});
+
+instance.interceptors.request.use((req) => {
+  const cricket = isCricketMode();
+  const activeBaseUrl = useProxy && !cricket ? '/api/sportmonks' : getSportmonksBaseUrl();
+  req.baseURL = activeBaseUrl;
+  
+  if (!req.headers) req.headers = {} as any;
+  req.headers.Accept = 'application/json';
+  if (!useProxy || cricket) {
+    if (cricket) {
+      // Cricket API v2 uses api_token query parameter
+      if (!req.params) req.params = {};
+      req.params.api_token = getSportmonksKey();
+    } else {
+      req.headers.Authorization = getSportmonksKey();
+    }
+  }
+  return req;
 });
 
 // ──────────────────────────── caching ────────────────────────────

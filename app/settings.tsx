@@ -41,6 +41,38 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
+        <Section title="SPORT">
+          <GlassCard padding={4}>
+            {(['football', 'cricket'] as const).map((sport, idx) => {
+              const active = settings.sport === sport || (sport === 'football' && !settings.sport);
+              const label = sport === 'football' ? '⚽  Football' : '🏏  Cricket';
+              const sub = sport === 'football'
+                ? 'Serie A, Premier League, Champions League e tutti i campionati.'
+                : 'IPL, T20 World Cup, ODI, Test matches e campionati internazionali.';
+              return (
+                <React.Fragment key={sport}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)' }} />}
+                  <Pressable
+                    onPress={() => {
+                      haptics.light();
+                      useSettingsStore.getState().setSport(sport);
+                    }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: active ? colors.accent04 : 'transparent' }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: active ? colors.primaryFixed : colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 15 }}>{label}</Text>
+                        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 11, marginTop: 3 }}>{sub}</Text>
+                      </View>
+                      {active && <BoroIcon name="check" size={20} color={colors.primaryFixed} />}
+                    </View>
+                  </Pressable>
+                </React.Fragment>
+              );
+            })}
+          </GlassCard>
+        </Section>
+
         <Section title={t('settings.leagues')}>
           <GlassCard padding={4}>
             {DEFAULT_LEAGUES.map((league, i) => {
