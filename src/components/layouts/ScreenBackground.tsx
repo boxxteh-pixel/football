@@ -2,6 +2,7 @@ import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/theme/colors';
+import { useSettingsStore } from '@/store/settingsStore';
 
 /**
  * App-wide backdrop rendered behind every screen.
@@ -15,6 +16,13 @@ import { useColors } from '@/theme/colors';
 export const ScreenBackground: React.FC = () => {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
+  const oledMode = useSettingsStore((s) => s.settings.oledMode);
+
+  if (oledMode) {
+    return (
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} pointerEvents="none" />
+    );
+  }
 
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">

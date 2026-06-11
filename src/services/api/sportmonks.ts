@@ -102,14 +102,15 @@ export const fetchSportmonksPredictions = async (
     }
 
     console.log(`[Sportmonks] Fetching fixtures for date ${cleanDate}...`);
-    const response = await axios.get(url, {
-      headers: {
-        'Authorization': activeKey,
+    // Wrap endpoint in smGet to cache the full response of the date
+    const cleanPath = `/fixtures/date/${cleanDate}`;
+    const fixtures = await smGet(cleanPath, {
+      params: {
+        include: 'participants;predictions.type',
+        ...(sportmonksLeagueId ? { filters: `leagues:${sportmonksLeagueId}` } : {})
       },
-      timeout: 10000,
+      ttl: TTL.predictions
     });
-
-    const fixtures = response.data?.data;
     if (!Array.isArray(fixtures) || fixtures.length === 0) {
       console.log('[Sportmonks] No fixtures found on this date.');
       return null;
