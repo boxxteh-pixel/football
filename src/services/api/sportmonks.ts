@@ -734,8 +734,8 @@ export const fetchSportmonksFixturesByDate = async (
     const cleanDate = date.split('T')[0];
 
     if (isCricketMode()) {
-      // Cricket API v2: /fixtures?filter[starts_between]=DATE,DATE&include=...
-      let url = `/fixtures?filter[starts_between]=${cleanDate},${cleanDate}&include=localteam,visitorteam,league,venue,runs`;
+      // Cricket API v2: /fixtures?filter[starts_between]=DATE 00:00:00,DATE 23:59:59&include=...
+      let url = `/fixtures?filter[starts_between]=${cleanDate} 00:00:00,${cleanDate} 23:59:59&include=localteam,visitorteam,league,venue,runs`;
       console.log(`[Sportmonks Cricket] Fetching fixtures for date ${cleanDate}...`);
       const response = await sportmonksClient.get(url);
       const data = response.data?.data;
@@ -830,7 +830,7 @@ export const fetchSportmonksFixturesBetween = async (
       let page = 1;
       let hasMore = true;
       while (hasMore && page <= 10) {
-        const url = `/fixtures?filter[starts_between]=${from},${to}&include=localteam,visitorteam,league,venue,runs&page=${page}`;
+        const url = `/fixtures?filter[starts_between]=${from} 00:00:00,${to} 23:59:59&include=localteam,visitorteam,league,venue,runs&page=${page}`;
         const response = await sportmonksClient.get(url);
         const data = response.data?.data;
         if (Array.isArray(data) && data.length > 0) collected.push(...data);
