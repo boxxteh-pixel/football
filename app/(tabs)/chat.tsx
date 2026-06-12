@@ -32,7 +32,7 @@ import { format, parseISO } from "date-fns";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface MatchAttachment {
-  fixtureId: number;
+  fixtureId: string;
   homeTeam: string;
   homeLogo?: string | null;
   awayTeam: string;
@@ -70,40 +70,39 @@ interface BotResponse {
 }
 
 function toAttachment(
-  fixture: Fixture,
-  pred: PredictionResult,
+  fixture: any,
+  pred: any,
   highlightType?: MatchAttachment["highlightType"],
 ): MatchAttachment {
-  const live = isLive(fixture.fixture.status.short);
-  let kickoff = "";
-  try {
-    kickoff = format(parseISO(fixture.fixture.date), "HH:mm");
-  } catch {
-    kickoff = "--:--";
-  }
+  const market = fixture.markets?.[0];
+  const maxPriceIndex = market?.outcomePrices.reduce(
+    (maxIdx: number, price: number, idx: number, arr: number[]) => (price > arr[maxIdx] ? idx : maxIdx),
+    0
+  ) ?? 0;
+  const topOutcome = market?.outcomes[maxPriceIndex] || 'Yes';
+  const topProbability = Math.round((market?.outcomePrices[maxPriceIndex] || 0.5) * 100);
+  const odds = market?.outcomePrices[maxPriceIndex] ? 1 / market.outcomePrices[maxPriceIndex] : 2.0;
+
   return {
-    fixtureId: fixture.fixture.id,
-    homeTeam: fixture.teams.home.name,
-    homeLogo: fixture.teams.home.logo,
-    awayTeam: fixture.teams.away.name,
-    awayLogo: fixture.teams.away.logo,
-    leagueName: fixture.league.name,
-    kickoff,
-    selection: pred.topPick.selection,
-    probability: pred.topPick.probability,
-    odds: pred.topPick.odds,
-    isLiveMatch: live,
-    homeGoals: fixture.goals.home,
-    awayGoals: fixture.goals.away,
-    elapsed: fixture.fixture.status.elapsed,
+    fixtureId: fixture.id,
+    homeTeam: fixture.title,
+    homeLogo: fixture.image,
+    awayTeam: `Top Pick: ${topOutcome}`,
+    awayLogo: null,
+    leagueName: fixture.category,
+    kickoff: `$${(fixture.volume / 1e6).toFixed(1)}M Vol`,
+    selection: topOutcome,
+    probability: topProbability,
+    odds: odds,
+    isLiveMatch: false,
     highlightType,
   };
 }
 
 function generateBotResponse(
   query: string,
-  fixtures: Fixture[],
-  predictionMap: Map<number, PredictionResult>,
+  fixtures: any[],
+  predictionMap: Map<string, any>,
 ): BotResponse {
   const lower = query.toLowerCase();
 
@@ -114,16 +113,15 @@ function generateBotResponse(
     };
   }
 
-  type Pair = { fixture: Fixture; pred: PredictionResult };
-  // Deduplica per fixture ID prima di creare le coppie
-  const seenIds = new Set<number>();
+  type Pair = { fixture: any; pred: any };
+  const seenIds = new Set<string>();
   const pairs: Pair[] = fixtures
     .filter((f) => {
-      if (seenIds.has(f.fixture.id)) return false;
-      seenIds.add(f.fixture.id);
+      if (seenIds.has(f.id)) return false;
+      seenIds.add(f.id);
       return true;
     })
-    .map((f) => ({ fixture: f, pred: predictionMap.get(f.fixture.id) }))
+    .map((f) => ({ fixture: f, pred: predictionMap.get(f.id) }))
     .filter((p): p is Pair => Boolean(p.pred));
 
   if (pairs.length === 0) {
@@ -133,23 +131,22 @@ function generateBotResponse(
     };
   }
 
-  // ── Più sicure ──
   if (
-    lower.includes("più sicure") ||
-    lower.includes("sicura") ||
-    lower.includes("sicure")
+    lower.includes("tendenza") ||
+    lower.includes("trending") ||
+    lower.includes("attivi") ||
+    lower.includes("sicur")
   ) {
     const best = [...pairs]
-      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+      .sort((a, b) => b.fixture.volume - a.fixture.volume)
       .slice(0, 1);
     return {
-      text: `🎯 La partita più sicura tra quelle di oggi (su ${pairs.length} analizzate):`,
+      text: `🎯 Il mercato di prediction più attivo oggi (su ${pairs.length} analizzati):`,
       attachments: best.map((p) => toAttachment(p.fixture, p.pred, "safe")),
     };
   }
 
-  // ── Multipla ──
-  if (lower.includes("multipla") || lower.includes("raddoppio")) {
+  if (lower.includes("multipla") || lower.includes("parlay") || lower.includes("raddoppio")) {
     const sorted = [...pairs]
       .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
       .slice(0, 3);
@@ -158,120 +155,60 @@ function generateBotResponse(
       sorted.reduce((a, p) => a * (p.pred.topPick.probability / 100), 1) * 100,
     );
     return {
-      text: `🔥 La multipla consigliata di oggi — quota combinata @${combined.toFixed(2)} · prob. congiunta ~${jointProb}%:`,
+      text: `🔥 Il parlay consigliato di oggi — quota combinata @${combined.toFixed(2)} · prob. congiunta ~${jointProb}%:`,
       attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "multi")),
     };
   }
 
-  // ── Value / valore ──
   if (
     lower.includes("valore") ||
-    lower.includes("underdog") ||
+    lower.includes("edge") ||
     lower.includes("value")
   ) {
-    const valueBets: Array<{
-      fixture: Fixture;
-      vb: ValueBetInfo;
-      pred: PredictionResult;
-    }> = [];
-    pairs.forEach((item) => {
-      (item.pred.valueBets ?? [])
-        .filter((vb) => vb.edge >= 0.05)
-        .forEach((vb) =>
-          valueBets.push({ fixture: item.fixture, vb, pred: item.pred }),
-        );
-    });
-    valueBets.sort((a, b) => b.vb.edge - a.vb.edge);
+    const sorted = [...pairs]
+      .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+      .slice(0, 2);
+    return {
+      text: `⚡ I mercati con maggiore edge statistico rilevato oggi:`,
+      attachments: sorted.map((p) => toAttachment(p.fixture, p.pred, "value")),
+    };
+  }
 
-    if (valueBets.length === 0) {
+  if (lower.includes("politica") || lower.includes("politics")) {
+    const politics = pairs.filter(p => p.fixture.category.toLowerCase() === 'politics').slice(0, 2);
+    if (politics.length === 0) {
       return {
-        text: "⚠️ Nessuna value bet con edge ≥5% rilevata oggi. Il mercato sembra piuttosto efficiente al momento.",
+        text: "🏛️ Nessun mercato politico di rilievo trovato al momento.",
         attachments: [],
       };
     }
-
-    const top = valueBets.slice(0, 2);
     return {
-      text: `⚡ La value bet migliore di oggi (edge modello vs mercato):`,
-      attachments: top.map((item) => {
-        const att = toAttachment(item.fixture, item.pred, "value");
-        // Override selection with the specific value pick
-        att.selection = item.vb.selection;
-        att.probability = item.vb.modelProb;
-        att.odds = item.vb.bestOdds;
-        return att;
-      }),
+      text: "🏛️ Mercati politici caldi analizzati dall'AI:",
+      attachments: politics.map(p => toAttachment(p.fixture, p.pred, "over")),
     };
   }
 
-  // ── Live ──
-  if (lower.includes("live")) {
-    const liveItems = pairs.filter((p) =>
-      isLive(p.fixture.fixture.status.short),
-    );
-    if (liveItems.length === 0) {
+  if (lower.includes("crypto") || lower.includes("bitcoin")) {
+    const crypto = pairs.filter(p => p.fixture.category.toLowerCase() === 'crypto').slice(0, 2);
+    if (crypto.length === 0) {
       return {
-        text: "📡 Nessuna partita live in questo momento. Ricontrolla tra poco!",
+        text: "🪙 Nessun mercato crypto di rilievo trovato al momento.",
         attachments: [],
       };
     }
-    const topLive = liveItems.slice(0, 3);
     return {
-      text: `📡 ${liveItems.length === 1 ? "Partita live in questo momento" : `${liveItems.length} partite live ora`}:`,
-      attachments: topLive.map((p) => toAttachment(p.fixture, p.pred, "live")),
+      text: "🪙 Mercati crypto e Bitcoin caldi analizzati dall'AI:",
+      attachments: crypto.map(p => toAttachment(p.fixture, p.pred, "btts")),
     };
   }
 
-  // ── Over 2.5 ──
-  if (lower.includes("over")) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.over25Pct - a.pred.over25Pct)
-      .slice(0, 1);
-    return {
-      text: `⚽ La partita più probabile per Over 2.5 oggi:`,
-      attachments: sorted.map((p) => {
-        const att = toAttachment(p.fixture, p.pred, "over");
-        att.selection = "Over 2.5 Goals";
-        att.probability = p.pred.over25Pct;
-        att.odds =
-          p.pred.bestOdds?.over25 ??
-          parseFloat((100 / p.pred.over25Pct).toFixed(2));
-        return att;
-      }),
-    };
-  }
-
-  // ── BTTS / Gol-Gol ──
-  if (
-    lower.includes("gol/gol") ||
-    lower.includes("segnano") ||
-    lower.includes("btts")
-  ) {
-    const sorted = [...pairs]
-      .sort((a, b) => b.pred.bttsPct - a.pred.bttsPct)
-      .slice(0, 1);
-    return {
-      text: `🥅 La partita migliore per Gol/Gol oggi:`,
-      attachments: sorted.map((p) => {
-        const att = toAttachment(p.fixture, p.pred, "btts");
-        att.selection = "Both Teams to Score";
-        att.probability = p.pred.bttsPct;
-        att.odds =
-          p.pred.bestOdds?.bttsYes ??
-          parseFloat((100 / p.pred.bttsPct).toFixed(2));
-        return att;
-      }),
-    };
-  }
-
-  // ── Default ──
-  const highConf = pairs.filter((p) => p.pred.topPick.probability >= 70);
-  const top1 = [...pairs]
-    .sort((a, b) => b.pred.topPick.probability - a.pred.topPick.probability)
+  // Default summary
+  const best = [...pairs]
+    .sort((a, b) => b.fixture.volume - a.fixture.volume)
     .slice(0, 1);
   return {
-    text: `🏆 Oggi: ${fixtures.length} partite · ${pairs.length} con previsioni · ${highConf.length} ad alta confidenza. Migliore del momento:`,
-    attachments: top1.map((p) => toAttachment(p.fixture, p.pred, "safe")),
+    text: `🏆 Oggi: ${fixtures.length} mercati attivi · ${pairs.length} analizzati dall'AI. Mercato in primo piano:`,
+    attachments: best.map((p) => toAttachment(p.fixture, p.pred, "safe")),
   };
 }
 
@@ -660,26 +597,21 @@ const MAX_MESSAGES = 100;
 
 const QUICK_BOT_SUGGESTIONS = [
   {
-    text: "🛡️ Più sicure",
-    query:
-      "Quali sono le partite più sicure e con più alta confidenza di oggi?",
+    text: "🛡️ Trending",
+    query: "Quali sono i mercati di prediction più attivi oggi?",
   },
   {
-    text: "🔥 Multipla",
-    query: "Consigliami una giocata multipla basata sui dati reali di oggi.",
+    text: "🔥 AI Parlay",
+    query: "Consigliami una giocata multipla basata sulle quote e volumi di oggi.",
   },
   {
-    text: "⚡ Valore",
-    query: "Ci sono value bet con edge positivo rispetto ai bookmaker?",
+    text: "⚡ High-Edge",
+    query: "Ci sono mercati con edge positivo rispetto al sentiment?",
   },
-  { text: "📡 Live ora", query: "Quali partite live ci sono adesso?" },
+  { text: "🏛️ Politica", query: "Mostrami i mercati principali sulla politica." },
   {
-    text: "⚽ Over 2.5",
-    query: "Quali partite di oggi hanno più probabilità per Over 2.5?",
-  },
-  {
-    text: "🥅 Gol/Gol",
-    query: "Quali incontri hanno le migliori statistiche per Gol/Gol?",
+    text: "🪙 Crypto",
+    query: "Quali mercati ci sono su Bitcoin e crypto?",
   },
 ];
 

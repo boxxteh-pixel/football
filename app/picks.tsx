@@ -10,7 +10,6 @@ import { fonts } from '@/theme/typography';
 import { useT } from '@/theme/i18n';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useBetSlipStore, summarizeSlip, type SavedPick } from '@/store/betSlipStore';
-import { useSettlePicks } from '@/hooks/useSettlePicks';
 import { formatPredictionSelection } from '@/utils/predictionText';
 
 const GREEN = '#22c55e';
@@ -24,9 +23,6 @@ export default function PicksScreen() {
   const picks = useBetSlipStore((s) => s.picks);
   const remove = useBetSlipStore((s) => s.remove);
   const clearSettled = useBetSlipStore((s) => s.clearSettled);
-
-  // Auto-settle pending picks whose matches have finished.
-  useSettlePicks();
 
   const summary = useMemo(() => summarizeSlip(picks), [picks]);
   const sorted = useMemo(

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useQueries } from '@tanstack/react-query';
-import { fetchFixtureById } from '@/services/api/apiFootball';
+import { fetchEventById } from '@/services/api/polymarket';
 import { ScreenContainer } from '@/components/layouts/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BoroIcon } from '@/components/ui/BoroIcon';
@@ -12,88 +12,44 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useFavoritesStore } from '@/store/favoritesStore';
-import { useT } from '@/theme/i18n';
-import { isLive } from '@/types/match';
-import type { Fixture } from '@/types/match';
+import type { PolymarketEvent } from '@/services/api/polymarket';
 
 export default function FavoritesScreen() {
   const colors = useColors();
-  const t = useT();
   const favorites = useFavoritesStore();
   const { gridColumns } = useResponsive();
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedFixtureIds, setSelectedFixtureIds] = useState<number[]>([]);
+  const [selectedFixtureIds, setSelectedFixtureIds] = useState<string[]>([]);
 
-  // Batch query all favorite fixtures in parallel using useQueries
+  // Query favorite markets in parallel
   const results = useQueries({
     queries: favorites.fixtures.map((id) => ({
-      queryKey: ['fixture', id],
-      queryFn: () => fetchFixtureById(id),
-      staleTime: Infinity,
+      queryKey: ['polymarket', 'event', id],
+      queryFn: () => fetchEventById(id),
+      staleTime: 5 * 60 * 1000,
     })),
   });
 
   const isLoading = results.some((r) => r.isLoading);
-  const favoriteMatches = useMemo<Fixture[]>(() => {
+  const favoriteEvents = useMemo<PolymarketEvent[]>(() => {
     return results
       .map((r) => r.data)
-      .filter((f): f is Fixture => !!f);
+      .filter((f): f is PolymarketEvent => !!f);
   }, [results]);
 
-  const favoriteMatchesCount = favorites.fixtures.length;
-
-  // Group favorites by day (matching Home screen logic)
-  const groupedFavorites = useMemo(() => {
-    const groups: Array<{ dateLabel: string; items: Fixture[] }> = [];
-    favoriteMatches.forEach((f) => {
-      const dateObj = new Date(f.fixture.timestamp * 1000);
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
-
-      let label = '';
-      const isSameDay = (d1: Date, d2: Date) =>
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
-
-      if (isLive(f.fixture.status.short)) {
-        label = 'Live';
-      } else if (isSameDay(dateObj, today)) {
-        label = t('common.today') || 'Today';
-      } else if (isSameDay(dateObj, tomorrow)) {
-        label = t('common.tomorrow') || 'Tomorrow';
-      } else {
-        label = dateObj.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-        label = label.charAt(0).toUpperCase() + label.slice(1);
-      }
-
-      const existing = groups.find((g) => g.dateLabel === label);
-      if (existing) {
-        existing.items.push(f);
-      } else {
-        groups.push({ dateLabel: label, items: [f] });
-      }
-    });
-
-    return groups.sort((a, b) => {
-      if (a.dateLabel === 'Live') return -1;
-      if (b.dateLabel === 'Live') return 1;
-      return 0;
-    });
-  }, [favoriteMatches, t]);
+  const favoriteMarketsCount = favorites.fixtures.length;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenContainer showBack title={t('favorites.title')}>
+      <ScreenContainer showBack title="Favorites">
         <View style={{ gap: 20, paddingTop: 8, paddingBottom: 100 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ color: colors.onSurface, fontFamily: fonts.headlineMd, fontSize: 26, letterSpacing: -0.5 }}>
-                {t('favorites.title')}
+                Favorite Markets
               </Text>
-              {favoriteMatchesCount > 0 && (
+              {favoriteMarketsCount > 0 && (
                 <View
                   style={{
                     backgroundColor: colors.accent12,
@@ -105,13 +61,13 @@ export default function FavoritesScreen() {
                   }}
                 >
                   <Text style={{ color: colors.primaryFixed, fontFamily: fonts.label, fontSize: 11, fontWeight: 'bold' }}>
-                    {favoriteMatchesCount} {favoriteMatchesCount === 1 ? t('match.result').toLowerCase() : 'matches'}
+                    {favoriteMarketsCount} saved
                   </Text>
                 </View>
               )}
             </View>
 
-            {favoriteMatchesCount > 0 && (
+            {favoriteMarketsCount > 0 && (
               <Pressable
                 onPress={() => {
                   setIsSelectionMode(!isSelectionMode);
@@ -143,44 +99,30 @@ export default function FavoritesScreen() {
                 <Skeleton key={i} height={84} radius={18} />
               ))}
             </View>
-          ) : favoriteMatchesCount === 0 ? (
+          ) : favoriteMarketsCount === 0 ? (
             <EmptyFavoritesState
-              icon="sports-soccer"
-              title={t('favorites.empty')}
-              subtitle={t('favorites.emptySub')}
+              icon="star"
+              title="No Favorite Markets"
+              subtitle="Tap the heart icon on any prediction market to keep track of its price and crowd consensus here."
             />
           ) : (
-            <View style={{ gap: 24 }}>
-              {groupedFavorites.map((group) => (
-                <View key={group.dateLabel} style={{ gap: 12 }}>
-                  {/* Day Divider */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 6 }}>
-                    <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
-                    <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                      {group.dateLabel}
-                    </Text>
-                    <View style={{ height: 1, flex: 1, backgroundColor: colors.accent15 }} />
-                  </View>
-                  <ResponsiveGrid columns={gridColumns} gap={4}>
-                    {group.items.map((f) => (
-                      <MatchListItem
-                        key={f.fixture.id}
-                        fixture={f}
-                        showCheckbox={isSelectionMode}
-                        checked={selectedFixtureIds.includes(f.fixture.id)}
-                        onCheckboxToggle={() => {
-                          setSelectedFixtureIds((prev) =>
-                            prev.includes(f.fixture.id)
-                              ? prev.filter((id) => id !== f.fixture.id)
-                              : [...prev, f.fixture.id]
-                          );
-                        }}
-                      />
-                    ))}
-                  </ResponsiveGrid>
-                </View>
+            <ResponsiveGrid columns={gridColumns} gap={4}>
+              {favoriteEvents.map((f) => (
+                <MatchListItem
+                  key={f.id}
+                  fixture={f}
+                  showCheckbox={isSelectionMode}
+                  checked={selectedFixtureIds.includes(f.id)}
+                  onCheckboxToggle={() => {
+                    setSelectedFixtureIds((prev) =>
+                      prev.includes(f.id)
+                        ? prev.filter((id) => id !== f.id)
+                        : [...prev, f.id]
+                    );
+                  }}
+                />
               ))}
-            </View>
+            </ResponsiveGrid>
           )}
         </View>
       </ScreenContainer>
@@ -199,7 +141,7 @@ export default function FavoritesScreen() {
           <GlassCard padding={16} activeBorder glow>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }}>
-                {selectedFixtureIds.length} {selectedFixtureIds.length === 1 ? 'partita selezionata' : 'partite selezionate'}
+                {selectedFixtureIds.length} {selectedFixtureIds.length === 1 ? 'market selected' : 'markets selected'}
               </Text>
               <Pressable
                 onPress={async () => {
@@ -223,7 +165,7 @@ export default function FavoritesScreen() {
               >
                 <BoroIcon name="delete-outline" size={16} color="#ffffff" />
                 <Text style={{ color: '#ffffff', fontFamily: fonts.label, fontSize: 13, fontWeight: 'bold' }}>
-                  Rimuovi
+                  Remove
                 </Text>
               </Pressable>
             </View>

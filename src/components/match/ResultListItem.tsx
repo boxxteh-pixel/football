@@ -1,35 +1,22 @@
-/**
- * A finished-match row for the Results/History screen.
- * Outlined GREEN when the model's pick landed, RED when it missed, showing the
- * final score, the pick that was graded, and the actual market outcome.
- */
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { format, parseISO } from 'date-fns';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BoroIcon } from '@/components/ui/BoroIcon';
-import { TeamCrest } from '@/components/ui/TeamCrest';
 import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
-import { useT } from '@/theme/i18n';
-import { formatPredictionSelection } from '@/utils/predictionText';
 import type { ResultRow } from '@/hooks/useResults';
 
 export const ResultListItem: React.FC<{ row: ResultRow }> = ({ row }) => {
   const colors = useColors();
   const haptics = useHaptics();
-  const t = useT();
   const { fixture, prediction, graded } = row;
 
   const correct = graded.grade === 'correct';
   const green = '#22c55e';
   const red = '#ef4444';
   const accent = correct ? green : red;
-  const date = format(parseISO(fixture.fixture.date), 'd MMM');
-  const hg = fixture.goals.home ?? 0;
-  const ag = fixture.goals.away ?? 0;
 
   return (
     <Pressable
@@ -59,32 +46,20 @@ export const ResultListItem: React.FC<{ row: ResultRow }> = ({ row }) => {
             </View>
           </View>
 
-          {/* Teams + score */}
-          <View style={{ flex: 1, paddingHorizontal: 12, gap: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TeamCrest uri={fixture.teams.home.logo} size={18} />
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13, flex: 1 }} numberOfLines={1}>
-                {fixture.teams.home.name}
-              </Text>
-              <Text style={{ color: hg >= ag ? colors.onSurface : colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 14 }}>
-                {hg}
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TeamCrest uri={fixture.teams.away.logo} size={18} />
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13, flex: 1 }} numberOfLines={1}>
-                {fixture.teams.away.name}
-              </Text>
-              <Text style={{ color: ag >= hg ? colors.onSurface : colors.onSurfaceVariant, fontFamily: fonts.stats, fontSize: 14 }}>
-                {ag}
-              </Text>
-            </View>
+          {/* Event title & outcomes */}
+          <View style={{ flex: 1, paddingHorizontal: 12, gap: 4 }}>
+            <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 13, flex: 1 }} numberOfLines={1}>
+              {fixture.league.name.toUpperCase()} Market
+            </Text>
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 12 }} numberOfLines={2}>
+              {fixture.teams.home.name} (Yes) vs {fixture.teams.away.name} (No)
+            </Text>
           </View>
 
-          {/* Pick + date */}
+          {/* Pick + status */}
           <View style={{ alignItems: 'flex-end', gap: 4, paddingLeft: 4, maxWidth: 120 }}>
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 8, letterSpacing: 0.5 }}>
-              {date.toUpperCase()}
+              RESOLVED
             </Text>
             <View
               style={{
@@ -97,11 +72,11 @@ export const ResultListItem: React.FC<{ row: ResultRow }> = ({ row }) => {
               }}
             >
               <Text style={{ color: accent, fontFamily: fonts.label, fontSize: 9 }} numberOfLines={1}>
-                {formatPredictionSelection(graded.pick, t)}
+                {prediction.topPick.selection}
               </Text>
             </View>
             <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.body, fontSize: 9 }}>
-              {Math.round(graded.probability)}% · {graded.market}
+              {Math.round(prediction.topPick.probability)}% Prob.
             </Text>
           </View>
         </View>

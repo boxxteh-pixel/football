@@ -11,7 +11,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useHaptics } from '@/hooks/useHaptics';
-import { useRateLimit } from '@/hooks/useRateLimit';
 import { USE_NATIVE_DRIVER } from '@/utils/anim';
 import { useT } from '@/theme/i18n';
 
@@ -24,15 +23,10 @@ export const AvatarMenu: React.FC = () => {
   const logOut = useAuthStore((s) => s.logOut);
   const haptics = useHaptics();
   const t = useT();
-  const rl = useRateLimit();
   const isWeb = Platform.OS === 'web';
   const menuBg = isWeb ? 'rgba(28,27,26,0.65)' : 'rgba(28,27,26,0.48)';
 
   const initial = session?.user.name?.[0]?.toUpperCase() ?? 'B';
-  // Real remaining API calls (e.g. "52.9k"); falls back to ∞ only if unknown.
-  const apiRequestsRemaining = rl.remaining != null ? rl.compact : '\u221e';
-  const apiProgress = rl.remainingPct != null ? rl.remainingPct / 100 : 1;
-  const apiLow = rl.remainingPct != null && rl.remainingPct < 15;
 
   useEffect(() => {
     Animated.timing(chevronProgress, {
@@ -104,58 +98,23 @@ export const AvatarMenu: React.FC = () => {
               {initial}
             </Text>
           </View>
-          <View style={{ flex: 1, gap: 5 }}>
+          <View style={{ flex: 1, justifyContent: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Text
                 style={{
                   color: colors.onSurface,
                   fontFamily: fonts.bodyBold,
-                  fontSize: 11,
+                  fontSize: 13,
                   flexShrink: 1,
-                  maxWidth: 68,
+                  maxWidth: 100,
                 }}
                 numberOfLines={1}
               >
                 {session?.user.name ?? t('common.guest')}
               </Text>
-              <View
-                style={{
-                  minWidth: 17,
-                  height: 17,
-                  borderRadius: 5,
-                  paddingHorizontal: 4,
-                  backgroundColor: apiLow ? 'rgba(239,68,68,0.2)' : colors.accent20,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text
-                  style={{ color: apiLow ? '#ef4444' : colors.primaryFixed, fontFamily: fonts.stats, fontSize: 10, lineHeight: 14 }}
-                  numberOfLines={1}
-                >
-                  {apiRequestsRemaining}
-                </Text>
-              </View>
               <Animated.View style={chevronStyle}>
                 <BoroIcon name="chevron-down" size={14} color={colors.onSurfaceVariant} />
               </Animated.View>
-            </View>
-            <View
-              style={{
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: colors.accent12,
-                overflow: 'hidden',
-              }}
-            >
-              <View
-                style={{
-                  width: `${apiProgress * 100}%`,
-                  height: '100%',
-                  borderRadius: 3,
-                  backgroundColor: apiLow ? '#ef4444' : colors.primaryFixed,
-                }}
-              />
             </View>
           </View>
         </View>

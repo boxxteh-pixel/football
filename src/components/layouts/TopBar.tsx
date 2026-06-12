@@ -13,24 +13,23 @@ import { AvatarMenu } from '@/components/ui/AvatarMenu';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useLiveFixtures } from '@/hooks/useFixtures';
-import { isLive } from '@/types/match';
 
 // ─── Live Score Ticker ─────────────────────────────────────────────────────────
 const LiveTicker: React.FC<{ leagueIds: number[] }> = ({ leagueIds }) => {
   const colors = useColors();
-  const { data: liveData = [] } = useLiveFixtures(leagueIds, true);
-  const liveMatches = liveData.filter((f) => isLive(f.fixture.status.short));
+  // We use leagueIds string/number array mapping to category but we can just get trending events for the ticker
+  const { data: liveData = [] } = useLiveFixtures('all', true);
   const scrollX = useRef(new Animated.Value(0)).current;
   const containerWidth = useRef(800);
 
-  const tickerText = liveMatches
-    .map((f) =>
-      `${f.teams.home.name} ${f.goals.home ?? 0} – ${f.goals.away ?? 0} ${f.teams.away.name}  ${f.fixture.status.elapsed}'`
+  const tickerText = liveData
+    .map((event) =>
+      `${event.title} (Vol: $${Math.round(event.volume).toLocaleString()})`
     )
     .join('   •   ');
 
   useEffect(() => {
-    if (liveMatches.length === 0) return;
+    if (liveData.length === 0) return;
     // Reset and start scroll
     scrollX.setValue(containerWidth.current);
     const anim = Animated.loop(
@@ -44,7 +43,7 @@ const LiveTicker: React.FC<{ leagueIds: number[] }> = ({ leagueIds }) => {
     return () => anim.stop();
   }, [tickerText]);
 
-  if (liveMatches.length === 0) return null;
+  if (liveData.length === 0) return null;
 
   return (
     <View
@@ -69,7 +68,7 @@ const LiveTicker: React.FC<{ leagueIds: number[] }> = ({ leagueIds }) => {
           color: '#FF9500', fontFamily: fonts.label,
           fontSize: 8, fontWeight: 'bold', letterSpacing: 1,
         }}>
-          LIVE
+          TRENDING
         </Text>
       </View>
       <View style={{ flex: 1, overflow: 'hidden' }}>

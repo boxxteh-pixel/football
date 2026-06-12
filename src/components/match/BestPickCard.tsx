@@ -1,49 +1,38 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, Image } from 'react-native';
 import { router } from 'expo-router';
-import { format, parseISO } from 'date-fns';
-import { BoroIcon } from '@/components/ui/BoroIcon';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { TeamCrest } from '@/components/ui/TeamCrest';
-import { useColors} from '@/theme/colors';
+import { useColors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 import { useHaptics } from '@/hooks/useHaptics';
-import { useFixturePrediction } from '@/hooks/useFixturePrediction';
-import type { Fixture } from '@/types/match';
-import type { PredictionResult } from '@/types/prediction';
-import { useT } from '@/theme/i18n';
-import { formatPredictionSelection } from '@/utils/predictionText';
+import type { PolymarketEvent } from '@/services/api/polymarket';
 
 interface BestPickCardProps {
-  fixture: Fixture;
-  /** Optional pre-resolved prediction; otherwise resolved from the shared cache. */
-  prediction?: PredictionResult;
+  fixture: PolymarketEvent;
+  prediction?: any;
 }
 
-export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction: provided }) => {
+export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction }) => {
   const colors = useColors();
   const haptics = useHaptics();
-  const t = useT();
-  const resolved = useFixturePrediction(provided ? null : fixture);
-  const prediction = provided ?? resolved.prediction;
-  const isHigh = (prediction?.topPick.probability ?? 0) >= 80;
-  const accentColor = isHigh ? colors.primaryFixed : colors.secondaryFixed;
-  const kickoff = format(parseISO(fixture.fixture.date), 'HH:mm');
 
-  if (!prediction) {
-    return (
-      <GlassCard rounded="2xl" padding={16} style={{ width: 300, marginRight: 14, height: 210, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 11 }}>{t('pick.analyzing')}</Text>
-      </GlassCard>
-    );
-  }
+  const handlePress = () => {
+    haptics.medium();
+    router.push(`/match/${fixture.id}`);
+  };
+
+  const market = fixture.markets?.[0];
+  const maxPriceIndex = market?.outcomePrices.reduce(
+    (maxIdx, price, idx, arr) => (price > arr[maxIdx] ? idx : maxIdx),
+    0
+  ) ?? 0;
+  const topOutcome = market?.outcomes[maxPriceIndex] || 'Yes';
+  const topProbability = Math.round((market?.outcomePrices[maxPriceIndex] || 0.5) * 100);
+  const odds = market?.outcomePrices[maxPriceIndex] ? 1 / market.outcomePrices[maxPriceIndex] : 2.0;
 
   return (
     <Pressable
-      onPress={() => {
-        haptics.medium();
-        router.push(`/match/${fixture.fixture.id}`);
-      }}
+      onPress={handlePress}
       style={({ pressed }) => ({
         transform: [{ scale: pressed ? 0.98 : 1 }],
       })}
@@ -51,119 +40,96 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
       <GlassCard
         rounded="2xl"
         padding={18}
-        activeBorder={isHigh}
-        style={{ width: 300, marginRight: 14 }}
+        activeBorder
+        style={{ width: 300, marginRight: 14, height: 200 }}
       >
-        {/* Card Header: League & Kickoff */}
+        {/* Card Header: Category & Volume */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 16,
+            marginBottom: 12,
           }}
         >
           <Text
             style={{
-              color: colors.onSurfaceVariant,
+              color: colors.primaryFixed,
               fontFamily: fonts.label,
               fontSize: 10,
               letterSpacing: 0.8,
               textTransform: 'uppercase',
               flex: 1,
-              marginRight: 8,
+              fontWeight: 'bold',
             }}
             numberOfLines={1}
           >
-            {fixture.league.name}
+            {fixture.category}
           </Text>
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 5,
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               paddingHorizontal: 8,
               paddingVertical: 3,
               borderRadius: 8,
             }}
           >
-            <BoroIcon name="schedule" size={11} color={colors.onSurfaceVariant} />
             <Text
               style={{
-                color: colors.onSurface,
+                color: colors.onSurfaceVariant,
                 fontFamily: fonts.label,
-                fontSize: 11,
+                fontSize: 10,
               }}
             >
-              {kickoff}
+              Top Pick
             </Text>
           </View>
         </View>
 
-        {/* Card Body: Teams & Prediction Summary */}
+        {/* Card Body: Title & Large Probability */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            paddingVertical: 4,
+            alignItems: 'center',
+            gap: 12,
+            flex: 1,
           }}
         >
-          {/* Home Team */}
-          <View style={{ alignItems: 'center', gap: 8, width: 86 }}>
-            <TeamCrest uri={fixture.teams.home.logo} size={48} glow={isHigh} />
+          <View style={{ flex: 1, gap: 4 }}>
             <Text
               style={{
                 color: colors.onSurface,
                 fontFamily: fonts.bodyBold,
-                fontSize: 12,
-                textAlign: 'center',
+                fontSize: 14,
               }}
-              numberOfLines={2}
+              numberOfLines={3}
             >
-              {fixture.teams.home.name}
+              {fixture.title}
             </Text>
           </View>
 
-          {/* Prediction Middle Area */}
-          <View style={{ alignItems: 'center', gap: 5, flex: 1, paddingTop: 6 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', width: 70 }}>
             <Text
               style={{
-                color: accentColor,
+                color: colors.primaryFixed,
                 fontFamily: fonts.display,
-                fontSize: 26,
+                fontSize: 24,
                 letterSpacing: -1,
               }}
             >
-              {Math.round(prediction.topPick.probability)}%
+              {topProbability}%
             </Text>
             <Text
               style={{
                 color: colors.onSurfaceVariant,
                 fontFamily: fonts.label,
                 fontSize: 8,
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-              }}
-            >
-              {t('match.probability')}
-            </Text>
-          </View>
-
-          {/* Away Team */}
-          <View style={{ alignItems: 'center', gap: 8, width: 86 }}>
-            <TeamCrest uri={fixture.teams.away.logo} size={48} glow={isHigh} />
-            <Text
-              style={{
-                color: colors.onSurface,
-                fontFamily: fonts.bodyBold,
-                fontSize: 12,
                 textAlign: 'center',
               }}
               numberOfLines={2}
             >
-              {fixture.teams.away.name}
+              {topOutcome}
             </Text>
           </View>
         </View>
@@ -173,54 +139,28 @@ export const BestPickCard: React.FC<BestPickCardProps> = ({ fixture, prediction:
           style={{
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.06)',
-            paddingTop: 12,
-            marginTop: 14,
-            gap: 10,
+            paddingTop: 10,
+            marginTop: 10,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <View style={{ gap: 3, flex: 1, marginRight: 12 }}>
-              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                {t('match.selection')}
-              </Text>
-              <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 14 }} numberOfLines={1}>
-                {formatPredictionSelection(prediction.topPick.selection, t)}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end', gap: 3 }}>
-              <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                {t('match.odds')}
-              </Text>
-              <Text style={{ color: accentColor, fontFamily: fonts.stats, fontSize: 16 }}>
-                {prediction.topPick.odds.toFixed(2)}
-              </Text>
-            </View>
+          <View style={{ gap: 2 }}>
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 8 }}>
+              OUTCOME
+            </Text>
+            <Text style={{ color: colors.onSurface, fontFamily: fonts.bodyBold, fontSize: 12 }} numberOfLines={1}>
+              {topOutcome}
+            </Text>
           </View>
-
-          {/* Progress Indicator Bar */}
-          <View
-            style={{
-              width: '100%',
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              overflow: 'hidden',
-            }}
-          >
-            <View
-              style={{
-                width: `${prediction.topPick.probability}%`,
-                height: '100%',
-                borderRadius: 3,
-                backgroundColor: accentColor,
-              }}
-            />
+          <View style={{ alignItems: 'flex-end', gap: 2 }}>
+            <Text style={{ color: colors.onSurfaceVariant, fontFamily: fonts.label, fontSize: 8 }}>
+              IMPLIED ODDS
+            </Text>
+            <Text style={{ color: colors.primaryFixed, fontFamily: fonts.stats, fontSize: 14 }}>
+              {odds.toFixed(2)}
+            </Text>
           </View>
         </View>
       </GlassCard>

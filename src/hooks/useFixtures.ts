@@ -1,156 +1,87 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  fetchFixtureById,
-  fetchFixtureEvents,
-  fetchFixtureStatistics,
-  fetchFixturesByDate,
-  fetchUpcomingFixtures,
-  fetchLiveFixtures,
-  fetchTeamLastFixtures,
-  fetchTeamStatistics,
-  fetchHeadToHead,
-  fetchStandings,
-} from '@/services/api/apiFootball';
-import { config } from '@/constants/config';
-import { isLive } from '@/types/match';
-import { todayIsoDate } from '@/utils/date';
+  fetchTrendingEvents,
+  fetchEventsByCategory,
+  fetchEventById,
+  searchEvents,
+  PolymarketEvent,
+} from '@/services/api/polymarket';
 
-const oneDay = 24 * 60 * 60 * 1000;
-
-/**
- * Today's fixtures with a smart fallback to the next match day when today is
- * empty (off-season / no games). When a specific league is selected we query
- * just that league for the given date.
- */
-export const useTodayFixtures = (leagueId?: number) =>
+export const useTodayFixtures = (categorySlug: string = 'all') =>
   useQuery({
-    queryKey: ['fixtures', 'today', todayIsoDate(), leagueId ?? 'all'],
-    queryFn: async () => {
-      if (leagueId) return fetchFixturesByDate(todayIsoDate(), leagueId);
-      const { fixtures } = await fetchUpcomingFixtures(todayIsoDate());
-      return fixtures;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes — ensures fresh data on each visit
+    queryKey: ['polymarket', 'events', categorySlug],
+    queryFn: () => fetchEventsByCategory(categorySlug),
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: 'always',
     refetchOnReconnect: true,
   });
 
-export const useFixturesByDate = (date: string, leagueId?: number) =>
+export const useLiveFixtures = (categorySlug: string = 'all', enabled = true) =>
   useQuery({
-    queryKey: ['fixtures', 'date', date, leagueId ?? 'all'],
-    queryFn: () => fetchFixturesByDate(date, leagueId),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
-
-export const useLiveFixtures = (leagueIds?: number[], enabled = true) =>
-  useQuery({
-    queryKey: ['fixtures', 'live', leagueIds?.join(',') ?? 'all'],
-    queryFn: () => fetchLiveFixtures(leagueIds),
-    refetchInterval: enabled ? config.app.liveRefreshMs : false,
-    refetchIntervalInBackground: false,
+    queryKey: ['polymarket', 'live', categorySlug],
+    queryFn: () => fetchTrendingEvents(),
+    refetchInterval: enabled ? 30000 : false,
     staleTime: 20000,
-    enabled: enabled,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
-    placeholderData: (prev) => prev, // keep last live list while refetching (no flicker)
+    enabled,
+    placeholderData: (prev) => prev,
   });
 
-export const useFixture = (id: number | undefined) =>
+export const useFixture = (id: string | undefined) =>
   useQuery({
-    queryKey: ['fixture', id],
-    queryFn: () => fetchFixtureById(id!),
-    enabled: typeof id === 'number' && Number.isFinite(id),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchInterval: (query) => {
-      const data = query.state.data;
-      if (data && isLive(data.fixture.status.short)) return config.app.liveRefreshMs;
-      return false;
-    },
+    queryKey: ['polymarket', 'event', id],
+    queryFn: () => fetchEventById(id!),
+    enabled: !!id,
+    staleTime: 60 * 1000,
   });
 
-export const useFixtureEvents = (id: number | undefined, isLiveFixture: boolean) =>
+export const useSearchEvents = (query: string) =>
   useQuery({
-    queryKey: ['fixture', id, 'events'],
-    queryFn: () => fetchFixtureEvents(id!),
-    enabled: typeof id === 'number' && Number.isFinite(id),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchInterval: isLiveFixture ? config.app.liveRefreshMs : false,
+    queryKey: ['polymarket', 'search', query],
+    queryFn: () => searchEvents(query),
+    enabled: query.length > 1,
+    staleTime: 60 * 1000,
   });
 
-export const useFixtureStats = (id: number | undefined, isLiveFixture: boolean) =>
+// Compatibility stubs so components don't crash
+export const useFixtureEvents = (id: any, isLive: boolean) =>
   useQuery({
-    queryKey: ['fixture', id, 'stats'],
-    queryFn: () => fetchFixtureStatistics(id!),
-    enabled: typeof id === 'number' && Number.isFinite(id),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchInterval: isLiveFixture ? config.app.liveRefreshMs : false,
+    queryKey: ['fixture-events', id],
+    queryFn: async () => [],
+    enabled: false,
   });
 
-export const useStandings = (leagueId: number, season?: number) =>
+export const useFixtureStats = (id: any, isLive: boolean) =>
   useQuery({
-    queryKey: ['standings', leagueId, season ?? config.app.defaultSeason],
-    queryFn: () => fetchStandings(leagueId, season),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    queryKey: ['fixture-stats', id],
+    queryFn: async () => [],
+    enabled: false,
   });
 
-export const useTeamLastFixtures = (teamId: number | undefined, last = 10) =>
+export const useStandings = (id: any) =>
   useQuery({
-    queryKey: ['team', teamId, 'last', last],
-    queryFn: () => fetchTeamLastFixtures(teamId!, last),
-    enabled: typeof teamId === 'number' && Number.isFinite(teamId),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    queryKey: ['standings', id],
+    queryFn: async () => [],
+    enabled: false,
   });
 
-export const useTeamStats = (
-  teamId: number | undefined,
-  leagueId: number | undefined,
-  season?: number,
-) =>
+export const useTeamLastFixtures = (id: any) =>
   useQuery({
-    queryKey: ['team', teamId, 'stats', leagueId, season ?? config.app.defaultSeason],
-    queryFn: () => fetchTeamStatistics(teamId!, leagueId!, season),
-    enabled:
-      typeof teamId === 'number' &&
-      Number.isFinite(teamId) &&
-      typeof leagueId === 'number' &&
-      Number.isFinite(leagueId),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    queryKey: ['team-last', id],
+    queryFn: async () => [],
+    enabled: false,
   });
 
-export const useH2H = (homeId: number | undefined, awayId: number | undefined) =>
+export const useTeamStats = (teamId: any, leagueId: any) =>
+  useQuery({
+    queryKey: ['team-stats', teamId, leagueId],
+    queryFn: async () => null,
+    enabled: false,
+  });
+
+export const useH2H = (homeId: any, awayId: any) =>
   useQuery({
     queryKey: ['h2h', homeId, awayId],
-    queryFn: () => fetchHeadToHead(homeId!, awayId!),
-    enabled:
-      typeof homeId === 'number' &&
-      Number.isFinite(homeId) &&
-      typeof awayId === 'number' &&
-      Number.isFinite(awayId),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    queryFn: async () => [],
+    enabled: false,
   });

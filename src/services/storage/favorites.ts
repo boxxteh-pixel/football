@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const FAVORITES_KEY = 'boro_favorites';
 
 interface FavoritesState {
-  teams: number[];
-  fixtures: number[];
-  leagues: number[];
+  teams: string[];
+  fixtures: string[];
+  leagues: string[];
 }
 
 const DEFAULT: FavoritesState = { teams: [], fixtures: [], leagues: [] };
@@ -25,7 +25,7 @@ export const writeFavorites = async (state: FavoritesState): Promise<void> => {
 
 export const toggleFavorite = async (
   kind: keyof FavoritesState,
-  id: number,
+  id: string,
 ): Promise<FavoritesState> => {
   const state = await readFavorites();
   const current = state[kind];

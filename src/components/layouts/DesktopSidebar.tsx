@@ -7,7 +7,6 @@ import { fonts } from "@/theme/typography";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { useRateLimit } from "@/hooks/useRateLimit";
 import { useT } from "@/theme/i18n";
 
 interface NavItem {
@@ -246,13 +245,9 @@ export const DesktopSidebar: React.FC = () => {
   const colorTheme = useSettingsStore((s) => s.settings.colorTheme);
   const session = useAuthStore((s) => s.session);
   const logOut = useAuthStore((s) => s.logOut);
-  const rl = useRateLimit();
 
   const userName = session?.user.name ?? "Guest";
   const initial = userName[0]?.toUpperCase() ?? "B";
-  const apiRemaining = rl.remaining != null ? rl.compact : "\u221e";
-  const apiProgress = rl.remainingPct != null ? rl.remainingPct / 100 : 1;
-  const apiLow = rl.remainingPct != null && rl.remainingPct < 15;
 
   const logoSource =
     colorTheme === "purple"
@@ -390,75 +385,9 @@ export const DesktopSidebar: React.FC = () => {
 
       {/* Bottom area: API Meter + Account + Settings + Logout */}
       <View style={{ gap: 8 }}>
-        {/* API usage meter */}
-        <View
-          nativeID="sidebar-api-meter"
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            backgroundColor: "rgba(255,255,255,0.025)",
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.06)",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <BoroIcon
-                name="analytics"
-                size={13}
-                color={colors.onSurfaceVariant}
-              />
-              <Text
-                style={{
-                  color: colors.onSurfaceVariant,
-                  fontFamily: fonts.label,
-                  fontSize: 10,
-                  letterSpacing: 0.8,
-                }}
-              >
-                API CREDITS
-              </Text>
-            </View>
-            <Text
-              style={{
-                color: apiLow ? "#ef4444" : colors.primaryFixed,
-                fontFamily: fonts.stats,
-                fontSize: 13,
-              }}
-            >
-              {apiRemaining}
-            </Text>
-          </View>
-          <View
-            style={{
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              overflow: "hidden",
-            }}
-          >
-            <View
-              style={{
-                width: `${apiProgress * 100}%`,
-                height: "100%",
-                borderRadius: 3,
-                backgroundColor: apiLow ? "#ef4444" : colors.primaryFixed,
-              }}
-            />
-          </View>
-        </View>
-
         {/* Divider */}
         <View style={{ marginVertical: 2 }}>
+
           <View
             style={{ height: 1, backgroundColor: "rgba(255,255,255,0.06)" }}
           />

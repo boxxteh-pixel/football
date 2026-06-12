@@ -4,7 +4,7 @@ import { supabase } from '@/services/supabase/client';
 import { useAuthStore } from '@/store/authStore';
 import { withTimeout } from '@/utils/async';
 
-const syncProfileFavorites = async (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => {
+const syncProfileFavorites = async (kind: 'teams' | 'fixtures' | 'leagues', ids: string[]) => {
   const session = useAuthStore.getState().session;
   if (!session?.user?.id) return;
 
@@ -30,15 +30,15 @@ const syncProfileFavorites = async (kind: 'teams' | 'fixtures' | 'leagues', ids:
 };
 
 interface FavoritesState {
-  teams: number[];
-  fixtures: number[];
-  leagues: number[];
+  teams: string[];
+  fixtures: string[];
+  leagues: string[];
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  toggle: (kind: 'teams' | 'fixtures' | 'leagues', id: number) => Promise<void>;
-  addMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => Promise<void>;
-  removeMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: number[]) => Promise<void>;
-  isFavorite: (kind: 'teams' | 'fixtures' | 'leagues', id: number) => boolean;
+  toggle: (kind: 'teams' | 'fixtures' | 'leagues', id: string) => Promise<void>;
+  addMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: string[]) => Promise<void>;
+  removeMultiple: (kind: 'teams' | 'fixtures' | 'leagues', ids: string[]) => Promise<void>;
+  isFavorite: (kind: 'teams' | 'fixtures' | 'leagues', id: string) => boolean;
 }
 
 export const useFavoritesStore = create<FavoritesState>((set, get) => ({
